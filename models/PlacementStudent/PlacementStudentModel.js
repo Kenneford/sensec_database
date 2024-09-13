@@ -1,48 +1,46 @@
 const mongoose = require("mongoose");
-const PlacementStudentsModelSchema = new mongoose.Schema(
+const placementStudentsModelSchema = new mongoose.Schema(
   {
-    firstName: {
+    sN: {
+      type: Number,
+      // require: true,
+    },
+    boardingStatus: {
       type: String,
       default: "",
-      require: true,
+      // require: true,
     },
-    lastName: {
+    surname: {
       type: String,
       default: "",
-      require: true,
+      // require: true,
     },
-    otherName: {
+    otherNames: {
       type: String,
       // required: true,
     },
     gender: {
       type: String,
-      required: true,
+      // required: true,
     },
     yearGraduated: {
       type: String,
       // required: true,
     },
-    enrollmentId: {
+    jHSAttended: {
       type: String,
+      // required: true,
     },
-    jhsAttended: {
+    jHSIndexNo: {
       type: String,
-      required: true,
-    },
-    jhsIndexNumber: {
-      type: String,
-      required: true,
+      // required: true,
       unique: true,
     },
-    generatedIndexNumber: {
+    placementNumber: {
       type: String,
+      unique: true,
       default: function () {
-        return (
-          this.jhsIndexNumber +
-          this.yearGraduated.split(" ").map((year) => year[2]) +
-          this.yearGraduated.split(" ").map((year) => year[3])
-        );
+        return "PN" + "-" + Math?.floor(1000 + Math?.random() * 9000);
       },
     },
     placementVerified: {
@@ -53,17 +51,34 @@ const PlacementStudentsModelSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    placementNumber: {
+    dateofBirth: {
       type: String,
-      unique: true,
+    },
+    trackID: {
+      type: String,
+    },
+    sMSContact: {
+      type: String,
+    },
+    generatedIndexNumber: {
+      type: String,
       default: function () {
-        return "PN" + "-" + Math.floor(1000 + Math.random() * 9000);
+        return (
+          this?.jHSIndexNo +
+          this?.yearGraduated?.split(" ")?.map((year) => year[2]) +
+          this?.yearGraduated?.split(" ")?.map((year) => year[3])
+        );
       },
     },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+    programme: {
+      type: String,
+    },
+    aggregateOfBestSix: {
+      type: Number,
+    },
+    enrollmentId: {
+      type: String,
+      default: "",
     },
   },
   {
@@ -73,7 +88,7 @@ const PlacementStudentsModelSchema = new mongoose.Schema(
 
 const PlacementStudent = mongoose.model(
   "PlacementStudent",
-  PlacementStudentsModelSchema
+  placementStudentsModelSchema
 );
 
 module.exports = PlacementStudent;
