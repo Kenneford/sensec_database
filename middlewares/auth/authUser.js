@@ -23,7 +23,7 @@ async function generateUserToken(req, res, next) {
       {
         id: userFound?._id,
         uniqueId: userFound?.uniqueId,
-        role: userFound?.role,
+        roles: userFound?.roles,
         isVerified: userFound?.isVerified,
         isVerifiedSensosa: userFound?.isVerifiedSensosa,
         lastUpdatedBy: userFound?.lastUpdatedBy,
@@ -99,7 +99,7 @@ function authUser(req, res, next) {
       });
       // return;
     } else {
-      req.userInfo = user;
+      req.user = user;
       next();
     }
   });
@@ -157,17 +157,17 @@ async function createUserVerificationData(req, res, next) {
 // Logged in user role middelware
 function authUserRole({ userRoles }) {
   return async (req, res, next) => {
-    // console.log(req.user, "L-47");
+    // console.log(req.user, "L-160");
     if (
-      req.userInfo?.role !== userRoles?.admin &&
-      req.userInfo?.role !== userRoles?.teacher &&
-      req.userInfo?.role !== userRoles?.nTStaff &&
-      req.userInfo?.role !== userRoles?.sensosa &&
-      req.userInfo?.role !== userRoles?.student
+      !req?.user?.roles?.includes(userRoles?.admin) &&
+      !req?.user?.roles?.includes(userRoles?.teacher) &&
+      !req?.user?.roles?.includes(userRoles?.nTStaff) &&
+      !req?.user?.roles?.includes(userRoles?.sensosa) &&
+      !req?.user?.roles?.includes(userRoles?.student)
     ) {
       return res.status(401).json({
         errorMessage: {
-          message: [`Not An Authorized User!`],
+          message: [`You're not an authorized user!`],
         },
       });
     }
