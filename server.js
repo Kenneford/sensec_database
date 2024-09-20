@@ -6,7 +6,10 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const cors = require("cors");
 
-const StudentsRouter = require("./routes/students/StudentRoutes");
+const UsersRoute = require("./routes/auth/UserRoute");
+const StudentsRoute = require("./routes/students/studentRoutes");
+const ProgrammesRoute = require("./routes/academics/programs/programsRoutes");
+const SubjectsRoute = require("./routes/academics/subjects/subjectsRoutes");
 
 const start = async () => {
   const mongodbConnection = `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_URL}/sensec_website`;
@@ -40,7 +43,13 @@ const start = async () => {
   //   app.use("/api/nt_staff");
 
   // Students routes
-  app.use("/api/sensec_db/v1/students", StudentsRouter);
+  app.use(
+    "/api/sensec_db/v1",
+    UsersRoute,
+    StudentsRoute,
+    ProgrammesRoute,
+    SubjectsRoute
+  );
 
   //   // Users routes
   //   app.use("/api/user");
