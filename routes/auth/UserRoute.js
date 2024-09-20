@@ -5,6 +5,8 @@ const {
   userLogin,
   forgotPasswordRequest,
   resetPassword,
+  assignUserRole,
+  removeUserRole,
 } = require("../../controllers/users/userController");
 const {
   sendVerificationEmail,
@@ -51,6 +53,8 @@ router.post(
   generatePasswordResetUserToken,
   resetPassword
 );
+router.put("/users/role/assign", assignUserRole);
+router.put("/users/role/remove", removeUserRole);
 // router.post("/users/logout", userLogout);
 
 module.exports = router;

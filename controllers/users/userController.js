@@ -289,6 +289,92 @@ module.exports.resetPassword = async (req, res) => {
   }
 };
 
+module.exports.assignUserRole = async (req, res) => {
+  const data = req.body;
+  console.log(data);
+
+  const userFound = await User.findOne({ uniqueId: data?.userId });
+  try {
+    if (userFound) {
+      if (!userFound?.roles?.includes(data?.role)) {
+        const userRoleUpdated = await User.findOneAndUpdate(
+          userFound?._id,
+          {
+            $push: { roles: data?.role },
+          },
+          { upsert: true }
+        );
+        res.status(200).json({
+          successMessage: `The role of ${data?.role} is assigned to ${userFound?.personalInfo?.fullName}!`,
+          user: userRoleUpdated,
+        });
+      } else {
+        return res.status(400).json({
+          error: {
+            errorMessage: ["Role already assigned to this user!"],
+          },
+        });
+      }
+    } else {
+      return res.status(404).json({
+        error: {
+          errorMessage: ["User's data not found!"],
+        },
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: {
+        errorMessage: ["Internal Server Error"],
+      },
+    });
+  }
+};
+
+module.exports.removeUserRole = async (req, res) => {
+  const data = req.body;
+  console.log(data);
+
+  const userFound = await User.findOne({ uniqueId: data?.userId });
+  try {
+    if (userFound) {
+      if (userFound?.roles?.includes(data?.role)) {
+        const userRoleUpdated = await User.findOneAndUpdate(
+          userFound?._id,
+          {
+            $pull: { roles: data?.role },
+          },
+          { new: true }
+        );
+        res.status(200).json({
+          successMessage: `The role of ${data?.role} is withdrawned from ${userFound?.personalInfo?.fullName}!`,
+          user: userRoleUpdated,
+        });
+      } else {
+        return res.status(400).json({
+          error: {
+            errorMessage: ["Role already assigned to this user!"],
+          },
+        });
+      }
+    } else {
+      return res.status(404).json({
+        error: {
+          errorMessage: ["User's data not found!"],
+        },
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: {
+        errorMessage: ["Internal Server Error"],
+      },
+    });
+  }
+};
+
 module.exports.userLogout = async (req, res) => {
   try {
     res.cookies("userToken", "", { maxAge: 0 });
