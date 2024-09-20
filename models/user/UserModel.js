@@ -90,9 +90,11 @@ const UsersModelSchema = new mongoose.Schema(
     updatedDate: {
       type: Date,
     },
-    role: {
-      type: String,
-    },
+    roles: [
+      {
+        type: String,
+      },
+    ],
   },
   {
     timestamps: true,

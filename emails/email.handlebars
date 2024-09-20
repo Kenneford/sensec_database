@@ -1,0 +1,166 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Welcome Email</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div
+      className="confirmContent"
+      style="
+      max-width: 30rem;
+      margin: auto;
+      border-radius: 0.6rem;
+      border: 1px solid #cccc;
+    "
+    >
+      <h2
+        style="
+        text-align: center;
+        padding-bottom: 1rem;
+        color: #555;
+      "
+      >
+        Email Verification
+      </h2>
+      <div
+        id="imageWrap"
+        style="
+          dispaly: flex;
+          justify-items: center;
+          align-items: center;
+          margin: auto;
+          width: 6rem;
+          height: 6rem;
+          padding: .3rem .2rem .2rem .3rem;
+          border-radius: .4rem;
+          border: 1px solid #cccc;
+          background-color: #fff;
+        "
+      >
+        <img
+          src={{userImage}}
+          width="98%"
+          height="98%"
+          margin="auto"
+          alt="User Profile-Image"
+          style="
+          margin: auto;
+        "
+        />
+      </div>
+      <p
+        style="
+          width: 90%;
+          margin: auto;
+          text-align: center;
+          padding: 1rem 0 0;
+          font-size: .9rem; 
+          text-align: center;
+          "
+      >
+        Hi
+        <span
+          style="
+          text-align: center;
+          font-weight: 600; 
+          font-size: .9rem;
+          "
+        >{{firstName}} {{lastName}}</span>
+      </p>
+      <div
+        className="infoText"
+        style=" width: 90%; margin: auto; align-items: center "
+      >
+        <p style=" font-size: .9rem; color: #393939; text-align: center;">
+          {{verificationText}}.
+        </p>
+        <p
+          className="thanks"
+          style="
+          font-size: .9rem;
+          text-align: center;
+          padding: .5rem 0 0;
+          fontWeight: 600;
+          color: #e01818;
+        "
+        >
+          {{linkExpiry}}.
+        </p>
+      </div>
+      <div
+        style="
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: auto;
+        "
+      >
+        <a
+          style="
+          width: 90%;
+          height: 2.3rem;
+          margin: 0 auto 1.5rem;
+          padding-top: .7rem;
+          font-size: 1.1rem;
+          text-align: center;
+          font-weight: 600;
+          background-color: green;
+          color: #fff;
+          cursor: pointer;
+          border-radius: 0.4rem;
+          text-decoration: none;
+        "
+          href="{{{urlLink}}}"
+          target="_blank"
+        >
+          {{linkText}}
+        </a>
+      </div>
+      <hr />
+      <span
+        className="sensecRigth"
+        style="
+        width:90%;
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      "
+      >
+        <p
+          style="
+          width: 100%;
+          padding: 0 0 1rem;
+          margin-bottom: 0;
+          font-size: .8rem;
+          font-weight: 500;
+          color: #555;
+          text-align: center;
+        "
+        >
+          &copy;{{currentYear}}
+          <span
+            style="
+          font-size: .8rem;
+          color: green;
+        "
+          >{{company}}</span>,
+          <span
+            style="
+          font-size: .8rem;
+        "
+          >All Rights Reserved!</span>
+        </p>
+      </span>
+    </div>
+    <script src="../public/urlLink.js"></script>
+  </body>
+</html>

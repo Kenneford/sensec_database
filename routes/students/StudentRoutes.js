@@ -4,6 +4,6 @@ const {
 
 const router = require("express").Router();
 
-router.post("/enrolment/online", studentOnlineEnrolment);
+router.post("/students/enrolment/online", studentOnlineEnrolment);
 
 module.exports = router;
