@@ -1,7 +1,4 @@
 const {
-  createElectiveSubject,
-} = require("../../../controllers/academics/subjects/electives/electiveSubjectController");
-const {
   createSubject,
   deleteSubject,
   updateSubject,
@@ -18,17 +15,6 @@ const {
 const router = require("express").Router();
 
 router.post(
-  "/subjects/elective/add",
-  authUser,
-  authUserRole({
-    userRoles: {
-      admin: "admin",
-    },
-  }),
-  createElectiveSubject
-);
-
-router.post(
   "/academics/subjects/add",
   authUser,
   authUserRole({
@@ -38,7 +24,6 @@ router.post(
   }),
   createSubject
 );
-
 router.get(
   "/academics/subjects/fetch_all",
   authUser,
@@ -49,7 +34,6 @@ router.get(
   }),
   getAllSubjects
 );
-
 router.get(
   "/academics/subjects/:subjectId/fetch",
   authUser,
@@ -60,7 +44,6 @@ router.get(
   }),
   getSingleSubject
 );
-
 router.get(
   "/academics/subjects/electives/program/:programId/fetch_all",
   authUser,
@@ -71,7 +54,6 @@ router.get(
   }),
   getAllProgramElectiveSubjects
 );
-
 router.get(
   "/academics/subjects/electives/optional/program/:programId/fetch_all",
   authUser,
@@ -82,7 +64,6 @@ router.get(
   }),
   getAllProgramOptionalElectiveSubjects
 );
-
 router.put(
   "/academics/subjects/:subjectId/update",
   authUser,
@@ -93,7 +74,6 @@ router.put(
   }),
   updateSubject
 );
-
 router.delete(
   "/academics/subjects/:subjectId/delete",
   authUser,
