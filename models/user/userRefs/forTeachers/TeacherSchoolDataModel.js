@@ -10,12 +10,12 @@ const teachersSchoolDataSchema = new Schema(
         ref: "ClassLevel",
       },
     ],
-    students: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    // students: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "User",
+    //   },
+    // ],
     teachingSubjects: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -26,6 +26,12 @@ const teachersSchoolDataSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    classSections: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ClassLevelSection",
+      },
+    ],
     classLevelHandling: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ClassLevelSection",
