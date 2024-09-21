@@ -9,10 +9,15 @@ module.exports.createSubject = async (req, res) => {
   const data = req.body;
   console.log(data);
 
-  const requiredFields =
-    data?.subjectName || data?.nameOfProgram || data?.programId;
-  // data?.nameOfDivisionProgram ||
-  // data?.divisionProgramId;
+  const requiredFields = data?.subjectName;
+  if (!requiredFields) {
+    res.status(403).json({
+      errorMessage: {
+        message: ["Name of subject required!"],
+      },
+    });
+    return;
+  }
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: data?.createdBy });
@@ -25,15 +30,15 @@ module.exports.createSubject = async (req, res) => {
       });
       return;
     }
-    if (!requiredFields) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Fill all required fields!"],
-        },
-      });
-      return;
-    }
     if (data && !data?.isCore) {
+      if (!data?.nameOfProgram || !data?.programId) {
+        res.status(403).json({
+          errorMessage: {
+            message: ["Fill all required fields!"],
+          },
+        });
+        return;
+      }
       let programFound;
       let divisionProgramFound;
       //Find main programme

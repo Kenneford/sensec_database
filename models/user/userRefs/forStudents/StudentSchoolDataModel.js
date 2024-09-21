@@ -21,6 +21,11 @@ const StudentsSchoolDataSchema = new Schema(
       ref: "Program",
       // required: true,
     },
+    divisionProgram: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProgramDivision",
+      // required: true,
+    },
     programOfOS: {
       type: String,
       // required: true,
