@@ -10,16 +10,6 @@ const subjectSchema = new Schema(
       type: String,
       required: true,
     },
-    // classLevel: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "ClassLevel",
-    //   required: true,
-    // },
-    // currentTeacher: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "User",
-    //   // required: true,
-    // },
     teachers: [
       {
         type: mongoose.Schema.Types.ObjectId,
