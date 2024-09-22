@@ -1,25 +1,16 @@
 const mongoose = require("mongoose");
+// const { v4: uuidv4 } = require("uuid");
 
-const BatchesModelSchema = new mongoose.Schema(
+const oldStudentsSchema = new mongoose.Schema(
   {
-    yearRange: {
-      type: String,
-      default: function () {
-        return `${this.fromYear}-${this.toYear}`;
-      },
-    },
-    fromYear: {
-      type: String,
-      required: true,
-    },
-    toYear: {
+    yearOfGraduation: {
       type: String,
       required: true,
     },
     description: {
       type: String,
       default: function () {
-        return `${this.yearRange} academic batch`;
+        return `This is ${this.yearOfGraduation} old students`;
       },
     },
     students: [
@@ -31,7 +22,6 @@ const BatchesModelSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     lastUpdatedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -39,10 +29,13 @@ const BatchesModelSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true,
+    timestamps: new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }),
   }
 );
 
-const Batch = mongoose.model("Batch", BatchesModelSchema);
-
-module.exports = Batch;
+const OldStudents = mongoose.model("OldStudents", oldStudentsSchema);
+module.exports = OldStudents;

@@ -16,6 +16,7 @@ const ClassLevelSectionRoute = require("./routes/academics/class/classLevelSecti
 const AcademicYearRoute = require("./routes/academics/year/academicYearRoutes");
 const AcademicTermRoute = require("./routes/academics/term/academicTermRoutes");
 const AcademicBatchRoute = require("./routes/academics/batches/batchesRoutes");
+const SensosanRoute = require("./routes/graduatesRoutes/OldStudentsRoutes");
 
 const start = async () => {
   // Database connection error middleware
@@ -88,7 +89,8 @@ const start = async () => {
       ClassLevelSectionRoute,
       AcademicYearRoute,
       AcademicTermRoute,
-      AcademicBatchRoute
+      AcademicBatchRoute,
+      SensosanRoute
     );
 
     app.listen(port, () => console.log(`Server listening at port ${port}`));
