@@ -11,10 +11,15 @@ const PlacementBatchesModelSchema = new mongoose.Schema(
         ref: "PlacementStudent",
       },
     ],
-    createdBy: {
+    uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      // required: true,
+    },
+    lastUpdatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      // required: true,
     },
   },
   {
