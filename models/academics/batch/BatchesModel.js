@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const moment = require("moment-timezone");
 
 const BatchesModelSchema = new mongoose.Schema(
   {
