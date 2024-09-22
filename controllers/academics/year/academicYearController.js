@@ -233,6 +233,24 @@ exports.deleteAcademicYear = async (req, res) => {
     const deletedAcademicYear = await AcademicYear.findOneAndDelete({
       _id: academicYearFound?._id,
     });
+    if (deletedAcademicYear) {
+      // Remove academic term from admin academic terms array
+      if (
+        adminFound?.adminActionsData?.academicYears.includes(
+          deletedAcademicYear?._id
+        )
+      ) {
+        await User.findOneAndUpdate(
+          adminFound._id,
+          {
+            $pull: {
+              "adminActionsData.academicYears": deletedAcademicYear?._id,
+            },
+          },
+          { new: true }
+        );
+      }
+    }
     res.status(201).json({
       successMessage: "Academic year deleted successfully",
       deletedAcademicYear,
@@ -246,3 +264,7 @@ exports.deleteAcademicYear = async (req, res) => {
     return;
   }
 };
+// Set Current  Academic Year ✅
+exports.currentAcademicYear = async (req, res) => {};
+// Remove Current  Academic Year ✅
+exports.removeCurrentAcademicYear = async (req, res) => {};
