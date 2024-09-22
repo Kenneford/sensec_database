@@ -542,6 +542,17 @@ exports.deleteClassLevelSection = async (req, res) => {
     const deletedClassSection = await ClassLevelSection.findByIdAndDelete({
       _id: classSectionFound?._id,
     });
+    if (
+      deletedClassSection &&
+      adminFound?.adminActionsData?.classLevelSections?.includes(
+        deletedClassSection?._id
+      )
+    ) {
+      adminFound.adminActionsData.classLevelSections.pull(
+        deletedClassSection?._id
+      );
+      await adminFound.save();
+    }
     res.status(201).json({
       successMessage: "Class section deleted successfully!",
       deletedClassSection,
