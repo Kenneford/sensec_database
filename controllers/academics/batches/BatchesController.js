@@ -253,5 +253,12 @@ module.exports.deleteBatch = async (req, res) => {
         deletedAcademicBatch,
       });
     }
-  } catch (error) {}
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!"],
+      },
+    });
+    return;
+  }
 };
