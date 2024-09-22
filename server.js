@@ -12,6 +12,7 @@ const ProgrammesRoute = require("./routes/academics/programs/programsRoutes");
 const SubjectsRoute = require("./routes/academics/subjects/subjectsRoutes");
 const ClassLevelRoute = require("./routes/academics/class/classLevelRoutes");
 const ClassLevelSectionRoute = require("./routes/academics/class/classLevelSectionRoutes");
+const AcademicYearRoute = require("./routes/academics/year/academicYearRoutes");
 
 const start = async () => {
   const mongodbConnection = `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_URL}/sensec_website`;
@@ -52,7 +53,8 @@ const start = async () => {
     ProgrammesRoute,
     SubjectsRoute,
     ClassLevelRoute,
-    ClassLevelSectionRoute
+    ClassLevelSectionRoute,
+    AcademicYearRoute
   );
 
   //   // Users routes
