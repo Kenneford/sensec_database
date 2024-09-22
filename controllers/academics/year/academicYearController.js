@@ -174,7 +174,7 @@ exports.updateAcademicYear = async (req, res) => {
       toYear: data?.toYear,
     });
     if (!existingAcademicYear) {
-      const updatedAcademicYear = await AcademicYear.findByIdAndUpdate(
+      const updatedAcademicYear = await AcademicYear.findOneAndUpdate(
         academicYearFound?._id,
         {
           fromYear: data?.fromYear,

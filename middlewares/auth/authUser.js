@@ -94,7 +94,7 @@ function authUser(req, res, next) {
     if (err) {
       res.status(403).json({
         errorMessage: {
-          message: [`Token Expired/Invalid!`],
+          message: [`Token expired or invalid!`],
         },
       });
       // return;
