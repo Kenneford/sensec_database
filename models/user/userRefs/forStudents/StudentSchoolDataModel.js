@@ -42,7 +42,7 @@ const StudentsSchoolDataSchema = new Schema(
         ref: "Subject",
       },
     ],
-    classTeacher: {
+    currentClassTeacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },

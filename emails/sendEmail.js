@@ -24,9 +24,10 @@ const vonage = new Vonage({
 const UserVerificationData = require("../models/user/userRefs/signUpModel/UserVerificationModel");
 
 const sendVerificationEmail = async (req, res, next) => {
+  const verificationData = req?.userVerificationData;
   // Find user's verification data
   const userVerificationData = await UserVerificationData.findOne({
-    userId: req?.userVerificationData?.userId,
+    userId: verificationData?.userId,
   });
   console.log(req?.body?.uniqueId, "L-31");
   try {
@@ -121,7 +122,134 @@ async function passwordResetRequestEmail(req, res, next) {
   });
 }
 
+const sendEnrollmentEmail = async (req, res, next) => {
+  const currentUser = req.user;
+  const student = req?.enrollmentApprovalData?.studentFound;
+  let body = `
+    <div
+      style="
+        margin-bottom: 1rem;
+        padding: 2rem;
+        width: 100%;
+        padding-bottom: 2rem;
+        height: 55vh;
+        fontSize: 1.2rem;
+        border: 1px solid #ccc;
+        border-radius: .4rem;"
+    >
+    <img src=${student?.personalInfo?.profilePicture.url} alt="User Picture" 
+      style="
+        width: 4rem;
+        height: 4rem;
+        object-fit: cover;
+        border-radius: .4rem;
+      "
+    />
+  <h4>Hello ${student?.personalInfo?.firstName},</h4>
+  <h1 style="
+    color: #696969;
+    height: 4rem;
+    object-fit: cover;
+    border-radius: .4rem;
+  ">Congratulations To You...</h1>
+  <p>We're thankful once again for your enrolment into our school.</p>
+  <p>This mail is to inform you that your enrolment has been approved, and you're now a student of SENYA SENIOR HIGH SCHOOL (SENSEC).
+  <p>You can also visit our website <a href="http://localhost:3000/sensec/students/placement_check">here</a> to check for your placement into our school.</p>
+  <p>Yours Sincerely,</p>
+  <h4 style="font-weight: 600; padding-bottom: -.5rem">${currentUser?.personalInfo?.firstName} ${currentUser?.personalInfo?.lastName}</h4>
+  <p style="font-weight: 600; padding-bottom: -.5rem">Head of Administration,
+  <br>
+  Senya Senior Secondary School.</p>
+    </div>
+  `;
+  const transporter = createMailTransporter();
+  // const transporter = createGMailTransporter();
+  let mailTemplate = {
+    from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
+    to: student?.contactAddress?.email,
+    subject: "Your Enrolment Status",
+    html: body,
+  };
+  transporter.sendMail(mailTemplate, (error, info) => {
+    if (error) {
+      console.log(error);
+      return res.status(400).json({
+        errorMessage: {
+          message: "Failed to send enrollment email to student!",
+        },
+      });
+    } else {
+      console.log("Your enrolment status has been sent to your email!");
+      next();
+      // res.status(200).json({
+      //   successMessage: "Enrollment email sent to student!",
+      // });
+    }
+  });
+};
+
+const studentEnrollmentApprovalSMS = (req, res, next) => {
+  const student = req?.enrollmentApprovalData?.studentFound;
+  const admin = req?.enrollmentApprovalData?.adminFound;
+  let body = `
+
+Hello ${student?.personalInfo?.firstName},
+
+CONGRATULATIONS TO YOU...
+
+We're thankful once again for your enrolment into our school.
+This message is to inform you that your enrolment has been approved, and you're now a student of SENYA SENIOR HIGH SCHOOL (SENSEC).
+Click: "http://localhost:3000/sensec/students/placement_check" to check for your placement into our school.
+
+Yours Sincerely,
+
+${admin?.personalInfo?.firstName} ${admin?.personalInfo?.lastName}
+Head of Administration,
+Senya Senior High School.
+
+`;
+  client.messages
+    .create({
+      body: body,
+      // to: "491784535757", // Text your number
+      to: student?.contactAddress?.mobile, // Text your number
+      from: process.env.TWILIO_NUMBER, // From a valid Twilio number
+    })
+    .then((message) => console.log(message.sid));
+
+  const from = process.env.VONAGE_BRAND_NAME;
+  const to = student?.contactAddress?.mobile;
+  const text = body;
+
+  client.messages
+    .create({
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      body: body,
+      to: "whatsapp:+4915759307163",
+      // to: "whatsapp:+233241283018",
+      // to: `whatsapp:${userInfo?.contactAddress?.mobile}`,
+    })
+    .then((message) => console.log(message.sid));
+
+  next();
+  // async function sendApprovedSMS() {
+  //   await vonage.sms
+  //     .send({ to, from, text })
+  //     .then((resp) => {
+  //       console.log("Message sent successfully");
+  //       console.log(resp);
+  //     })
+  //     .catch((err) => {
+  //       console.log("There was an error sending the messages.");
+  //       console.error(err);
+  //     });
+  // }
+  // sendApprovedSMS();
+};
+
 module.exports = {
   sendVerificationEmail,
   passwordResetRequestEmail,
+  sendEnrollmentEmail,
+  studentEnrollmentApprovalSMS,
 };

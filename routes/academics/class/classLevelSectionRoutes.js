@@ -12,8 +12,8 @@ const {
   authUserRole,
 } = require("../../../middlewares/auth/authUser");
 const {
-  findProgramme,
-} = require("../../../middlewares/programme/programMiddleware");
+  findSectionProgramme,
+} = require("../../../middlewares/student/studentMiddleware");
 
 const router = require("express").Router();
 
@@ -26,7 +26,7 @@ router.post(
       admin: "admin",
     },
   }),
-  findProgramme,
+  findSectionProgramme,
   createClassLevelSection
 );
 // Assign lecturer

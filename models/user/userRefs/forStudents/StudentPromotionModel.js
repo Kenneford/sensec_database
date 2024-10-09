@@ -58,11 +58,11 @@ const StudentPromotionSchema = new Schema(
     dateEnrolled: {
       type: Date,
     },
-    enrolmentApprovedBy: {
+    enrollmentApprovedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    enrolmentApprovementDate: {
+    enrollmentApprovementDate: {
       type: Date,
     },
     sensosaApplicationApprovedBy: {
