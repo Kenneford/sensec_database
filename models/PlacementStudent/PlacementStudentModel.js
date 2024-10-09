@@ -51,8 +51,8 @@ const placementStudentsModelSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    dateofBirth: {
-      type: String,
+    dateOfBirth: {
+      type: Date,
     },
     trackID: {
       type: String,

@@ -1,232 +1,163 @@
-const cloudinary = require("../../middlewares/cloudinary/cloudinary");
-const PlacementStudent = require("../../models/PlacementStudent/PlacementStudentModel");
+const { cloudinary } = require("../../middlewares/cloudinary/cloudinary");
 const User = require("../../models/user/UserModel");
 
+// Student online enrollment ✅
 module.exports.studentOnlineEnrolment = async (req, res) => {
   const { data } = req.body;
-  console.log(data);
-
-  const requiredFields =
-    data?.newStudent?.firstName ||
-    data?.newStudent?.lastName ||
-    data?.newStudent?.gender ||
-    data?.newStudent?.dateOfBirth ||
-    data?.newStudent?.placeOfBirth ||
-    data?.newStudent?.nationality;
-
-  if (!requiredFields) {
-    res.status(400).json({
-      errorMessage: {
-        message: [`Fill All Required Fields!`],
+  const placementStudent = req.placementStudent;
+  const program = req.program;
+  const studentClassInfo = req.studentClassInfo;
+  try {
+    // Check for student image upload file
+    if (!data?.profilePicture) {
+      res.status(400).json({
+        errorMessage: {
+          message: ["No image selected or image file not supported!"],
+        },
+      });
+      return;
+    }
+    await cloudinary.uploader.upload(
+      data?.profilePicture,
+      {
+        folder: "Students",
       },
-    });
-    return;
-  }
-  if (!data?.profilePicture) {
-    res.status(400).json({
-      errorMessage: {
-        message: ["No image selected or image file not supported!"],
-      },
-    });
-    return;
-  }
-  // Validate student's JHS completion year
-  if (
-    data?.placementStudent &&
-    data?.placementStudent?.yearGraduated !== data?.newStudent?.completedJhs
-  ) {
-    res.status(400).json({
-      errorMessage: {
-        message: [`Please provide the right year of completion!`],
-      },
-    });
-    return;
-  }
-  // Validate student's JHS attended
-  if (
-    data?.placementStudent &&
-    data?.placementStudent?.jHSAttended !== data?.newStudent?.jhsAttended
-  ) {
-    res.status(400).json({
-      errorMessage: {
-        message: [`Please provide the right JHS attended!`],
-      },
-    });
-    return;
-  }
-  // Validate student's selected program✅
-  if (
-    data?.placementStudent &&
-    data?.placementStudent?.programme !== data?.newStudent?.programName
-  ) {
-    res.status(400).json({
-      errorMessage: {
-        message: [`Programme selected does not match your course programme!`],
-      },
-    });
-    return;
-  }
-  // Validate student's selected residentialStatus
-  if (
-    data?.placementStudent &&
-    data?.placementStudent?.boardingStatus !==
-      data?.newStudent?.residentialStatus
-  ) {
-    res.status(400).json({
-      errorMessage: {
-        message: [
-          `Residential status selected does not match your boarding status!`,
-        ],
-      },
-    });
-    return;
-  }
-  //Find student's Program✅
-  const foundProgram = await Program.findOne({
-    _id: data?.newStudent?.program,
-  }).populate([{ path: "electiveSubjects" }]);
-  if (!foundProgram) {
-    res.status(404).json({
-      errorMessage: {
-        message: [`Student's Program Not Found!`],
-      },
-    });
-    return;
-  }
-
-  //find core subjects
-  const coreSubjects = await Subject?.find({
-    classLevel: data?.newStudent?.currentClassLevel,
-    "coreSubInfo.isCoreSubject": true,
-  });
-
-  //Find student's optional elective subject
-  const optionalElectiveSubjectsFound = await Subject?.find({
-    "electiveSubInfo.programId": foundProgram?._id,
-    "electiveSubInfo.isOptional": true,
-  });
-
-  //Find general elective subjects for student
-  const electiveSubjectsFound = await Subject?.find({
-    "electiveSubInfo.programId": foundProgram?._id,
-    "electiveSubInfo.isOptional": false,
-    classLevel: data?.newStudent?.currentClassLevel,
-  });
-
-  if (
-    optionalElectiveSubjectsFound?.length > 1 &&
-    !data?.newStudent?.optionalElectiveSubject
-  ) {
-    res.status(404).json({
-      errorMessage: {
-        message: [`Selection Of One Optional Elective Subject Required!`],
-      },
-    });
-    return;
-  }
-  // find student's class level
-  const studentClassLevel = await ClassLevel.findOne({
-    _id: data?.newStudent?.currentClassLevel,
-  });
-  if (!studentClassLevel) {
-    res.status(404).json({
-      errorMessage: {
-        message: [`Student's Class Level Not Found!`],
-      },
-    });
-    return;
-  }
-
-  // find student's class level section✅
-  const placementStudentFound = await PlacementStudent.findOne({
-    generatedIndexNumber: data?.placementStudent?.generatedIndexNumber,
-  });
-
-  // find student's class level section✅
-  const studentClassLevelSectionFound = await ClassLevelSection.findOne({
-    classLevelId: data?.newStudent?.currentClassLevel,
-    program: data?.newStudent?.program,
-  });
-  //Find Student's class teacher
-  const studentClassTeacherFound = await User.findOne({
-    "teacherSchoolData.classLevelHandling": studentClassLevelSectionFound?._id,
-  });
-  if (!studentClassLevelSectionFound) {
-    return res.status(404).json({
-      errorMessage: {
-        message: [`No Class Found For Student!`],
-      },
-    });
-  }
-  await cloudinary.uploader.upload(
-    data?.profilePicture,
-    {
-      folder: "Students",
-    },
-    async (err, result) => {
-      if (err) {
-        res.status(400).json({
-          errorMessage: {
-            message: ["No image file selected or image file not supported!"],
-          },
-        });
-      } else {
-        //Create new student personal Info data
-        const newStudentData = await User.create({
-          uniqueId: data?.uniqueId,
-          "personalInfo.firstName": data?.newStudent?.firstName,
-          "personalInfo.lastName": data?.newStudent?.lastName,
-          "personalInfo.otherName": data?.newStudent?.otherName,
-          "personalInfo.dateOfBirth": data?.newStudent?.dateOfBirth,
-          "personalInfo.placeOfBirth": data?.newStudent?.placeOfBirth,
-          "personalInfo.nationality": data?.newStudent?.nationality,
-          "personalInfo.gender": data?.newStudent?.gender,
-          "personalInfo.fullName": `${data?.newStudent?.firstName} ${data?.newStudent?.otherName} ${data?.newStudent?.lastName}`,
-          roles: ["student"],
-          "personalInfo.profilePicture": {
-            public_id: result.public_id,
-            url: result.secure_url,
-          },
-
-          "studentSchoolData.jhsAttended": data?.newStudent?.jhsAttended,
-          "studentSchoolData.completedJhs": data?.newStudent?.completedJhs,
-          "studentSchoolData.jhsIndexNumber": data?.newStudent?.jhsIndexNumber,
-          "studentSchoolData.program": data?.newStudent?.program,
-          "studentSchoolData.currentClassLevel":
-            data?.newStudent?.currentClassLevel,
-          "studentSchoolData.currentAcademicYear":
-            data?.newStudent?.currentAcademicYear,
-          "studentSchoolData.batch": data?.newStudent?.batch,
-          "studentSchoolData.currentClassLevelSection":
-            studentClassLevelSectionFound?._id,
-          "studentSchoolData.classTeacher": studentClassTeacherFound?._id,
-
-          "status.height": data?.newStudent?.height,
-          "status.weight": data?.newStudent?.weight,
-          "status.complexion": data?.newStudent?.complexion,
-          "status.motherTongue": data?.newStudent?.motherTongue,
-          "status.otherTongue": data?.newStudent?.otherTongue,
-          "status.residentialStatus": data?.newStudent?.residentialStatus,
-
-          "contactAddress.homeTown": data?.newStudent?.homeTown,
-          "contactAddress.district": data?.newStudent?.district,
-          "contactAddress.region": data?.newStudent?.region,
-          "contactAddress.currentCity": data?.newStudent?.currentCity,
-          "contactAddress.residentialAddress":
-            data?.newStudent?.residentialAddress,
-          "contactAddress.gpsAddress": data?.newStudent?.gpsAddress,
-          "contactAddress.mobile": data?.newStudent?.mobile,
-          "contactAddress.email": data?.newStudent?.email,
-          "studentStatusExtend.enrollmentStatus": "in progress",
-        });
-
-        try {
-          // addStudentElectiveSubjects(newStudentData, electiveSubjectsFound);
-          // addStudentCoreSubjects(newStudentData, coreSubjects);
-
+      async (err, result) => {
+        if (err) {
+          return res.status(400).json({
+            errorMessage: {
+              message: ["Something went wrong!"],
+            },
+          });
+        } else {
+          //Create new student enrolment data
+          const newStudentData = await User.create({
+            uniqueId: data?.uniqueId,
+            "personalInfo.firstName": data?.newStudent?.firstName,
+            "personalInfo.lastName": data?.newStudent?.lastName,
+            "personalInfo.otherName": data?.newStudent?.otherName,
+            "personalInfo.dateOfBirth": data?.newStudent?.dateOfBirth,
+            "personalInfo.placeOfBirth": data?.newStudent?.placeOfBirth,
+            "personalInfo.nationality": data?.newStudent?.nationality,
+            "personalInfo.gender": data?.newStudent?.gender,
+            "personalInfo.fullName": `${data?.newStudent?.firstName} ${data?.newStudent?.otherName} ${data?.newStudent?.lastName}`,
+            roles: ["student"],
+            "personalInfo.profilePicture": {
+              public_id: result.public_id,
+              url: result.secure_url,
+            },
+            "studentSchoolData.jhsAttended": data?.newStudent?.jhsAttended,
+            "studentSchoolData.completedJhs": data?.newStudent?.completedJhs,
+            "studentSchoolData.jhsIndexNumber":
+              data?.newStudent?.jhsIndexNumber,
+            "studentSchoolData.program": program?.mainProgramFound?._id,
+            "studentSchoolData.divisionProgram":
+              program?.studentDivisionProgramFound?._id,
+            "studentSchoolData.currentClassLevel":
+              data?.newStudent?.currentClassLevel,
+            "studentSchoolData.currentAcademicYear":
+              data?.newStudent?.currentAcademicYear,
+            "studentSchoolData.batch": data?.newStudent?.batch,
+            "studentSchoolData.currentClassLevelSection":
+              studentClassInfo?.classSectionFound?._id,
+            "studentSchoolData.currentClassTeacher":
+              studentClassInfo?.classSectionFound?.currentTeacher,
+            "status.height": data?.newStudent?.height,
+            "status.weight": data?.newStudent?.weight,
+            "status.complexion": data?.newStudent?.complexion,
+            "status.motherTongue": data?.newStudent?.motherTongue,
+            "status.otherTongue": data?.newStudent?.otherTongue,
+            "status.residentialStatus": data?.newStudent?.residentialStatus,
+            "contactAddress.homeTown": data?.newStudent?.homeTown,
+            "contactAddress.district": data?.newStudent?.district,
+            "contactAddress.region": data?.newStudent?.region,
+            "contactAddress.currentCity": data?.newStudent?.currentCity,
+            "contactAddress.residentialAddress":
+              data?.newStudent?.residentialAddress,
+            "contactAddress.gpsAddress": data?.newStudent?.gpsAddress,
+            "contactAddress.mobile": data?.newStudent?.mobile,
+            "contactAddress.email": data?.newStudent?.email,
+            "studentStatusExtend.enrollmentStatus": "in progress",
+          });
+          if (newStudentData && program) {
+            // Add student's elective subjects
+            if (program?.studentDivisionProgramFound) {
+              program?.studentDivisionProgramFound?.electiveSubjects?.forEach(
+                async (subject) => {
+                  if (
+                    subject &&
+                    !newStudentData?.studentSchoolData?.electiveSubjects?.includes(
+                      subject?._id
+                    )
+                  ) {
+                    await User.findOneAndUpdate(
+                      newStudentData?._id,
+                      {
+                        $push: {
+                          "studentSchoolData.electiveSubjects": subject?._id,
+                        },
+                      },
+                      { upsert: true }
+                    );
+                  }
+                }
+              );
+              //push student into division programme's students✅
+              if (
+                !program?.studentDivisionProgramFound?.students?.includes(
+                  newStudentData?._id
+                )
+              ) {
+                program?.studentDivisionProgramFound?.students?.push(
+                  newStudentData?._id
+                );
+                await program.studentDivisionProgramFound.save();
+              }
+              //push student into main programme's students✅
+              if (
+                !program?.mainProgramFound?.students?.includes(
+                  newStudentData?._id
+                )
+              ) {
+                program?.mainProgramFound?.students?.push(newStudentData?._id);
+                await program.mainProgramFound.save();
+              }
+            } else if (program?.mainProgramFound) {
+              // Add student's elective subjects
+              program?.mainProgramFound?.electiveSubjects?.forEach(
+                async (subject) => {
+                  if (
+                    subject &&
+                    !newStudentData?.studentSchoolData?.electiveSubjects?.includes(
+                      subject?._id
+                    )
+                  ) {
+                    await User.findOneAndUpdate(
+                      newStudentData?._id,
+                      {
+                        $push: {
+                          "studentSchoolData.electiveSubjects": subject?._id,
+                        },
+                      },
+                      { upsert: true }
+                    );
+                  }
+                }
+              );
+              //push student into main programme's students✅
+              if (
+                !program?.mainProgramFound?.students?.includes(
+                  newStudentData?._id
+                )
+              ) {
+                program?.mainProgramFound?.students?.push(newStudentData?._id);
+                await program.mainProgramFound.save();
+              }
+            }
+          }
           //Push optionalElectiveSubject into student's electiveSubjects array
           if (
-            newStudentData &&
+            data?.newStudent?.optionalElectiveSubject &&
             !newStudentData?.studentSchoolData?.electiveSubjects?.includes(
               data?.newStudent?.optionalElectiveSubject
             )
@@ -242,12 +173,10 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
               { new: true, upsert: true }
             );
           }
-
-          //Push teacher into student's teachers array
+          //Push student's current teacher into student's teachers array
           if (
-            newStudentData &&
             !newStudentData?.studentSchoolData?.classTeachers?.includes(
-              studentClassTeacherFound?._id
+              studentClassInfo?.classSectionFound?.currentTeacher
             )
           ) {
             await User.findOneAndUpdate(
@@ -255,51 +184,93 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
               {
                 $push: {
                   "studentSchoolData.classTeachers":
-                    studentClassTeacherFound?._id,
+                    studentClassInfo?.classSectionFound?.currentTeacher,
                 },
               },
               { new: true, upsert: true }
             );
           }
-          //push student into class level pending students✅
-          if (
-            studentClassLevel &&
-            !studentClassLevel?.pendingStudents?.includes(newStudentData?._id)
-          ) {
-            studentClassLevel.pendingStudents.push(newStudentData?._id);
-            await studentClassLevel.save();
+          //Update placement student's enrollmentId✅
+          if (placementStudent) {
+            placementStudent.enrollmentId = newStudentData?.uniqueId;
+            await placementStudent.save();
           }
-          //push student into class level pending students✅
-          if (placementStudentFound) {
-            placementStudentFound.enrollmentId = newStudentData?.uniqueId;
-            await placementStudentFound.save();
-          }
-          //Send application E-mail to old student
-          // if (
-          //   sensosaApplicantInfo &&
-          //   sensosaApplicantInfo?.contactAddress?.email !== "" &&
-          //   sensosaApplicantInfo?.role === "sensosa"
-          // ) {
-          //   sensosaApplicationEmailTemplate({
-          //     userEmail: sensosaApplicantInfo?.contactAddress?.email,
-          //     userInfo: sensosaApplicantInfo,
-          //   });
-          // }
-        } catch (error) {
-          console.log(error);
-          return res.status(500).json({
-            errorMessage: {
-              message: ["Internal Server Error!"],
-            },
-          });
-        }
 
-        res.status(201).json({
-          successMessage: "Your enrollment info saved successfully!",
-          newStudentData,
-        });
-        console.log("Your enrollment info saved successfully!");
+          res.status(201).json({
+            successMessage: "Your enrollment info saved successfully!",
+            newStudentData,
+          });
+          console.log("Your enrollment info saved successfully!");
+        }
       }
+    );
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!"],
+      },
+    });
+  }
+};
+// Student enrollment approval ✅
+module.exports.approveStudentEnrollment = async (req, res) => {
+  const { studentId } = req.params;
+  const { enrolmentApprovedBy } = req.body;
+  const student = req?.enrollmentApprovalData?.studentFound;
+
+  // //Find admin
+  const admin = await User.findOne({ _id: enrolmentApprovedBy });
+  if (!admin) {
+    res.status(404).json({
+      errorMessage: {
+        message: [`Operation Failed! You're Not An Admin!`],
+      },
+    });
+  } else {
+    //Update student's approval status✅
+    if (
+      student &&
+      student?.studentStatusExtend?.enrollmentStatus === "pending"
+    ) {
+      const studentApproved = await User.findOneAndUpdate(
+        { _id: student?.id },
+        {
+          "studentStatusExtend.enrollmentStatus": "approved",
+          "studentStatusExtend.isStudent": true,
+          "studentStatusExtend.enrolmentApprovedBy": admin?._id,
+          "studentStatusExtend.enrolmentApprovementDate":
+            new Date().toISOString(),
+        },
+        { new: true }
+      );
+      if (studentApproved && admin) {
+        await User.findOneAndUpdate(
+          admin?._id,
+          {
+            $push: {
+              "adminActionsData.registeredStudents": studentApproved?._id,
+            },
+          },
+          { upsert: true }
+        );
+      }
+      res.status(200).json({
+        successMessage: "Student Approved Successfully!",
+        studentApproved,
+      });
+      // if (
+      //   studentApproved &&
+      //   studentApproved?.studentStatusExtend?.enrollmentStatus === "approved"
+      // ) {
+      //   studentEnrollmentApprovalTemplate({
+      //     userEmail: studentApproved?.contactAddress?.email,
+      //     userInfo: studentApproved,
+      //   });
+      //   studentSMSEnrollmentApprovalTemplate({
+      //     userInfo: studentApproved,
+      //   });
+      // }
     }
-  );
+  }
 };

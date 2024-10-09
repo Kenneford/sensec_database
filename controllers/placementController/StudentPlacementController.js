@@ -99,6 +99,48 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
     return;
   }
 };
+// Update placement data ✅
+module.exports.updatePlacementStudent = async (req, res) => {
+  const { data } = req.body;
+
+  try {
+    const existingStudent = await PlacementStudent.findOne({
+      jhsIndexNo: data?.jhsIndexNo,
+    });
+    if (!existingStudent) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Student with index number ${jhsIndexNo} not found!`],
+        },
+      });
+      return;
+    }
+    const updatedPlacementStudent = await PlacementStudent.findOneAndUpdate(
+      existingStudent?._id,
+      {
+        firstName: data?.firstName,
+        lastName: data?.lastName,
+        otherName: data?.otherName,
+        dateOfBirth: data?.dateOfBirth,
+        jhsAttended: data?.jhsAttended,
+        yearGraduated: data?.yearGraduated,
+        smsContact: data?.smsContact,
+      },
+      { new: true }
+    );
+    res.status(201).json({
+      successMessage: "Placement data updated successfully!",
+      updatedPlacementStudent,
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: [`Internal Server Error!`],
+      },
+    });
+    return;
+  }
+};
 // Check student placement ✅
 module.exports.studentCheckPlacement = async (req, res) => {
   const { jHSIndexNo } = req.body;
@@ -140,19 +182,19 @@ module.exports.studentCheckPlacement = async (req, res) => {
 };
 // Verify student placement ✅
 module.exports.verifyPlacementStudent = async (req, res) => {
-  const { otherNames, surname, yearGraduated, generatedIndexNumber } = req.body;
+  const { firstName, lastName, yearGraduated, jhsIndexNo } = req.body;
   const error = [];
   try {
-    if (!otherNames) {
+    if (!firstName) {
       error.push("Your first Name Required!");
     }
-    if (!surname) {
+    if (!lastName) {
       error.push("Your last name required!");
     }
     if (!yearGraduated) {
       error.push("Your graduation year required!");
     }
-    if (!generatedIndexNumber) {
+    if (!jhsIndexNo) {
       error.push("Your BECE index-number required!");
     }
     if (error.length > 0) {
@@ -166,27 +208,24 @@ module.exports.verifyPlacementStudent = async (req, res) => {
     //Find student's data to verify
     const foundStudent = await PlacementStudent.findOne({
       yearGraduated,
-      generatedIndexNumber,
+      jhsIndexNo,
     });
     if (!foundStudent) {
       res.status(404).json({
         errorMessage: {
-          message: [`Placement student data not found!`],
+          message: [`Student data not found!`],
         },
       });
       return;
     }
-    //Check to validate student's name
+    // Validate student's name
     if (
-      (foundStudent &&
-        foundStudent.generatedIndexNumber === generatedIndexNumber &&
-        foundStudent &&
-        foundStudent.otherNames !== otherNames) ||
-      (foundStudent && foundStudent.surname !== surname)
+      (foundStudent && foundStudent.firstName !== firstName) ||
+      (foundStudent && foundStudent.lastName !== lastName)
     ) {
       res.status(400).json({
         errorMessage: {
-          message: [`It looks like some credentials are incorrect!`],
+          message: [`It looks like some name credentials are incorrect!`],
         },
       });
       return;
@@ -195,23 +234,54 @@ module.exports.verifyPlacementStudent = async (req, res) => {
     //return without creating new verified-student data
     if (foundStudent && foundStudent.placementVerified === true) {
       res.status(201).json({
-        successMessage: "Already Verified!",
+        successMessage: "Already verified!",
         foundStudent,
       });
       return;
     }
-    // Update student's placement verification status
+    //   //Update student's placement verification status
     if (foundStudent && foundStudent.placementVerified === false) {
       foundStudent.placementVerified = true;
       await foundStudent.save();
     }
+    //If student found and he/she is not already verified,
+    //go on to create a new verified-student data
+    // const newStudentCreated = await Student.create({});
+    // try {
+    //   //Update student's placement verification status
+    //   if (
+    //     foundStudent &&
+    //     foundStudent.jhsIndexNo === jhsIndexNo &&
+    //     foundStudent.yearGraduated === yearGraduated &&
+    //     foundStudent.placementVerified === false
+    //   ) {
+    //     foundStudent.placementVerified = true;
+    //     await foundStudent.save();
+    //   }
+    //   if (newStudentCreated && foundStudent) {
+    //     foundStudent.uniqueId = newStudentCreated?.uniqueId;
+    //     newStudentCreated.secret = foundStudent?.placementSecret;
+    //     await foundStudent.save();
+    //     await newStudentCreated.save();
+    //   }
+    //   res.status(200).json({
+    //     successMessage: "Placement verified successfully...",
+    //     foundStudent,
+    //     newStudentData: newStudentCreated,
+    //   });
+    // } catch (error) {
+    //   res.status(500).json({
+    //     errorMessage: {
+    //       message: [`Internal Server Error!`],
+    //     },
+    //   });
+    // }
     res.status(200).json({
-      successMessage: "Placement verified successfully...",
+      successMessage: "Placement verified successfully!",
       foundStudent,
       // newStudentData: newStudentCreated,
     });
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       errorMessage: {
         message: [`Internal Server Error!`],
