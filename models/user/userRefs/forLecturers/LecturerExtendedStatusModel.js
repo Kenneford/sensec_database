@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const { Schema } = mongoose;
 
-const TeacherStatusSchema = new Schema(
+const LecturerStatusSchema = new Schema(
   {
-    isTeacher: {
+    isLecturer: {
       type: Boolean,
       default: false,
     },
@@ -15,9 +15,9 @@ const TeacherStatusSchema = new Schema(
   },
   { timestamps: true }
 );
-const TeacherExtendedStatus = mongoose.model(
-  "TeacherExtendedStatus",
-  TeacherStatusSchema
+const LecturerExtendedStatus = mongoose.model(
+  "LecturerExtendedStatus",
+  LecturerStatusSchema
 );
 
-module.exports = TeacherExtendedStatus;
+module.exports = LecturerExtendedStatus;

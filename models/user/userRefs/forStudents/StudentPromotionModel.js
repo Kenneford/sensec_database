@@ -49,7 +49,7 @@ const StudentPromotionSchema = new Schema(
     },
     enrollmentStatus: {
       type: String,
-      // default: "pending",
+      default: null,
     },
     enrolledOnline: {
       type: Boolean,

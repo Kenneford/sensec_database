@@ -8,6 +8,10 @@ const SensosaSchoolDataSchema = new Schema(
       type: String,
       // required: true,
     },
+    jhsIndexNo: {
+      type: String,
+      // required: true,
+    },
     completedJhs: {
       type: String,
       // required: true,
