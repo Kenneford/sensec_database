@@ -4,73 +4,24 @@ const jwt = require("jsonwebtoken");
 const crypto = require("node:crypto");
 const UserVerificationData = require("../../models/user/userRefs/signUpModel/UserVerificationModel");
 const { sendVerificationEmail } = require("../../emails/sendEmail");
+const Program = require("../../models/academics/programmes/ProgramsModel");
+const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
 
 module.exports.userSignUp = async (req, res) => {
-  const { userName, uniqueId, password } = req.body;
-  const error = [];
-  if (!userName) {
-    error.push("Please Provide Your Username!");
-  }
-  if (!uniqueId) {
-    error.push("Please Provide Your Unique-Id!");
-  }
-  if (!password) {
-    error.push("Please Password Required To Sign-Up!");
-  }
-  if (error.length > 0) {
-    res.status(400).json({
-      errorMessage: {
-        message: error,
-      },
-    });
-    return;
-  }
-  const userFound = await User.findOne({
-    uniqueId,
-  }).select("+userSignUpDetails.password");
-  if (!userFound) {
-    res.status(403).json({
-      errorMessage: {
-        message: [`User With Unique-Id ${uniqueId} Does Not Exist!`],
-      },
-    });
-    return;
-  }
-  if (userFound && userFound.signedUp) {
-    res.status(404).json({
-      errorMessage: {
-        message: [`Sign-Up Denied! User Already Exist!`],
-      },
-    });
-    return;
-  }
-  // console.log(userFound);
-  //Check if username already in use
-  const userNameFound = await User.findOne({
-    "userSignUpDetails.userName": userName,
-  });
-  if (userNameFound) {
+  const newSignedUpUser = req?.newSignedUpUserData?.newSignedUpUser;
+  try {
+    if (newSignedUpUser) {
+      res.status(201).json({
+        successMessage: "Sign-up successful!",
+        user: newSignedUpUser,
+      });
+    }
+  } catch (error) {
     return res.status(404).json({
       errorMessage: {
-        message: [`User With Username ${userName} Already Exist!`],
+        message: [`Sign-up failed!`],
       },
     });
-  } else {
-    //Create New User
-    const newUserSignUp = await User.findOneAndUpdate(
-      userFound?._id,
-      {
-        "userSignUpDetails.userName": userName,
-        "userSignUpDetails.password": await bcrypt.hash(password, 10),
-        signedUp: true,
-      },
-      { new: true }
-    );
-    res.status(201).json({
-      successMessage: "Sign-up successful!",
-      user: newUserSignUp,
-    });
-    console.log("Sign-up successful!");
   }
 };
 
@@ -187,7 +138,7 @@ module.exports.userLogin = async (req, res) => {
         return;
       } else {
         res.status(200).cookie("userToken", token).json({
-          successMessage: "You logged in successfully...",
+          successMessage: "You logged in successfully!",
           user: userFound,
           token,
         });
@@ -200,6 +151,41 @@ module.exports.userLogin = async (req, res) => {
         },
       });
     }
+  }
+};
+
+module.exports.refreshUserToken = async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    // Verify the current token
+    const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+
+    // Generate a new token with an extended expiration
+    const newToken = jwt.sign(
+      {
+        id: decodedToken?._id,
+        uniqueId: decodedToken?.uniqueId,
+        personalInfo: decodedToken?.personalInfo,
+        userSignUpDetails: decodedToken?.userSignUpDetails,
+        roles: decodedToken?.roles,
+        isVerified: decodedToken?.isVerified,
+        isVerifiedSensosa: decodedToken?.isVerifiedSensosa,
+        lastUpdatedBy: decodedToken?.lastUpdatedBy,
+        updatedDate: decodedToken?.updatedDate,
+      },
+      process.env.TOKEN_SECRET,
+      {
+        // expiresIn: Date.now() + 60000, // Expires in just a minute
+        expiresIn: process.env.TOKEN_EXP,
+      }
+    );
+    res.status(200).json({
+      successMessage: `Session updated successfully!`,
+      newToken,
+    });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token" });
   }
 };
 
@@ -386,6 +372,39 @@ module.exports.userLogout = async (req, res) => {
     return res.status(500).json({
       error: {
         errorMessage: ["Internal Server Error"],
+      },
+    });
+  }
+};
+module.exports.fetchAllUsers = async (req, res) => {
+  try {
+    const allUsers = await User.find({}).populate([
+      // { path: "employment.employmentProcessedBy" },
+      // { path: "employment.employmentApprovedBy" },
+      // { path: "adminActionsData.admins" },
+      {
+        path: "lecturerSchoolData.program",
+      },
+      { path: "lecturerSchoolData.classLevelHandling" },
+      // { path: "teacherSchoolData.teachingSubjects" },
+      { path: "studentSchoolData.batch" },
+      { path: "studentSchoolData.program" },
+      { path: "studentSchoolData.currentClassLevel" },
+      // { path: "studentSchoolData.classTeacher" },
+      // { path: "studentSchoolData.currentClassLevelSection" },
+      // { path: "studentSchoolData.house" },
+      // { path: "studentStatusExtend.enrolmentApprovedBy" },
+    ]);
+    if (allUsers) {
+      res.status(200).json({
+        successMessage: `All users data fetched successfully!`,
+        allUsers,
+      });
+    }
+  } catch (error) {
+    return res.status(400).json({
+      errorMessage: {
+        message: [`Could not fetch users data!`],
       },
     });
   }

@@ -7,8 +7,8 @@ const Employment = require("./EmploymentModel");
 const AdminExtendedStatus = require("./userRefs/forAdmins/AdminExtendedStatusModel");
 const AdminActionsData = require("./userRefs/forAdmins/AdminActionsDataModel");
 const NTStaffExtendedStatus = require("./userRefs/forNTStaffs/NTStaffExtendedStatusModel");
-const TeachersSchoolData = require("./userRefs/forTeachers/TeacherSchoolDataModel");
-const TeacherExtendedStatus = require("./userRefs/forTeachers/TeacherExtendedStatusModel");
+const LecturerSchoolData = require("./userRefs/forLecturers/LecturerSchoolDataModel");
+const LecturerExtendedStatus = require("./userRefs/forLecturers/LecturerExtendedStatusModel");
 const StudentsSchoolData = require("./userRefs/forStudents/StudentSchoolDataModel");
 const StudentPromotion = require("./userRefs/forStudents/StudentPromotionModel");
 const SensosaSchoolData = require("./userRefs/forStudents/SensosaSchoolDataModel");
@@ -50,11 +50,11 @@ const UsersModelSchema = new mongoose.Schema(
     nTStaffStatusExtend: {
       type: NTStaffExtendedStatus.schema,
     },
-    teacherSchoolData: {
-      type: TeachersSchoolData.schema,
+    lecturerSchoolData: {
+      type: LecturerSchoolData.schema,
     },
-    teacherStatusExtend: {
-      type: TeacherExtendedStatus.schema,
+    lecturerStatusExtend: {
+      type: LecturerExtendedStatus.schema,
     },
     studentSchoolData: {
       type: StudentsSchoolData.schema,
