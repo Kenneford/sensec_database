@@ -21,16 +21,16 @@ const {
 
 // Programmes
 router.post(
-  "/academics/program/create",
-  authUser,
-  authUserRole({
-    userRole: {
-      admin: "admin",
-    },
-  }),
+  "/academics/programme/create",
+  // authUser,
+  // authUserRole({
+  //   userRole: {
+  //     admin: "admin",
+  //   },
+  // }),
   createProgram
 );
-router.get("/academics/programs/fetch_all", getAllPrograms);
+router.get("/academics/programmes/fetch_all", getAllPrograms);
 router.get("/academics/programs/:programId/fetch", getSingleProgram);
 router.put(
   "/academics/programs/:programId/update",

@@ -1,4 +1,10 @@
 const {
+  createStudentGuardian,
+} = require("../../controllers/students/GaurdianController");
+const {
+  createStudentParent,
+} = require("../../controllers/students/ParentController");
+const {
   studentOnlineEnrolment,
   approveStudentEnrollment,
 } = require("../../controllers/students/StudentController");
@@ -25,12 +31,20 @@ router.post(
   studentClass,
   studentOnlineEnrolment
 );
+router.post(
+  "/students/:studentId/enrolment/online/parent/add",
+  createStudentParent
+);
+router.post(
+  "/students/:studentId/enrolment/online/guardian/add",
+  createStudentGuardian
+);
 router.put(
   "/students/enrolment/:studentId/approve",
   authUser,
   authUserRole({ userRoles: { admin: "admin" } }),
   updateApprovedStudentData,
-  sendEnrollmentEmail,
+  // sendEnrollmentEmail,
   studentEnrollmentApprovalSMS,
   approveStudentEnrollment
 );

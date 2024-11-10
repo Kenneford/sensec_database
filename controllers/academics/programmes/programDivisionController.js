@@ -100,9 +100,7 @@ module.exports.createDivisionProgram = async (req, res) => {
 exports.getAllDivisionPrograms = async (req, res) => {
   const { programId } = req.params;
   try {
-    const program = await Program.findOne({ _id: programId }).populate([
-      { path: "programDivisions" },
-    ]);
+    const program = await Program.findOne({ _id: programId });
     if (program) {
       const divisionProgramsFound = await ProgramDivision.find({
         programId,

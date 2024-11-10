@@ -7,11 +7,14 @@ const User = require("../../models/user/UserModel");
 module.exports.uploadPlacementFile = async (req, res, next) => {
   const currentUser = req.user;
   const { data } = req.body;
-  console.log(currentUser);
+  console.log(data);
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (
+      !adminFound ||
+      (currentUser && !currentUser?.roles?.includes("admin"))
+    ) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admin!"],
@@ -36,7 +39,7 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
 
       const existingStudents = newPlacementStudents.filter((newStd) =>
         allPlacementStudents.some(
-          (existingStd) => existingStd.jHSIndexNo === newStd.jHSIndexNo
+          (existingStd) => existingStd.jhsIndexNo === newStd.jhsIndexNo
         )
       );
 
@@ -77,7 +80,7 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
             }
           });
           res.status(200).json({
-            successMessage: "Placement data uploaded successfully!",
+            successMessage: "Excel file uploaded successfully!",
             // newStudents,
           });
         }
@@ -91,26 +94,29 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
       return;
     }
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       errorMessage: {
-        message: [`Internal Server Error!`],
+        message: [error?.message],
       },
     });
     return;
   }
 };
 // Update placement data ✅
-module.exports.updatePlacementStudent = async (req, res) => {
+module.exports.updatePlacementData = async (req, res) => {
   const { data } = req.body;
+  const { studentIndexNo } = req.params;
 
   try {
     const existingStudent = await PlacementStudent.findOne({
-      jhsIndexNo: data?.jhsIndexNo,
+      jhsIndexNo: studentIndexNo,
     });
     if (!existingStudent) {
       res.status(404).json({
         errorMessage: {
-          message: [`Student with index number ${jhsIndexNo} not found!`],
+          message: [`Placement data not found!`],
         },
       });
       return;
@@ -143,9 +149,9 @@ module.exports.updatePlacementStudent = async (req, res) => {
 };
 // Check student placement ✅
 module.exports.studentCheckPlacement = async (req, res) => {
-  const { jHSIndexNo } = req.body;
+  const { studentIndexNo } = req.params;
   try {
-    if (!jHSIndexNo) {
+    if (!studentIndexNo) {
       res.status(400).json({
         errorMessage: {
           message: ["Your JHS index number required!"],
@@ -154,19 +160,17 @@ module.exports.studentCheckPlacement = async (req, res) => {
       return;
     }
     const foundStudent = await PlacementStudent.findOne({
-      jHSIndexNo,
+      jhsIndexNo: studentIndexNo,
     });
     if (foundStudent) {
       res.status(200).json({
-        successMessage: `Placement Data With Your Index Number ${jHSIndexNo} Found Successfully!`,
+        successMessage: `Placement Data With Your Index Number ${studentIndexNo} Found Successfully!`,
         foundStudent,
       });
     } else {
       res.status(404).json({
         errorMessage: {
-          message: [
-            `Placement data with your index number ${jHSIndexNo} not found!`,
-          ],
+          message: [`Placement data not found!`],
         },
       });
       return;
@@ -182,19 +186,13 @@ module.exports.studentCheckPlacement = async (req, res) => {
 };
 // Verify student placement ✅
 module.exports.verifyPlacementStudent = async (req, res) => {
-  const { firstName, lastName, yearGraduated, jhsIndexNo } = req.body;
+  const { data } = req.body;
   const error = [];
   try {
-    if (!firstName) {
-      error.push("Your first Name Required!");
-    }
-    if (!lastName) {
-      error.push("Your last name required!");
-    }
-    if (!yearGraduated) {
+    if (!data?.yearGraduated) {
       error.push("Your graduation year required!");
     }
-    if (!jhsIndexNo) {
+    if (!data?.jhsIndexNo) {
       error.push("Your BECE index-number required!");
     }
     if (error.length > 0) {
@@ -207,8 +205,7 @@ module.exports.verifyPlacementStudent = async (req, res) => {
     }
     //Find student's data to verify
     const foundStudent = await PlacementStudent.findOne({
-      yearGraduated,
-      jhsIndexNo,
+      jhsIndexNo: data?.jhsIndexNo,
     });
     if (!foundStudent) {
       res.status(404).json({
@@ -218,68 +215,31 @@ module.exports.verifyPlacementStudent = async (req, res) => {
       });
       return;
     }
-    // Validate student's name
-    if (
-      (foundStudent && foundStudent.firstName !== firstName) ||
-      (foundStudent && foundStudent.lastName !== lastName)
-    ) {
-      res.status(400).json({
+    if (foundStudent && foundStudent?.yearGraduated !== data?.yearGraduated) {
+      res.status(404).json({
         errorMessage: {
-          message: [`It looks like some name credentials are incorrect!`],
+          message: [`Year completed JHS not correct!`],
         },
       });
       return;
     }
     //If student found and he/she is already verified,
-    //return without creating new verified-student data
+    //return without updating student data
     if (foundStudent && foundStudent.placementVerified === true) {
-      res.status(201).json({
+      res.status(208).json({
         successMessage: "Already verified!",
         foundStudent,
       });
       return;
     }
-    //   //Update student's placement verification status
+    // Update student's placement verification status
     if (foundStudent && foundStudent.placementVerified === false) {
       foundStudent.placementVerified = true;
       await foundStudent.save();
     }
-    //If student found and he/she is not already verified,
-    //go on to create a new verified-student data
-    // const newStudentCreated = await Student.create({});
-    // try {
-    //   //Update student's placement verification status
-    //   if (
-    //     foundStudent &&
-    //     foundStudent.jhsIndexNo === jhsIndexNo &&
-    //     foundStudent.yearGraduated === yearGraduated &&
-    //     foundStudent.placementVerified === false
-    //   ) {
-    //     foundStudent.placementVerified = true;
-    //     await foundStudent.save();
-    //   }
-    //   if (newStudentCreated && foundStudent) {
-    //     foundStudent.uniqueId = newStudentCreated?.uniqueId;
-    //     newStudentCreated.secret = foundStudent?.placementSecret;
-    //     await foundStudent.save();
-    //     await newStudentCreated.save();
-    //   }
-    //   res.status(200).json({
-    //     successMessage: "Placement verified successfully...",
-    //     foundStudent,
-    //     newStudentData: newStudentCreated,
-    //   });
-    // } catch (error) {
-    //   res.status(500).json({
-    //     errorMessage: {
-    //       message: [`Internal Server Error!`],
-    //     },
-    //   });
-    // }
     res.status(200).json({
       successMessage: "Placement verified successfully!",
-      foundStudent,
-      // newStudentData: newStudentCreated,
+      verifiedPlacement: foundStudent,
     });
   } catch (error) {
     res.status(500).json({
@@ -303,7 +263,7 @@ module.exports.fetchAllPlacementStudents = async (req, res) => {
     }
     // Order by time
     const sortedStudents = allStudents.sort((oldStudent, newStudent) => {
-      return [newStudent.createdAt - oldStudent.createdAt];
+      return [newStudent.updatedAt - oldStudent.updatedAt];
     });
     res.status(200).json({
       successMessage: "All placement students fetched successfully!",
@@ -319,23 +279,22 @@ module.exports.fetchAllPlacementStudents = async (req, res) => {
 };
 // Get single placement student ✅
 module.exports.fetchSinglePlacementStudent = async (req, res) => {
-  const { studentId } = req.params;
+  const { studentIndexNo } = req.params;
   try {
-    const foundStudents = await PlacementStudent.findOne({
-      _id: studentId,
+    const foundStudent = await PlacementStudent.findOne({
+      jhsIndexNo: studentIndexNo,
     });
-    if (!foundStudents) {
+    if (!foundStudent) {
       res.status(404).json({
         errorMessage: {
           message: [`No placement data found!`],
         },
       });
       return;
-    }
-    if (foundStudents) {
+    } else {
       res.status(200).json({
         successMessage: "Placement student fetched successfully!",
-        foundStudents,
+        foundStudent,
       });
     }
   } catch (error) {

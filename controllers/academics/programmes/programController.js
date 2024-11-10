@@ -4,7 +4,8 @@ const User = require("../../../models/user/UserModel");
 // Create program ✅
 module.exports.createProgram = async (req, res) => {
   const data = req.body;
-  const user = req.user;
+  // const user = req.user;
+  const user = { roles: ["admin"] }; //❓Will Be Deleted After Users Can Login❓
   console.log(data);
   try {
     //Find Admin
@@ -36,7 +37,7 @@ module.exports.createProgram = async (req, res) => {
       });
       return;
     }
-    const programCreated = await Program.create({
+    const programmeCreated = await Program.create({
       name: data?.name,
       createdBy: data?.createdBy,
     });
@@ -44,13 +45,13 @@ module.exports.createProgram = async (req, res) => {
       //   push program into admin's programs array✅
       if (
         foundAdmin &&
-        !foundAdmin?.adminActionsData?.programs?.includes(programCreated?._id)
+        !foundAdmin?.adminActionsData?.programs?.includes(programmeCreated?._id)
       ) {
         await User.findOneAndUpdate(
           foundAdmin?._id,
           {
             $push: {
-              "adminActionsData.programs": programCreated?._id,
+              "adminActionsData.programs": programmeCreated?._id,
             },
           },
           { upsert: true }
@@ -66,7 +67,7 @@ module.exports.createProgram = async (req, res) => {
     }
     res.status(201).json({
       successMessage: "Program Created Successfully",
-      program: programCreated,
+      programme: programmeCreated,
     });
     console.log("Program Created Successfully");
   } catch (error) {
