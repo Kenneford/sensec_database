@@ -1,0 +1,167 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Email Verification</title>
+    <style>
+      body {
+      font-family: "Arial", sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      }
+      .container {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      background-color: #ffffff;
+      border: 1px solid #ccc;
+      -webkit-box-shadow: 0px 0px 16px -8px rgba(0, 0, 0, 0.68);
+      box-shadow: 0px 0px 16px -8px rgba(0, 0, 0, 0.68);
+      overflow: hidden;
+      border-radius: 8px;
+      }
+      .header {
+      width: 100%;
+      background-color: white;
+      text-align: center;
+      padding: 10px 0;
+      }
+      .header img {
+      max-width: 3rem;
+      height: auto;
+      }
+      .header-title {
+      width: 100%;
+      background-color: green;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      margin: 0;
+      }
+      .content {
+      width: 70%;
+      margin: 20px auto;
+      line-height: 1.6;
+      color: #333333;
+      }
+      .student-picture {
+      margin: auto;
+      width: 4.5rem;
+      height: 4.5rem;
+      object-fit: cover;
+      padding: 0.3rem 0.2rem 0.2rem 0.3rem;
+      border-radius: 0.4rem;
+      border: 1px solid #cccc;
+      background-color: #fff;
+      }
+      .footer {
+      text-align: center;
+      padding: 10px 0;
+      color: #666666;
+      font-size: 12px;
+      }
+      .button {
+      display: block; /* Makes the button a block element */
+      width: 100%; /* Full-width button */
+      padding: 0.5rem 0;
+      color: white !important;
+      background-color: green !important;
+      text-decoration: none;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      }
+      a {
+      color: #fff !important;
+      }
+      .linkExpiry {
+      text-align: center;
+      color: #d80707 !important;
+      }
+      .msg-8327876505295696982 .m_-8327876505295696982button {
+      width: inherit !important;
+      }
+      @media only screen and (max-width: 600px) {
+      .container {
+        width: 100% !important;
+      }
+      .content {
+        width: 95% !important;
+      }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <!-- School Logo -->
+        <img src="cid:schoolLogo" alt="School Logo" class="logo" />
+      </div>
+      <!-- Header -->
+      <h2 class="header-title">Welcome to {{company}}!</h2>
+      <!-- Email content -->
+      <div class="content">
+        <!-- Student's Photo -->
+        <img src={{userImage}} alt="Student Photo" class="student-picture" />
+        <p>Hi {{firstName}} {{lastName}},</p>
+        <p>Thank you for signing up! We’re excited to have you on board and look forward to have a good experience with you. 
+          Below are your login credentials:</p>
+        <ul>
+          <li><strong>Unique ID:</strong> {{uniqueId}}</li>
+          <li><strong>Username:</strong> {{userName}}</li>
+          <li><strong>Password:</strong> {{password}}</li>
+        </ul>
+        <p>{{verificationText}}</p>
+        <p class="linkExpiry">{{linkExpiry}}</p>
+        <p>
+        <p class="linkBtn">
+          <a href="{{urlLink}}" class="button">Verify Your Email</a>
+        </p>
+      </div>
+      <hr />
+      <!-- Footer -->
+      <div class="footer">
+        {{!-- &copy;
+        {{year}}
+        Our School. All rights reserved. --}}
+        <span
+          className="sensecRigth"
+          style="
+        width:90%;
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      "
+        >
+          <p
+            style="
+          width: 100%;
+          padding: 0 0 1rem;
+          margin-bottom: 0;
+          font-size: .8rem;
+          font-weight: 500;
+          color: #555;
+          text-align: center;
+        "
+          >
+            &copy;{{currentYear}}
+            <span
+              style="
+          font-size: .8rem;
+          color: green;
+        "
+            >{{company}}</span>.
+            <span
+              style="
+          font-size: .8rem;
+        "
+            >All Rights Reserved!</span>
+          </p>
+        </span>
+      </div>
+    </div>
+  </body>
+</html>
