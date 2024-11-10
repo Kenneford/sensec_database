@@ -7,15 +7,19 @@ const {
   resetPassword,
   assignUserRole,
   removeUserRole,
+  fetchAllUsers,
+  refreshUserToken,
 } = require("../../controllers/users/userController");
 const {
   sendVerificationEmail,
   passwordResetRequestEmail,
+  userSignUpSMS,
 } = require("../../emails/sendEmail");
 const {
   createUserVerificationData,
   generateUserToken,
   generatePasswordResetUserToken,
+  validateUserSignUpData,
 } = require("../../middlewares/auth/authUser");
 const {
   verifyUserMiddleware,
@@ -30,8 +34,10 @@ const router = require("express").Router();
 
 router.post(
   "/users/sign_up",
+  validateUserSignUpData,
   createUserVerificationData,
   sendVerificationEmail,
+  userSignUpSMS,
   userSignUp
 );
 router.put(
@@ -41,6 +47,7 @@ router.put(
   userVerification
 );
 router.post("/users/login", generateUserToken, userLogin);
+router.post("/users/refresh-token", refreshUserToken);
 router.post(
   "/users/request_password_reset",
   requestPasswordReset,
@@ -55,6 +62,6 @@ router.post(
 );
 router.put("/users/role/assign", assignUserRole);
 router.put("/users/role/remove", removeUserRole);
-// router.post("/users/logout", userLogout);
+router.get("/users/fetch_all", fetchAllUsers);
 
 module.exports = router;

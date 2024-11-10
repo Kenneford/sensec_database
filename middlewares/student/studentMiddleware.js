@@ -12,15 +12,15 @@ async function findSectionProgramme(req, res, next) {
   const data = req.body;
   try {
     let programFound;
-    if (data?.divisionProgramId) {
+    if (data?.newStudent?.divisionProgram) {
       programFound = await ProgramDivision.findOne({
-        _id: data?.divisionProgramId,
+        _id: data?.newStudent?.divisionProgram,
       });
       req.sectionProgram = { programFound, isDivisionProgram: true };
       next();
-    } else if (data?.programId) {
+    } else if (data?.newStudent?.program) {
       programFound = await Program.findOne({
-        _id: data?.programId,
+        _id: data?.newStudent?.program,
       });
       req.sectionProgram = { programFound, isDivisionProgram: false };
       next();
@@ -43,16 +43,27 @@ async function findSectionProgramme(req, res, next) {
 }
 async function validateStudentPlacementData(req, res, next) {
   const { data } = req.body;
+  console.log(data?.newStudent, "Student");
+  console.log(data?.dateOfBirth, "Date Of Birth");
 
   try {
     // Find placement student✅
     const placementStudentFound = await PlacementStudent.findOne({
-      jhsIndexNo: data?.placementStudent?.jhsIndexNo,
+      jhsIndexNo: data?.newStudent?.jhsIndexNo,
     });
+
+    // Validate placement student data
+    if (!placementStudentFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Placement data not found!`],
+        },
+      });
+      return;
+    }
     // Validate student's JHS completion year
     if (
-      data?.placementStudent &&
-      data?.placementStudent?.yearGraduated !== data?.newStudent?.completedJhs
+      placementStudentFound?.yearGraduated !== data?.newStudent?.completedJhs
     ) {
       res.status(400).json({
         errorMessage: {
@@ -62,10 +73,7 @@ async function validateStudentPlacementData(req, res, next) {
       return;
     }
     // Validate student's JHS attended
-    if (
-      data?.placementStudent &&
-      data?.placementStudent?.jhsAttended !== data?.newStudent?.jhsAttended
-    ) {
+    if (placementStudentFound?.jhsAttended !== data?.newStudent?.jhsAttended) {
       res.status(400).json({
         errorMessage: {
           message: [`Please provide the right JHS attended!`],
@@ -73,23 +81,8 @@ async function validateStudentPlacementData(req, res, next) {
       });
       return;
     }
-    // Validate student's selected program✅
-    if (
-      data?.placementStudent &&
-      data?.placementStudent?.programme !== data?.newStudent?.programName
-    ) {
-      res.status(400).json({
-        errorMessage: {
-          message: [`Programme selected does not match your course programme!`],
-        },
-      });
-      return;
-    }
     // Validate student's gender
-    if (
-      data?.placementStudent &&
-      data?.placementStudent?.gender !== data?.newStudent?.gender
-    ) {
+    if (placementStudentFound?.gender !== data?.newStudent?.gender) {
       res.status(400).json({
         errorMessage: {
           message: [
@@ -101,9 +94,8 @@ async function validateStudentPlacementData(req, res, next) {
     }
     // Validate student's selected residentialStatus
     if (
-      data?.placementStudent &&
-      data?.placementStudent?.boardingStatus !==
-        data?.newStudent?.residentialStatus
+      placementStudentFound?.boardingStatus !==
+      data?.newStudent?.residentialStatus
     ) {
       res.status(400).json({
         errorMessage: {
@@ -115,14 +107,13 @@ async function validateStudentPlacementData(req, res, next) {
       return;
     }
     // Validate student's date of birth
-    // Convert placement date to string before validating
-    const placementDOB = new Date(data?.placementStudent?.dateOfBirth)
+    // Convert both placement dates (from frontend data & backend) to string before validating
+    const placementDOB = placementStudentFound?.dateOfBirth
       .toISOString()
       .split("T")[0];
-    if (
-      placementDOB &&
-      placementDOB.toString() !== data?.newStudent?.dateOfBirth
-    ) {
+    const inputDOB = new Date(data?.dateOfBirth).toISOString().split("T")[0];
+
+    if (placementDOB && inputDOB && inputDOB !== placementDOB) {
       res.status(400).json({
         errorMessage: {
           message: [
@@ -133,10 +124,7 @@ async function validateStudentPlacementData(req, res, next) {
       return;
     }
     // Validate student's contact
-    if (
-      data?.placementStudent &&
-      data?.placementStudent?.smsContact !== data?.newStudent?.mobile
-    ) {
+    if (placementStudentFound?.smsContact !== data?.newStudent?.mobile) {
       res.status(400).json({
         errorMessage: {
           message: [
@@ -148,12 +136,8 @@ async function validateStudentPlacementData(req, res, next) {
     }
     // Validate student's name
     if (
-      (data?.placementStudent &&
-        data?.placementStudent.firstName !== data?.newStudent?.firstName) ||
-      (data?.placementStudent &&
-        data?.placementStudent.lastName !== data?.newStudent?.lastName) ||
-      (data?.placementStudent &&
-        data?.placementStudent.otherName !== data?.newStudent?.otherName)
+      placementStudentFound?.firstName !== data?.newStudent?.firstName ||
+      placementStudentFound?.lastName !== data?.newStudent?.lastName
     ) {
       res.status(400).json({
         errorMessage: {
@@ -177,6 +161,10 @@ async function studentProgramme(req, res, next) {
   const { data } = req.body;
 
   try {
+    // Find placement student✅
+    const placementStudentFound = await PlacementStudent.findOne({
+      jhsIndexNo: data?.newStudent?.jhsIndexNo,
+    });
     //Find student's Program✅
     const mainProgramFound = await Program.findOne({
       _id: data?.newStudent?.program,
@@ -189,9 +177,23 @@ async function studentProgramme(req, res, next) {
       });
       return;
     }
-    if (data?.newStudent?.divisionProgramId) {
+    // Validate student's selected program✅
+    if (
+      placementStudentFound &&
+      placementStudentFound?.programme !== mainProgramFound?.name
+    ) {
+      res.status(400).json({
+        errorMessage: {
+          message: [
+            `Programme selected does not match your placement programme!`,
+          ],
+        },
+      });
+      return;
+    }
+    if (data?.newStudent?.divisionProgram) {
       const studentDivisionProgramFound = await ProgramDivision.findOne({
-        _id: data?.newStudent?.divisionProgramId,
+        _id: data?.newStudent?.divisionProgram,
       });
       if (
         studentDivisionProgramFound?.optionalElectiveSubjects?.length > 0 &&
@@ -247,7 +249,6 @@ async function studentProgramme(req, res, next) {
 }
 async function studentClass(req, res, next) {
   const { data } = req.body;
-
   try {
     // find student's class level
     const studentClassLevel = await ClassLevel.findOne({
@@ -262,12 +263,12 @@ async function studentClass(req, res, next) {
       return;
     }
     let classSectionFound;
-    if (data?.newStudent?.divisionProgramId) {
+    if (data?.newStudent?.divisionProgram) {
       // find student's class level section✅
       classSectionFound = await ClassLevelSection.findOne({
         classLevelId: data?.newStudent?.currentClassLevel,
-        // program: data?.newStudent?.program,
-        divisionProgram: data?.newStudent?.divisionProgramId,
+        // program:data?.newStudent?.program,
+        divisionProgram: data?.newStudent?.divisionProgram,
       });
       req.studentClassInfo = { studentClassLevel, classSectionFound };
       next();
@@ -299,7 +300,9 @@ async function studentClass(req, res, next) {
 async function updateApprovedStudentData(req, res, next) {
   const currentUser = req.user;
   const { studentId } = req.params;
-  const data = req.body;
+  const { enrolmentApprovedBy } = req.body;
+  console.log(enrolmentApprovedBy);
+
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
@@ -311,7 +314,7 @@ async function updateApprovedStudentData(req, res, next) {
       });
       return;
     }
-    if (currentUser?.id !== data?.enrolmentApprovedBy) {
+    if (currentUser?.id !== enrolmentApprovedBy) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admingfhj!"],

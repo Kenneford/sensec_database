@@ -8,6 +8,8 @@ const cors = require("cors");
 const CircuitBreaker = require("opossum");
 
 const UsersRoute = require("./routes/auth/UserRoute");
+const AdminsRoute = require("./routes/admins/adminRoutes");
+const EmploymentRoute = require("./routes/employmentRoutes/employmentRoutes");
 const StudentsRoute = require("./routes/students/studentRoutes");
 const ProgrammesRoute = require("./routes/academics/programs/programsRoutes");
 const SubjectsRoute = require("./routes/academics/subjects/subjectsRoutes");
@@ -22,6 +24,12 @@ const PlacementBatchRoute = require("./routes/studentPlacementRoutes/placementBa
 const HouseRoute = require("./routes/academics/house/HouseRoutes");
 
 const start = async () => {
+  // Configure CORS options if needed
+  const corsOptions = {
+    origin: "*", // or '*' to allow all origins
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    // allowedHeaders: "Content-Type,Authorization",
+  };
   // Database connection error middleware
   function dbErrorHandler(err, req, res, next) {
     if (
@@ -61,30 +69,36 @@ const start = async () => {
       console.error(err);
       throw err;
     }
-
-    app.use(express.json({ limit: "2mb" })); // to parse the incoming request with JSON payloads [from: req.body]
+    // Error handling middleware for mongo server error
+    app.use((err, req, res, next) => {
+      console.error(err); // Log the error details
+      // Check if the error is related to MongoDB
+      if (
+        err.name === "MongoNetworkError" ||
+        err.name === "MongooseServerSelectionError"
+      ) {
+        return res.status(503).json({
+          message: "Service temporarily unavailable. Please try again later.",
+        });
+      }
+      // For other errors, send a generic error message
+      res.status(500).json({ message: "Internal server error." });
+    });
+    app.use(express.json({ limit: "10mb" })); // to parse the incoming request with JSON payloads [from: req.body]
     app.use(cookieParser());
-    app.use(express.urlencoded({ extended: true }));
-    app.use(cors());
+    app.use(express.urlencoded({ limit: "10mb", extended: true }));
+    app.use(cors(corsOptions));
     app.use(dbErrorHandler);
 
     const port = process.env.PORT || 7006;
 
     app.use(express.static("public"));
-
-    // Admins routes
-    //   app.use("/api/admin");
-
-    //   // Teachers routes
-    //   app.use("/api/teacher");
-
-    //   // Staffs routes
-    //   app.use("/api/nt_staff");
-
-    // Students routes
+    // Routes
     app.use(
       "/api/sensec_db/v1",
       UsersRoute,
+      AdminsRoute,
+      EmploymentRoute,
       StudentsRoute,
       ProgrammesRoute,
       SubjectsRoute,

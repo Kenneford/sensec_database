@@ -10,12 +10,22 @@ const placementStudentsModelSchema = new mongoose.Schema(
       default: "",
       // require: true,
     },
-    surname: {
+    firstName: {
       type: String,
       default: "",
       // require: true,
     },
-    otherNames: {
+    lastName: {
+      type: String,
+      default: "",
+      // require: true,
+    },
+    fullName: {
+      type: String,
+      default: "",
+      // require: true,
+    },
+    otherName: {
       type: String,
       // required: true,
     },
@@ -27,11 +37,11 @@ const placementStudentsModelSchema = new mongoose.Schema(
       type: String,
       // required: true,
     },
-    jHSAttended: {
+    jhsAttended: {
       type: String,
       // required: true,
     },
-    jHSIndexNo: {
+    jhsIndexNo: {
       type: String,
       // required: true,
       unique: true,
@@ -40,7 +50,15 @@ const placementStudentsModelSchema = new mongoose.Schema(
       type: String,
       unique: true,
       default: function () {
-        return "PN" + "-" + Math?.floor(1000 + Math?.random() * 9000);
+        return (
+          "PN" +
+          "-" +
+          Math?.floor(1000 + Math?.random() * 9000) +
+          this?.fullName
+            ?.split(" ")
+            ?.map((name) => name[0])
+            .join("")
+        );
       },
     },
     placementVerified: {
@@ -57,16 +75,18 @@ const placementStudentsModelSchema = new mongoose.Schema(
     trackID: {
       type: String,
     },
-    sMSContact: {
+    smsContact: {
       type: String,
     },
     generatedIndexNumber: {
       type: String,
       default: function () {
         return (
-          this?.jHSIndexNo +
-          this?.yearGraduated?.split(" ")?.map((year) => year[2]) +
-          this?.yearGraduated?.split(" ")?.map((year) => year[3])
+          this?.jhsIndexNo +
+          this?.fullName
+            ?.split(" ")
+            ?.map((name) => name[0])
+            .join("")
         );
       },
     },

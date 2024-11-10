@@ -13,7 +13,7 @@ const parentsSchema = new mongoose.Schema(
       default: "",
     },
     email: { type: String, max: 50, default: "" },
-    phoneNumber: { type: String, max: 20, default: "" },
+    mobile: { type: String, max: 20, default: "" },
   },
   {
     timestamps: true,

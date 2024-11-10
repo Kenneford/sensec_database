@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const { Schema } = mongoose;
 
-const teachersSchoolDataSchema = new Schema(
+const LecturerSchoolDataSchema = new Schema(
   {
     classLevels: [
       {
@@ -41,9 +41,9 @@ const teachersSchoolDataSchema = new Schema(
   },
   { timestamps: true }
 );
-const TeachersSchoolData = mongoose.model(
-  "TeachersSchoolData",
-  teachersSchoolDataSchema
+const LecturerSchoolData = mongoose.model(
+  "LecturerSchoolData",
+  LecturerSchoolDataSchema
 );
 
-module.exports = TeachersSchoolData;
+module.exports = LecturerSchoolData;

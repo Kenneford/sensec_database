@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const userVerificationDataSchema = new mongoose.Schema({
   userId: {
     type: String,
-    unique: true,
   },
   emailToken: {
     type: String,

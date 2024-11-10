@@ -1,3 +1,4 @@
+const { sendEnrollmentApprovalEmail } = require("../../emails/sendEmail");
 const { cloudinary } = require("../../middlewares/cloudinary/cloudinary");
 const User = require("../../models/user/UserModel");
 
@@ -9,7 +10,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
   const studentClassInfo = req.studentClassInfo;
   try {
     // Check for student image upload file
-    if (!data?.profilePicture) {
+    if (!data?.newStudent?.profilePicture) {
       res.status(400).json({
         errorMessage: {
           message: ["No image selected or image file not supported!"],
@@ -18,9 +19,14 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
       return;
     }
     await cloudinary.uploader.upload(
-      data?.profilePicture,
+      data?.newStudent?.profilePicture,
       {
         folder: "Students",
+        transformation: [
+          { width: 500, height: 500, crop: "scale" },
+          { quality: "auto" },
+          { fetch_format: "auto" },
+        ],
       },
       async (err, result) => {
         if (err) {
@@ -32,7 +38,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
         } else {
           //Create new student enrolment data
           const newStudentData = await User.create({
-            uniqueId: data?.uniqueId,
+            uniqueId: data?.newStudent?.uniqueId,
             "personalInfo.firstName": data?.newStudent?.firstName,
             "personalInfo.lastName": data?.newStudent?.lastName,
             "personalInfo.otherName": data?.newStudent?.otherName,
@@ -48,15 +54,14 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
             },
             "studentSchoolData.jhsAttended": data?.newStudent?.jhsAttended,
             "studentSchoolData.completedJhs": data?.newStudent?.completedJhs,
-            "studentSchoolData.jhsIndexNumber":
-              data?.newStudent?.jhsIndexNumber,
+            "studentSchoolData.jhsIndexNo": data?.newStudent?.jhsIndexNo,
             "studentSchoolData.program": program?.mainProgramFound?._id,
             "studentSchoolData.divisionProgram":
               program?.studentDivisionProgramFound?._id,
             "studentSchoolData.currentClassLevel":
               data?.newStudent?.currentClassLevel,
-            "studentSchoolData.currentAcademicYear":
-              data?.newStudent?.currentAcademicYear,
+            // "studentSchoolData.currentAcademicYear":
+            //   data?.newStudent?.currentAcademicYear,
             "studentSchoolData.batch": data?.newStudent?.batch,
             "studentSchoolData.currentClassLevelSection":
               studentClassInfo?.classSectionFound?._id,
@@ -192,7 +197,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           }
           //Update placement student's enrollmentId✅
           if (placementStudent) {
-            placementStudent.enrollmentId = newStudentData?.uniqueId;
+            placementStudent.enrollmentId = data?.newStudent?.uniqueId;
             await placementStudent.save();
           }
 
@@ -254,6 +259,10 @@ module.exports.approveStudentEnrollment = async (req, res) => {
           },
           { upsert: true }
         );
+      }
+      //Send enrolment E-mail to student
+      if (studentApproved && studentApproved?.contactAddress?.email !== "") {
+        sendEnrollmentApprovalEmail({ foundStudent: studentApproved });
       }
       res.status(200).json({
         successMessage: "Student Approved Successfully!",
