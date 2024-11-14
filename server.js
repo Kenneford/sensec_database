@@ -22,6 +22,7 @@ const SensosanRoute = require("./routes/graduatesRoutes/OldStudentsRoutes");
 const StudentPlacementRoute = require("./routes/studentPlacementRoutes/StudentPlacementRoutes");
 const PlacementBatchRoute = require("./routes/studentPlacementRoutes/placementBatchRoutes/placementBatchRoutes");
 const HouseRoute = require("./routes/academics/house/HouseRoutes");
+const RejectionsRoute = require("./routes/rejections/rejectionsRoutes");
 
 const start = async () => {
   // Configure CORS options if needed
@@ -75,6 +76,7 @@ const start = async () => {
       // Check if the error is related to MongoDB
       if (
         err.name === "MongoNetworkError" ||
+        err.name === "MongoServerError" ||
         err.name === "MongooseServerSelectionError"
       ) {
         return res.status(503).json({
@@ -110,7 +112,8 @@ const start = async () => {
       SensosanRoute,
       StudentPlacementRoute,
       PlacementBatchRoute,
-      HouseRoute
+      HouseRoute,
+      RejectionsRoute
     );
 
     app.listen(port, () => console.log(`Server listening at port ${port}`));

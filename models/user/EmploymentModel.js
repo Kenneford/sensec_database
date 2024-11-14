@@ -12,10 +12,11 @@ const employmentSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    employmentProcessedDate: {
-      type: Date,
-    },
     employmentApprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    employmentRejectedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
@@ -23,7 +24,15 @@ const employmentSchema = new Schema(
       type: Date,
       // default: "",
     },
+    employmentRejectedDate: {
+      type: Date,
+      // default: "",
+    },
     employmentStatus: {
+      type: String,
+      // default: "",
+    },
+    employmentType: {
       type: String,
       // default: "",
     },

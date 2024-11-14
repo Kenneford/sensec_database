@@ -75,6 +75,10 @@ const UsersModelSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    signedUpSensosan: {
+      type: Boolean,
+      default: false,
+    },
     isVerified: {
       type: Boolean,
       default: false,

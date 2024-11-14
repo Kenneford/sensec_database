@@ -1,20 +1,24 @@
+const {
+  sendEmploymentEmail,
+  employmentSMS,
+} = require("../../emails/sendEmail");
 const { cloudinary } = require("../../middlewares/cloudinary/cloudinary");
 const User = require("../../models/user/UserModel");
 
+// Works ✅
 module.exports.addNewEmployee = async (req, res) => {
   const { employeeData } = req.body;
-  console.log(employeeData);
-
   try {
     const existingEmployee = await User.findOne({
       uniqueId: employeeData?.uniqueId,
     });
     if (existingEmployee) {
-      return res.status(208).json({
+      res.status(208).json({
         errorMessage: {
           message: [`Employee ID already exist!`],
         },
       });
+      return;
     }
     if (!employeeData?.profilePicture) {
       // Check for student image upload file
@@ -31,7 +35,7 @@ module.exports.addNewEmployee = async (req, res) => {
         {
           folder: "Employees",
           transformation: [
-            { width: 500, height: 500, crop: "scale" },
+            { width: 300, height: 400, crop: "fill", gravity: "center" },
             { quality: "auto" },
             { fetch_format: "auto" },
           ],
@@ -54,7 +58,9 @@ module.exports.addNewEmployee = async (req, res) => {
               "personalInfo.placeOfBirth": employeeData?.placeOfBirth,
               "personalInfo.nationality": employeeData?.nationality,
               "personalInfo.gender": employeeData?.gender,
-              "personalInfo.fullName": `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`,
+              "personalInfo.fullName": employeeData?.otherName
+                ? `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`
+                : `${employeeData?.firstName} ${employeeData?.lastName}`,
               roles: ["admin"],
               "personalInfo.profilePicture": {
                 public_id: result.public_id,
@@ -75,10 +81,22 @@ module.exports.addNewEmployee = async (req, res) => {
               "contactAddress.gpsAddress": employeeData?.gpsAddress,
               "contactAddress.mobile": employeeData?.mobile,
               "contactAddress.email": employeeData?.email,
-              "employment.employmentProcessedDate": new Date().toISOString(),
+              "employment.employmentType": employeeData?.typeOfEmployment,
               "adminStatusExtend.isAdmin": false, //===>>> isAdmin: will be updated during employment approval
               "employment.employmentStatus": "pending",
             });
+            if (
+              newEmployeeData &&
+              newEmployeeData?.contactAddress?.email !== ""
+            ) {
+              sendEmploymentEmail({ foundUser: newEmployeeData });
+            }
+            // if (
+            //   newEmployeeData &&
+            //   newEmployeeData?.contactAddress?.mobile !== ""
+            // ) {
+            //   employmentSMS({ foundUser: newEmployeeData });
+            // }
             res.status(201).json({
               successMessage: "Your employment data saved successfully!",
               newEmployeeData,
@@ -95,7 +113,7 @@ module.exports.addNewEmployee = async (req, res) => {
         {
           folder: "Employees",
           transformation: [
-            { width: 300, height: 300, crop: "scale" },
+            { width: 300, height: 400, crop: "fill", gravity: "center" },
             { quality: "auto" },
             { fetch_format: "auto" },
           ],
@@ -124,7 +142,7 @@ module.exports.addNewEmployee = async (req, res) => {
                 public_id: result.public_id,
                 url: result.secure_url,
               },
-              "studentSchoolData.program": employeeData?.program,
+              "lecturerSchoolData.program": employeeData?.program,
               "status.height": employeeData?.height,
               "status.weight": employeeData?.weight,
               "status.complexion": employeeData?.complexion,
@@ -140,10 +158,16 @@ module.exports.addNewEmployee = async (req, res) => {
               "contactAddress.gpsAddress": employeeData?.gpsAddress,
               "contactAddress.mobile": employeeData?.mobile,
               "contactAddress.email": employeeData?.email,
-              "employment.employmentProcessedDate": new Date().toISOString(),
+              "employment.employmentType": employeeData?.typeOfEmployment,
               "lecturerStatusExtend.isLecturer": false,
               "employment.employmentStatus": "pending",
             });
+            if (newEmployeeData?.contactAddress?.email !== "") {
+              sendEmploymentEmail({ foundUser: newEmployeeData });
+            }
+            // if (newEmployeeData?.contactAddress?.mobile !== "") {
+            //   employmentSMS({ foundUser: newEmployeeData });
+            // }
             res.status(201).json({
               successMessage: "Your employment data saved successfully!",
               newEmployeeData,
@@ -160,7 +184,7 @@ module.exports.addNewEmployee = async (req, res) => {
         {
           folder: "Employees",
           transformation: [
-            { width: 500, height: 500, crop: "scale" },
+            { width: 300, height: 400, crop: "fill", gravity: "center" },
             { quality: "auto" },
             { fetch_format: "auto" },
           ],
@@ -204,10 +228,16 @@ module.exports.addNewEmployee = async (req, res) => {
               "contactAddress.gpsAddress": employeeData?.gpsAddress,
               "contactAddress.mobile": employeeData?.mobile,
               "contactAddress.email": employeeData?.email,
-              "employment.employmentProcessedDate": new Date().toISOString(),
+              "employment.employmentType": employeeData?.typeOfEmployment,
               "nTStaffStatusExtend.isNTStaff": false,
               "employment.employmentStatus": "pending",
             });
+            if (newEmployeeData?.contactAddress?.email !== "") {
+              sendEmploymentEmail({ foundUser: newEmployeeData });
+            }
+            // if (newEmployeeData?.contactAddress?.mobile !== "") {
+            //   employmentSMS({ foundUser: newEmployeeData });
+            // }
             res.status(201).json({
               successMessage: "Your employment data saved successfully!",
               newEmployeeData,
@@ -224,7 +254,252 @@ module.exports.addNewEmployee = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log(error);
+    if (error.code === 11000) {
+      return res.status(500).json({
+        errorMessage: {
+          message: [
+            "Duplicate key error: A user with this email already exists!",
+          ],
+        },
+      });
+      // Handle the error, e.g., return a custom message or perform other actions
+    } else {
+      console.log(error);
+      return res.status(500).json({
+        errorMessage: {
+          message: [error?.message],
+        },
+      });
+      // Handle other potential errors
+    }
+  }
+};
+// Works ✅
+module.exports.approveEmployment = async (req, res, next) => {
+  const { employeeId, employmentApprovedBy } = req.params;
+  const authAdmin = req.user;
+  // console.log(employmentApprovedBy);
+  console.log(authAdmin);
+
+  try {
+    //Find admin taking action
+    const adminFound = await User.findOne({ _id: employmentApprovedBy });
+    // Validate admin's ID
+    if (!adminFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    if (authAdmin && authAdmin?.id !== employmentApprovedBy) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    //Find user
+    const employeeFound = await User.findOne({ uniqueId: employeeId });
+    // console.log(user);
+    if (!employeeFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Employee Data Not Found!"],
+        },
+      });
+      return;
+    }
+    if (employeeFound?.employment?.employmentStatus === "approved") {
+      res.status(400).json({
+        errorMessage: {
+          message: ["Employment Already Approved!"],
+        },
+      });
+      return;
+    }
+    let userEmploymentApproved;
+    //Find user to update
+    //Update Admin
+    if (employeeFound.roles?.includes("admin")) {
+      userEmploymentApproved = await User.findOneAndUpdate(
+        employeeFound._id,
+        {
+          "employment.employmentStatus": "approved",
+          "employment.employmentApprovedBy": adminFound?._id,
+          "employment.employmentApprovedDate": new Date().toISOString(),
+          "adminStatusExtend.isAdmin": true,
+          "adminStatusExtend.isStaff": true,
+        },
+        { new: true }
+      );
+    }
+    //Update Lecturer
+    if (employeeFound.roles?.includes("lecturer")) {
+      userEmploymentApproved = await User.findOneAndUpdate(
+        employeeFound._id,
+        {
+          "employment.employmentStatus": "approved",
+          "employment.employmentApprovedBy": adminFound?._id,
+          "employment.employmentApprovedDate": new Date().toISOString(),
+          "lecturerStatusExtend.isLecturer": true,
+          "lecturerStatusExtend.isStaff": true,
+        },
+        { new: true }
+      );
+    }
+    //Update Non-Teaching Staff
+    if (employeeFound.roles?.includes("nt-staff")) {
+      userEmploymentApproved = await User.findOneAndUpdate(
+        employeeFound._id,
+        {
+          "employment.employmentStatus": "approved",
+          "employment.employmentApprovedBy": adminFound?._id,
+          "employment.employmentApprovedDate": new Date().toISOString(),
+          "nTStaffStatusExtend.isNTStaff": true,
+          "nTStaffStatusExtend.isStaff": true,
+        },
+        { new: true }
+      );
+    }
+    //Push approved employee into adminFound's actionsData employmentsApproved array✅
+    if (
+      userEmploymentApproved &&
+      adminFound &&
+      !adminFound?.adminActionsData?.employmentsApproved?.includes(
+        userEmploymentApproved?._id
+      )
+    ) {
+      await User.findOneAndUpdate(
+        adminFound?._id,
+        {
+          $push: {
+            "adminActionsData.employmentsApproved": userEmploymentApproved?._id,
+          },
+        },
+        { upsert: true, new: true }
+      );
+    }
+    res.status(200).json({
+      successMessage: "Employment approved successfully!",
+      userEmploymentApproved,
+    });
+    console.log("Employment Approved Successfully!");
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!"],
+      },
+    });
+  }
+};
+// Works ✅
+module.exports.rejectEmployment = async (req, res, next) => {
+  const { employeeId, employmentRejectedBy } = req.params;
+  const authAdmin = req.user;
+  console.log(employeeId, employmentRejectedBy);
+
+  const adminFound = await User.findOne({ _id: employmentRejectedBy });
+  try {
+    //Find admin taking action
+    // Validate admin's ID
+    if (!adminFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    if (authAdmin && authAdmin?.id !== employmentRejectedBy) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    //Find user
+    const employeeFound = await User.findOne({ uniqueId: employeeId });
+    // console.log(user);
+    if (!employeeFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Employee Data Not Found!"],
+        },
+      });
+      return;
+    }
+    let userEmploymentRejected;
+    //Find user to update
+    //Update Admin
+    if (employeeFound.roles?.includes("admin")) {
+      userEmploymentRejected = await User.findOneAndUpdate(
+        employeeFound._id,
+        {
+          "employment.employmentStatus": "rejected",
+          "employment.employmentRejectedBy": adminFound?._id,
+          "employment.employmentRejectedDate": new Date().toISOString(),
+          "adminStatusExtend.isAdmin": false,
+          "adminStatusExtend.isStaff": false,
+        },
+        { new: true }
+      );
+    }
+    //Update Lecturer
+    if (employeeFound.roles?.includes("lecturer")) {
+      userEmploymentRejected = await User.findOneAndUpdate(
+        employeeFound._id,
+        {
+          "employment.employmentStatus": "rejected",
+          "employment.employmentRejectedBy": adminFound?._id,
+          "employment.employmentRejectedDate": new Date().toISOString(),
+          "lecturerStatusExtend.isLecturer": false,
+          "lecturerStatusExtend.isStaff": false,
+        },
+        { new: true }
+      );
+    }
+    //Update Non-Teaching Staff
+    if (employeeFound.roles?.includes("nt-staff")) {
+      userEmploymentRejected = await User.findOneAndUpdate(
+        employeeFound._id,
+        {
+          "employment.employmentStatus": "rejected",
+          "employment.employmentRejectedBy": adminFound?._id,
+          "employment.employmentRejectedDate": new Date().toISOString(),
+          "nTStaffStatusExtend.isNTStaff": false,
+          "nTStaffStatusExtend.isStaff": false,
+        },
+        { new: true }
+      );
+    }
+    //Push approved employee into adminFound's actionsData employmentsApproved array✅
+    if (
+      userEmploymentRejected &&
+      adminFound &&
+      !adminFound?.adminActionsData?.employmentsRejected?.includes(
+        userEmploymentRejected?._id
+      )
+    ) {
+      await User.findOneAndUpdate(
+        adminFound?._id,
+        {
+          $push: {
+            "adminActionsData.employmentsRejected": userEmploymentRejected?._id,
+          },
+        },
+        { upsert: true, new: true }
+      );
+    }
+    res.status(200).json({
+      successMessage: "Employment rejected successfully!",
+      userEmploymentRejected,
+    });
+    console.log("Employment rejected successfully!");
+  } catch (error) {
     return res.status(500).json({
       errorMessage: {
         message: ["Internal Server Error!"],

@@ -27,7 +27,7 @@ const sendVerificationEmail = async (req, res, next) => {
   // Get verification data
   const verificationData = req?.newSignedUpUserData?.verificationData;
   // Get user's data
-  const foundStudent = req?.newSignedUpUserData?.newSignedUpUser;
+  const userFound = req?.newSignedUpUserData?.newSignedUpUser;
   const userPassword = req?.newSignedUpUserData?.password;
   try {
     // Find user's verification data
@@ -385,6 +385,134 @@ Senya Senior High School.
   }
 };
 
+const sendEmploymentEmail = async ({ foundUser }) => {
+  console.log(foundUser);
+
+  const currentYear = new Date().getFullYear();
+  const url = "http://192.168.178.22:2025";
+  try {
+    const transporter = createGMailTransporter();
+
+    const handlebarOptions = {
+      viewEngine: {
+        extname: "hbs",
+        partialsDir: path.resolve("./emails/forEnrollment/"),
+        layoutsDir: path.resolve("./emails/forEnrollment/"),
+        defaultLayout: "",
+      },
+      viewPath: path.resolve("./emails/forEnrollment/"),
+      extName: ".hbs",
+    };
+
+    // use a template file with nodemailer
+    transporter.use("compile", hbs(handlebarOptions));
+
+    let mailTemplate = {
+      from: `Senya Senior High School <${process.env.NODEMAILER_GMAIL}>`,
+      to: foundUser?.contactAddress?.email,
+      subject: "Your Employment Status",
+      template: "employmentEmail",
+      context: {
+        userImage: foundUser?.personalInfo?.profilePicture.url,
+        uniqueId: foundUser?.uniqueId,
+        firstName: foundUser?.personalInfo?.firstName,
+        lastName: foundUser?.personalInfo?.lastName,
+        company: "Senya Senior High School",
+        urlLink: `${url}/sensec/homepage`,
+        linkText: "Visit Our Website",
+        currentYear,
+      },
+      attachments: [
+        {
+          filename: "school-logo.png",
+          path: path.resolve(__dirname, "assets/sensec-logo1.png"), // Path to school logo
+          cid: "schoolLogo", // Same CID as in the HTML template
+        },
+      ],
+    };
+    transporter.sendMail(mailTemplate, (error, info) => {
+      if (error) {
+        console.log("Error sending email:", error?.message);
+        // return res
+        //   .status(400)
+        //   .json({ errorMessage: { message: "Failed to send email." } });
+      } else {
+        console.log("Employment email sent!");
+        // next();
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+const employmentSMS = async ({ foundUser }) => {
+  const url = "http://192.168.178.22:2025";
+  try {
+    let body = `
+
+Hello ${foundUser?.personalInfo?.firstName},
+
+This mail is to inform you that your employment process was successful, and you're on pending for final approval. 
+We're going to send you another mail with your employment details as soon as your employment is approved. 
+As you wait for your approval, you can also visit our website to know more about Senya Senior High School.
+Click: ${url} to visit our website.
+
+Thank you for joining our school!
+
+Yours Sincerely,
+
+Nicholas Afful,
+Head of Administration,
+Senya Senior High School.
+
+`;
+    twilioClient.messages
+      .create({
+        // to: "491784535757", // Text your number
+        from: process.env.TWILIO_NUMBER, // From a valid Twilio number
+        to: foundUser?.contactAddress?.mobile, // Text your number
+        body: body,
+      })
+      .then((message) => {
+        try {
+          console.log(message.sid);
+        } catch (error) {
+          console.log(error);
+        }
+      });
+  } catch (error) {
+    console.log(error);
+  }
+
+  // const from = process.env.VONAGE_BRAND_NAME;
+  // const to = foundUser?.contactAddress?.mobile;
+  // const text = body;
+
+  // twilioClient.messages
+  //   .create({
+  //     from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+  //     body: body,
+  //     to: "whatsapp:+4915759307163",
+  //     // to: "whatsapp:+233241283018",
+  //     // to: `whatsapp:${userInfo?.contactAddress?.mobile}`,
+  //   })
+  //   .then((message) => console.log(message.sid));
+
+  // next();
+  // async function sendApprovedSMS() {
+  //   await vonage.sms
+  //     .send({ to, from, text })
+  //     .then((resp) => {
+  //       console.log("Message sent successfully");
+  //       console.log(resp);
+  //     })
+  //     .catch((err) => {
+  //       console.log("There was an error sending the messages.");
+  //       console.error(err);
+  //     });
+  // }
+  // sendApprovedSMS();
+};
 module.exports = {
   sendVerificationEmail,
   passwordResetRequestEmail,
@@ -392,4 +520,6 @@ module.exports = {
   sendEnrollmentApprovalEmail,
   studentEnrollmentApprovalSMS,
   userSignUpSMS,
+  sendEmploymentEmail,
+  employmentSMS,
 };
