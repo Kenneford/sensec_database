@@ -4,79 +4,73 @@ const { Schema } = mongoose;
 
 const adminsActionDataSchema = new Schema(
   {
-    academicTerms: [
+    academicTermsCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "AcademicTerm",
       },
     ],
-    academicYears: [
+    academicYearsCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "AcademicYear",
       },
     ],
-    programs: [
+    programsCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Program",
       },
     ],
-    oldStudentsGroups: [
+    oldStudentsGroupsCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "OldStudents",
       },
     ],
-    classLevels: [
+    classLevelsCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "ClassLevel",
       },
     ],
-    classLevelSections: [
+    classLevelSectionsCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "ClassLevelSection",
       },
     ],
-    houses: [
+    housesCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "House",
       },
     ],
-    batches: [
+    batchesCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Batch",
       },
     ],
-    subjects: [
+    subjectsCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Subject",
       },
     ],
-    admins: [
+    employmentsApproved: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
-    teachers: [
+    employmentsRejected: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
-    nTStaffs: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    registeredStudents: [
+    studentsApproved: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

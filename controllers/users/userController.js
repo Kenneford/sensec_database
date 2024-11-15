@@ -156,15 +156,16 @@ module.exports.userLogin = async (req, res) => {
 
 module.exports.refreshUserToken = async (req, res) => {
   const { token } = req.body;
+  const oldToken = token;
 
   try {
     // Verify the current token
-    const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+    const decodedToken = jwt.verify(oldToken, process.env.TOKEN_SECRET);
 
     // Generate a new token with an extended expiration
-    const newToken = jwt.sign(
+    const token = jwt.sign(
       {
-        id: decodedToken?._id,
+        id: decodedToken?.id,
         uniqueId: decodedToken?.uniqueId,
         personalInfo: decodedToken?.personalInfo,
         userSignUpDetails: decodedToken?.userSignUpDetails,
@@ -182,7 +183,7 @@ module.exports.refreshUserToken = async (req, res) => {
     );
     res.status(200).json({
       successMessage: `Session updated successfully!`,
-      newToken,
+      token,
     });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
@@ -396,9 +397,12 @@ module.exports.fetchAllUsers = async (req, res) => {
       // { path: "studentStatusExtend.enrolmentApprovedBy" },
     ]);
     if (allUsers) {
+      const sortedUsers = [...allUsers]?.sort(
+        (oldUser, newUser) => newUser?.createdAt - oldUser?.createdAt
+      );
       res.status(200).json({
         successMessage: `All users data fetched successfully!`,
-        allUsers,
+        allUsers: sortedUsers,
       });
     }
   } catch (error) {

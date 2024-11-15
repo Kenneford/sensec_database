@@ -27,9 +27,7 @@ async function generateUserToken(req, res, next) {
 
     const matchPassword = await bcrypt.compare(
       password,
-      userFound?.signedUpSensosa
-        ? userFound?.userSignUpDetails?.chatPassword
-        : userFound?.userSignUpDetails?.password
+      userFound?.userSignUpDetails?.password
     );
     if (matchPassword) {
       // Generate user token
@@ -147,7 +145,7 @@ async function validateUserSignUpData(req, res, next) {
         });
       }
     }
-    // Find student
+    // Find user
     const userFound = await User.findOne({
       uniqueId: signUpData?.uniqueId,
     }).select("+userSignUpDetails.password");
@@ -167,6 +165,39 @@ async function validateUserSignUpData(req, res, next) {
         },
       });
       return;
+    }
+    // Check if user is an admin and his/her employment has been approved
+    if (userFound && userFound?.roles?.includes("admin")) {
+      if (userFound && userFound?.employment?.employmentStatus !== "approved") {
+        res.status(404).json({
+          errorMessage: {
+            message: [`Sign-up denied! Your employment not yet approved!`],
+          },
+        });
+        return;
+      }
+    }
+    // Check if user is a lecturer and his/her employment has been approved
+    if (userFound && userFound?.roles?.includes("lecturer")) {
+      if (userFound && userFound?.employment?.employmentStatus !== "approved") {
+        res.status(404).json({
+          errorMessage: {
+            message: [`Sign-up denied! Your employment not yet approved!`],
+          },
+        });
+        return;
+      }
+    }
+    // Check if user is a non-teaching staff and his/her employment has been approved
+    if (userFound && userFound?.roles?.includes("nt-staff")) {
+      if (userFound && userFound?.employment?.employmentStatus !== "approved") {
+        res.status(404).json({
+          errorMessage: {
+            message: [`Sign-up denied! Your employment not yet approved!`],
+          },
+        });
+        return;
+      }
     }
     // Check if user is a student and his/her enrollment has been approved
     if (userFound && userFound?.roles?.includes("student")) {
