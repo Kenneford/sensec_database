@@ -395,11 +395,112 @@ module.exports.approveEmployment = async (req, res, next) => {
     });
   }
 };
+module.exports.approveMultiEmployees = async (req, res) => {
+  const { employees } = req.body;
+  const { employmentApprovedBy } = req.params;
+  const authAdmin = req.user;
+  try {
+    //Find admin taking action
+    const adminFound = await User.findOne({ _id: employmentApprovedBy });
+    // Validate admin's ID
+    if (!adminFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    if (authAdmin && authAdmin?.id !== employmentApprovedBy) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    //Check if employees data is greater than 0
+    if (!employees || employees.length < 1) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`No employee data selected!`],
+        },
+      });
+      return;
+    }
+    const approvedEmployees = employees.forEach(async (employee) => {
+      //Find employee
+      const employeeFound = await User.findOne({
+        uniqueId: employee?.uniqueId,
+      });
+      if (
+        employeeFound?.adminStatusExtend &&
+        employeeFound?.employment?.employmentStatus === "pending"
+      ) {
+        //Update employee's employment data
+        await User.findOneAndUpdate(
+          employeeFound._id,
+          {
+            "employment.employmentStatus": "approved",
+            "employment.employmentApprovedBy": adminFound?._id,
+            "employment.employmentApprovedDate": new Date().toISOString(),
+            "adminStatusExtend.isAdmin": true,
+            "adminStatusExtend.isStaff": true,
+          },
+          { new: true }
+        );
+      }
+      if (
+        employeeFound?.lecturerStatusExtend &&
+        employeeFound?.employment?.employmentStatus === "pending"
+      ) {
+        //Update employee's employment data
+        await User.findOneAndUpdate(
+          employeeFound._id,
+          {
+            "employment.employmentStatus": "approved",
+            "employment.employmentApprovedBy": adminFound?._id,
+            "employment.employmentApprovedDate": new Date().toISOString(),
+            "lecturerStatusExtend.isLecturer": true,
+            "lecturerStatusExtend.isStaff": true,
+          },
+          { new: true }
+        );
+      }
+      if (
+        employeeFound?.nTStaffStatusExtend &&
+        employeeFound?.employment?.employmentStatus === "pending"
+      ) {
+        //Update employee's employment data
+        await User.findOneAndUpdate(
+          employeeFound._id,
+          {
+            "employment.employmentStatus": "approved",
+            "employment.employmentApprovedBy": adminFound?._id,
+            "employment.employmentApprovedDate": new Date().toISOString(),
+            "nTStaffStatusExtend.isNTStaff": true,
+            "nTStaffStatusExtend.isStaff": true,
+          },
+          { new: true }
+        );
+      }
+    });
+    res.status(200).json({
+      successMessage: "All selected employees approved successfully!",
+      allApprovedEmployees: approvedEmployees,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
+  }
+};
 // Works ✅
 module.exports.rejectEmployment = async (req, res, next) => {
   const { employeeId, employmentRejectedBy } = req.params;
   const authAdmin = req.user;
-  console.log(employeeId, employmentRejectedBy);
 
   const adminFound = await User.findOne({ _id: employmentRejectedBy });
   try {
@@ -503,6 +604,109 @@ module.exports.rejectEmployment = async (req, res, next) => {
     return res.status(500).json({
       errorMessage: {
         message: ["Internal Server Error!"],
+      },
+    });
+  }
+};
+module.exports.rejectMultiEmployees = async (req, res) => {
+  const { employees } = req.body;
+  const { employmentRejectedBy } = req.params;
+  const authAdmin = req.user;
+
+  try {
+    //Find admin taking action
+    const adminFound = await User.findOne({ _id: employmentRejectedBy });
+    // Validate admin's ID
+    if (!adminFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    if (authAdmin && authAdmin?.id !== employmentRejectedBy) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    //Check if employees data is greater than 0
+    if (!employees || employees.length < 1) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`No employee data selected!`],
+        },
+      });
+      return;
+    }
+    const rejectedEmployees = employees.forEach(async (employee) => {
+      //Find employee
+      const employeeFound = await User.findOne({
+        uniqueId: employee?.uniqueId,
+      });
+      if (
+        employeeFound?.adminStatusExtend &&
+        employeeFound?.employment?.employmentStatus === "pending"
+      ) {
+        //Update employee's employment data
+        await User.findOneAndUpdate(
+          employeeFound._id,
+          {
+            "employment.employmentStatus": "rejected",
+            "employment.employmentApprovedBy": adminFound?._id,
+            "employment.employmentApprovedDate": new Date().toISOString(),
+            "adminStatusExtend.isAdmin": false,
+            "adminStatusExtend.isStaff": false,
+          },
+          { new: true }
+        );
+      }
+      if (
+        employeeFound?.lecturerStatusExtend &&
+        employeeFound?.employment?.employmentStatus === "pending"
+      ) {
+        //Update employee's employment data
+        await User.findOneAndUpdate(
+          employeeFound._id,
+          {
+            "employment.employmentStatus": "rejected",
+            "employment.employmentApprovedBy": adminFound?._id,
+            "employment.employmentApprovedDate": new Date().toISOString(),
+            "lecturerStatusExtend.isLecturer": false,
+            "lecturerStatusExtend.isStaff": false,
+          },
+          { new: true }
+        );
+      }
+      if (
+        employeeFound?.nTStaffStatusExtend &&
+        employeeFound?.employment?.employmentStatus === "pending"
+      ) {
+        //Update employee's employment data
+        await User.findOneAndUpdate(
+          employeeFound._id,
+          {
+            "employment.employmentStatus": "rejected",
+            "employment.employmentApprovedBy": adminFound?._id,
+            "employment.employmentApprovedDate": new Date().toISOString(),
+            "nTStaffStatusExtend.isNTStaff": false,
+            "nTStaffStatusExtend.isStaff": false,
+          },
+          { new: true }
+        );
+      }
+    });
+    res.status(200).json({
+      successMessage: "All selected employees rejected successfully!",
+      allRejectedEmployees: rejectedEmployees,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
       },
     });
   }
