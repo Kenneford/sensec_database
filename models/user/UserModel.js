@@ -5,7 +5,7 @@ const ContactAddress = require("./ContactAddressModel");
 const Status = require("./StatusModel");
 const Employment = require("./EmploymentModel");
 const AdminExtendedStatus = require("./userRefs/forAdmins/AdminExtendedStatusModel");
-const AdminActionsData = require("./userRefs/forAdmins/AdminActionsDataModel");
+// const AdminActionsData = require("./userRefs/forAdmins/AdminActionsDataModel");
 const NTStaffExtendedStatus = require("./userRefs/forNTStaffs/NTStaffExtendedStatusModel");
 const LecturerSchoolData = require("./userRefs/forLecturers/LecturerSchoolDataModel");
 const LecturerExtendedStatus = require("./userRefs/forLecturers/LecturerExtendedStatusModel");
@@ -25,10 +25,6 @@ const UsersModelSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    sensosaId: {
-      type: String,
-      unique: true,
-    },
     personalInfo: {
       type: PersonalInfo.schema,
     },
@@ -41,9 +37,9 @@ const UsersModelSchema = new mongoose.Schema(
     employment: {
       type: Employment.schema,
     },
-    adminActionsData: {
-      type: AdminActionsData.schema,
-    },
+    // adminActionsData: {
+    //   type: AdminActionsData.schema,
+    // },
     adminStatusExtend: {
       type: AdminExtendedStatus.schema,
     },
@@ -80,6 +76,14 @@ const UsersModelSchema = new mongoose.Schema(
       default: false,
     },
     isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isVerifiedSensosa: {
+      type: Boolean,
+      default: false,
+    },
+    hasBeenNotifiedForNextSemester: {
       type: Boolean,
       default: false,
     },

@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const cors = require("cors");
 const CircuitBreaker = require("opossum");
+const cron = require("node-cron");
 
 const UsersRoute = require("./routes/auth/UserRoute");
 const AdminsRoute = require("./routes/admins/adminRoutes");
@@ -22,30 +23,36 @@ const SensosanRoute = require("./routes/graduatesRoutes/OldStudentsRoutes");
 const StudentPlacementRoute = require("./routes/studentPlacementRoutes/StudentPlacementRoutes");
 const PlacementBatchRoute = require("./routes/studentPlacementRoutes/placementBatchRoutes/placementBatchRoutes");
 const HouseRoute = require("./routes/academics/house/HouseRoutes");
-const RejectionsRoute = require("./routes/rejections/rejectionsRoutes");
+const AcademicTerm = require("./models/academics/term/AcademicTermModel");
+const {
+  updateCurrentSemester,
+  updateAcademicYear,
+  notifyNextSemester,
+  createNextAcademicYear,
+} = require("./middlewares/academics/semesterService");
 
-const start = async () => {
-  // Configure CORS options if needed
-  const corsOptions = {
-    origin: "*", // or '*' to allow all origins
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    // allowedHeaders: "Content-Type,Authorization",
-  };
-  // Database connection error middleware
-  function dbErrorHandler(err, req, res, next) {
-    if (
-      err.name === "MongoNetworkError" ||
-      err.message.includes("failed to connect")
-    ) {
-      console.error("Database connection failed");
-      return res
-        .status(500)
-        .json({ message: "Database unavailable, please try again later" });
-    }
-    next(err); // Pass to the next error handler
-  }
-
+const start = async (req, res) => {
   try {
+    // Configure CORS options if needed
+    const corsOptions = {
+      origin: "*", // or '*' to allow all origins
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      // allowedHeaders: "Content-Type,Authorization",
+    };
+    // Database connection error middleware
+    function dbErrorHandler(err, req, res, next) {
+      if (
+        err.name === "MongoNetworkError" ||
+        err.message.includes("failed to connect")
+      ) {
+        console.error("Database connection failed");
+        return res
+          .status(500)
+          .json({ message: "Database unavailable, please try again later" });
+      }
+      next(err); // Pass to the next error handler
+    }
+
     const mongodbConnection = `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_URL}/sensec_website`;
     if (!mongodbConnection) {
       throw new Error("auth DB_URI must be defined");
@@ -95,6 +102,7 @@ const start = async () => {
     const port = process.env.PORT || 7006;
 
     app.use(express.static("public"));
+
     // Routes
     app.use(
       "/api/sensec_db/v1",
@@ -112,13 +120,55 @@ const start = async () => {
       SensosanRoute,
       StudentPlacementRoute,
       PlacementBatchRoute,
-      HouseRoute,
-      RejectionsRoute
+      HouseRoute
     );
+
+    // Run the update function immediately on server start
+    // (async () => {
+    //   console.log("Running initial semester update...");
+    //   await updateCurrentSemester();
+    // })();
+    // // Run the academic year update on server start
+    // (async () => {
+    //   console.log("Running initial academic year update...");
+    //   await updateAcademicYear(); // Set the current academic year on server start
+    // })();
+    // (async () => {
+    //   console.log("Running next semester notification...");
+    //   await notifyNextSemester(); // Set next semester notification on server start
+    // })();
+    // (async () => {
+    //   console.log("Running create next academic year...");
+    //   await createNextAcademicYear(); // Set next semester notification on server start
+    // })();
+    // Schedule the cron job
+    cron.schedule("0 0 * * *", async () => {
+      await updateCurrentSemester();
+    });
+    // Cron job to update the academic year daily at midnight
+    cron.schedule("0 0 * * *", async () => {
+      await updateAcademicYear();
+    });
+    // Run daily at midnight
+    cron.schedule("0 0 * * *", async () => {
+      await notifyNextSemester();
+    });
+    // Schedule the function to run at midnight on September 1
+    cron.schedule("0 0 1 9 *", async () => {
+      console.log("Running academic year update...");
+      await createNextAcademicYear();
+    });
 
     app.listen(port, () => console.log(`Server listening at port ${port}`));
   } catch (error) {
-    throw new Error(`Server could not start!`);
+    console.log(error);
+
+    res.status(500).json({
+      errorMessage: {
+        message: [`Server could not start!`],
+      },
+    });
+    // throw new Error(`Server could not start!`);
   }
 };
 

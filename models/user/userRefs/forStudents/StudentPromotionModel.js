@@ -21,7 +21,7 @@ const StudentPromotionSchema = new Schema(
       ref: "User",
     },
     promotionDate: {
-      type: String,
+      Date,
     },
     isDemoted: {
       type: Boolean,
@@ -38,6 +38,9 @@ const StudentPromotionSchema = new Schema(
     isGraduated: {
       type: Boolean,
       default: false,
+    },
+    dateGraduated: {
+      type: Date,
     },
     yearGraduated: {
       type: String,
@@ -58,11 +61,22 @@ const StudentPromotionSchema = new Schema(
     dateEnrolled: {
       type: Date,
     },
+    graduatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     enrollmentApprovedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
     enrollmentApprovementDate: {
+      type: Date,
+    },
+    enrollmentRejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    enrollmentRejectionDate: {
       type: Date,
     },
     sensosaApplicationApprovedBy: {

@@ -23,6 +23,10 @@ const oldStudentsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    isAutoCreated: {
+      type: Boolean,
+      default: false,
+    },
     lastUpdatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

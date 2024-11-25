@@ -4,20 +4,9 @@ const User = require("../../../models/user/UserModel");
 // Create Academic Year ✅
 module.exports.createAcademicYear = async (req, res) => {
   const currentUser = req.user;
-  const data = req.body;
-  if (currentUser?.id !== data?.createdBy) {
-    res.status(403).json({
-      errorMessage: { message: ["Operation denied! You're not an admin!"] },
-    });
-    return;
-  }
-  const requiredFields = data?.fromYear || data?.toYear || data?.createdBy;
-  if (!requiredFields) {
-    res.status(403).json({
-      errorMessage: { message: ["Fill all required fields!"] },
-    });
-    return;
-  }
+  const { academicYear } = req.body;
+  console.log(academicYear);
+
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
@@ -27,10 +16,24 @@ module.exports.createAcademicYear = async (req, res) => {
       });
       return;
     }
+    if (currentUser?.id !== academicYear?.createdBy) {
+      res.status(403).json({
+        errorMessage: { message: ["Operation denied! You're not an admin!"] },
+      });
+      return;
+    }
+    const requiredFields =
+      academicYear?.fromYear || academicYear?.toYear || academicYear?.createdBy;
+    if (!requiredFields) {
+      res.status(403).json({
+        errorMessage: { message: ["Fill all required fields!"] },
+      });
+      return;
+    }
     // check if exists
     const existingAcademicYear = await AcademicYear.findOne({
-      fromYear: data?.fromYear,
-      toYear: data?.toYear,
+      fromYear: academicYear?.fromYear,
+      toYear: academicYear?.toYear,
     });
     if (existingAcademicYear) {
       res.status(400).json({
@@ -44,34 +47,26 @@ module.exports.createAcademicYear = async (req, res) => {
     }
     // Create Academic Year
     const academicYearCreated = await AcademicYear.create({
-      fromYear: data?.fromYear,
-      toYear: data?.toYear,
-      createdBy: data?.createdBy,
+      fromYear: academicYear?.fromYear,
+      toYear: academicYear?.toYear,
+      createdBy: academicYear?.createdBy,
     });
     if (academicYearCreated) {
       //   push academic year into admin
-      try {
-        if (
-          !adminFound?.adminActionsData?.academicYears.includes(
-            academicYearCreated?._id
-          )
-        ) {
-          await User.findOneAndUpdate(
-            adminFound._id,
-            {
-              $push: {
-                "adminActionsData.academicYears": academicYearCreated?._id,
-              },
+      if (
+        !adminFound?.adminActionsData?.academicYearsCreated.includes(
+          academicYearCreated?._id
+        )
+      ) {
+        await User.findOneAndUpdate(
+          adminFound._id,
+          {
+            $push: {
+              "adminActionsData.academicYearsCreated": academicYearCreated?._id,
             },
-            { upsert: true }
-          );
-        }
-      } catch (error) {
-        return res.status(500).json({
-          errorMessage: {
-            message: ["Internal Server Error!"],
           },
-        });
+          { upsert: true }
+        );
       }
       res.status(201).json({
         successMessage: "Academic year created successfully!",
@@ -85,6 +80,7 @@ module.exports.createAcademicYear = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log(error);
     res.status(403).json({
       errorMessage: { message: ["Internal Server Error!"] },
     });

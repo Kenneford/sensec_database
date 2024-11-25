@@ -58,7 +58,7 @@ router.post(
   "/academics/program/division/create",
   authUser,
   authUserRole({
-    userRole: {
+    userRoles: {
       admin: "admin",
     },
   }),

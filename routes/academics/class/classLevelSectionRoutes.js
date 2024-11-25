@@ -8,12 +8,12 @@ const {
   removeClassSectionLecturer,
 } = require("../../../controllers/academics/class/classLevelSectionController");
 const {
+  findSectionProgramme,
+} = require("../../../middlewares/academics/classSectionsMiddleware");
+const {
   authUser,
   authUserRole,
 } = require("../../../middlewares/auth/authUser");
-const {
-  findSectionProgramme,
-} = require("../../../middlewares/student/studentMiddleware");
 
 const router = require("express").Router();
 
@@ -42,7 +42,7 @@ router.put(
 );
 // Remove lecturer
 router.put(
-  "/academics/class_section/lecturer/:lecturerId/remove",
+  "/academics/class_section/lecturer/remove",
   authUser,
   authUserRole({
     userRoles: {

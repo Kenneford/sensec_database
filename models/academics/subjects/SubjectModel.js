@@ -31,11 +31,6 @@ const subjectSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    // duration: {
-    //   type: String,
-    //   // required: true,
-    //   default: "3 months",
-    // },
   },
   { timestamps: true }
 );

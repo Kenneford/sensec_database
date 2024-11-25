@@ -46,6 +46,12 @@ const adminsActionDataSchema = new Schema(
         ref: "House",
       },
     ],
+    placementBatchesCreated: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PlacementBatch",
+      },
+    ],
     batchesCreated: [
       {
         type: mongoose.Schema.Types.ObjectId,

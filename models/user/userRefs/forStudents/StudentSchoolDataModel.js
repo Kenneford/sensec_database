@@ -12,7 +12,7 @@ const StudentsSchoolDataSchema = new Schema(
       type: String,
       // required: true,
     },
-    jhsIndexNumber: {
+    jhsIndexNo: {
       type: String,
       // required: true,
     },
@@ -27,7 +27,8 @@ const StudentsSchoolDataSchema = new Schema(
       // required: true,
     },
     programOfOS: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Program",
       // required: true,
     },
     electiveSubjects: [

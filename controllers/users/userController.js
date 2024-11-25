@@ -387,18 +387,19 @@ module.exports.fetchAllUsers = async (req, res) => {
         path: "lecturerSchoolData.program",
       },
       { path: "lecturerSchoolData.classLevelHandling" },
-      // { path: "teacherSchoolData.teachingSubjects" },
+      { path: "lecturerSchoolData.teachingSubjects" },
       { path: "studentSchoolData.batch" },
       { path: "studentSchoolData.program" },
+      { path: "studentSchoolData.divisionProgram" },
       { path: "studentSchoolData.currentClassLevel" },
-      // { path: "studentSchoolData.classTeacher" },
-      // { path: "studentSchoolData.currentClassLevelSection" },
-      // { path: "studentSchoolData.house" },
-      // { path: "studentStatusExtend.enrolmentApprovedBy" },
+      { path: "studentSchoolData.currentClassTeacher" },
+      { path: "studentSchoolData.currentClassLevelSection" },
+      { path: "studentSchoolData.house" },
+      { path: "studentStatusExtend.enrollmentApprovedBy" },
     ]);
     if (allUsers) {
       const sortedUsers = [...allUsers]?.sort(
-        (oldUser, newUser) => newUser?.createdAt - oldUser?.createdAt
+        (oldUser, newUser) => newUser?.updatedAt - oldUser?.updatedAt
       );
       res.status(200).json({
         successMessage: `All users data fetched successfully!`,

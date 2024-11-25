@@ -4,26 +4,8 @@ const User = require("../../../models/user/UserModel");
 // Create academic batch ✅
 module.exports.createBatch = async (req, res) => {
   const currentUser = req.user;
-  const data = req.body;
+  const { data } = req.body;
   try {
-    //Find Admin
-    const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
-        },
-      });
-      return;
-    }
-    if (currentUser?.id !== data?.createdBy) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
-        },
-      });
-      return;
-    }
     if (!data?.fromYear) {
       res.status(403).json({
         errorMessage: {
@@ -45,23 +27,44 @@ module.exports.createBatch = async (req, res) => {
       toYear: data?.toYear,
     });
     if (existingBatch) {
-      res.status(400).json({
+      return res.status(400).json({
         errorMessage: {
           message: [`${existingBatch.yearRange} batch already exists!`],
         },
       });
-    } else {
+    }
+    if (data?.createdBy) {
+      //Find Admin
+      const adminFound = await User.findOne({ _id: currentUser?.id });
+      if (!adminFound || !currentUser?.roles?.includes("admin")) {
+        res.status(403).json({
+          errorMessage: {
+            message: ["Operation Denied! You're Not An Admin!"],
+          },
+        });
+        return;
+      }
+      if (currentUser?.id !== data?.createdBy) {
+        res.status(403).json({
+          errorMessage: {
+            message: ["Operation Denied! You're Not An Admin!"],
+          },
+        });
+        return;
+      }
       const newBatch = await Batch.create({
         fromYear: data?.fromYear,
         toYear: data?.toYear,
-        createdBy: data?.createdBy,
+        createdBy: adminFound?._id,
       });
       if (
         newBatch &&
-        !adminFound?.adminActionsData?.batches?.includes(newBatch?._id)
+        adminFound &&
+        !adminFound?.adminActionsData?.batchesCreated?.includes(newBatch?._id)
+        // !adminFound?.adminActionsData?.batchesCreated?.includes(newBatch?._id)
       ) {
         // await User.findOneAndUpdate(adminFound?._id,{ _id: currentUser?.id });
-        adminFound.adminActionsData.batches.push(newBatch?._id);
+        adminFound?.adminActionsData?.batchesCreated?.push(newBatch?._id);
         await adminFound.save();
       }
       res.status(201).json({
@@ -69,7 +72,20 @@ module.exports.createBatch = async (req, res) => {
         batch: newBatch,
       });
     }
+    if (!data?.createdBy) {
+      const newBatch = await Batch.create({
+        fromYear: data?.fromYear,
+        toYear: data?.toYear,
+        isAutoCreated: true,
+      });
+      res.status(201).json({
+        successMessage: " Batch created successfully!",
+        batch: newBatch,
+      });
+    }
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       errorMessage: {
         message: [`Internal Server Error!`],

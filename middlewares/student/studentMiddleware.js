@@ -1,50 +1,15 @@
-const { handleErrorFunction } = require("../../errors/errorFunction");
 const ClassLevel = require("../../models/academics/class/ClassLevelModel");
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
+const House = require("../../models/academics/house/HouseModel");
 const ProgramDivision = require("../../models/academics/programmes/divisions/ProgramDivisionModel");
 const Program = require("../../models/academics/programmes/ProgramsModel");
-const Subject = require("../../models/academics/subjects/SubjectModel");
+const OldStudents = require("../../models/graduates/OldStudentsModel");
 const PlacementStudent = require("../../models/PlacementStudent/PlacementStudentModel");
 const User = require("../../models/user/UserModel");
-const cloudinary = require("../cloudinary/cloudinary");
 
-async function findSectionProgramme(req, res, next) {
-  const data = req.body;
-  try {
-    let programFound;
-    if (data?.newStudent?.divisionProgram) {
-      programFound = await ProgramDivision.findOne({
-        _id: data?.newStudent?.divisionProgram,
-      });
-      req.sectionProgram = { programFound, isDivisionProgram: true };
-      next();
-    } else if (data?.newStudent?.program) {
-      programFound = await Program.findOne({
-        _id: data?.newStudent?.program,
-      });
-      req.sectionProgram = { programFound, isDivisionProgram: false };
-      next();
-    } else {
-      res.status(404).json({
-        errorMessage: {
-          message: ["No programme data found!"],
-        },
-      });
-      return;
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      errorMessage: {
-        message: ["Internal Server Error!"],
-      },
-    });
-  }
-}
+// For New Students Enrollment
 async function validateStudentPlacementData(req, res, next) {
   const { data } = req.body;
-  console.log(data?.newStudent, "Student");
-  console.log(data?.dateOfBirth, "Date Of Birth");
 
   try {
     // Find placement student✅
@@ -146,6 +111,14 @@ async function validateStudentPlacementData(req, res, next) {
       });
       return;
     }
+    if (!placementStudentFound?.placementVerified) {
+      res.status(400).json({
+        errorMessage: {
+          message: [`Your placement is not yet verified!`],
+        },
+      });
+      return;
+    }
     req.placementStudent = placementStudentFound;
     next();
   } catch (error) {
@@ -209,7 +182,7 @@ async function studentProgramme(req, res, next) {
       req.program = {
         mainProgramFound,
         studentDivisionProgramFound,
-        coreSubjects,
+        // coreSubjects,
         isDivisionProgram: true,
       };
       next();
@@ -297,11 +270,11 @@ async function studentClass(req, res, next) {
     });
   }
 }
+// For Enrollment Approvals
 async function updateApprovedStudentData(req, res, next) {
   const currentUser = req.user;
   const { studentId } = req.params;
-  const { enrolmentApprovedBy } = req.body;
-  console.log(enrolmentApprovedBy);
+  const { enrollmentApprovedBy } = req.body;
 
   try {
     //Find Admin
@@ -314,10 +287,10 @@ async function updateApprovedStudentData(req, res, next) {
       });
       return;
     }
-    if (currentUser?.id !== enrolmentApprovedBy) {
+    if (currentUser?.id !== enrollmentApprovedBy) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admingfhj!"],
+          message: ["Operation Denied! You're Not An Admin!"],
         },
       });
       return;
@@ -325,14 +298,6 @@ async function updateApprovedStudentData(req, res, next) {
     //Find student
     const studentFound = await User.findOne({ uniqueId: studentId });
     // console.log(studentFound, "L-240");
-    if (!studentFound) {
-      res.status(404).json({
-        errorMessage: {
-          message: ["Student Data Not Found!"],
-        },
-      });
-      return;
-    }
     if (studentFound?.studentStatusExtend?.enrollmentStatus === "approved") {
       res.status(400).json({
         errorMessage: {
@@ -341,7 +306,7 @@ async function updateApprovedStudentData(req, res, next) {
       });
       return;
     }
-    // Push student into his classLevel students array ✅
+    // Push classLevel into students classLevels array ✅
     if (
       !studentFound?.studentSchoolData?.classLevels?.includes(
         studentFound?.studentSchoolData?.currentClassLevel
@@ -374,10 +339,697 @@ async function updateApprovedStudentData(req, res, next) {
     return;
   }
 }
+async function updateMultiApprovedStudentData(req, res, next) {
+  const currentUser = req.user;
+  const { students, enrollmentApprovedBy } = req.body;
+
+  try {
+    //Check if students data is greater than 0
+    if (!students || students?.length < 1) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`No student data selected!`],
+        },
+      });
+      return;
+    }
+    //Find Admin
+    const adminFound = await User.findOne({ _id: currentUser?.id });
+    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're Not An Admin!"],
+        },
+      });
+      return;
+    }
+    if (currentUser?.id !== enrollmentApprovedBy) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're Not An Admin!"],
+        },
+      });
+      return;
+    }
+    students.forEach(async (student) => {
+      //Find student
+      const studentFound = await User.findOne({ uniqueId: student?.uniqueId });
+      if (studentFound?.studentStatusExtend?.enrollmentStatus === "pending") {
+        // Push classLevel into his students classLevels array ✅
+        if (
+          !studentFound?.studentSchoolData?.classLevels?.includes(
+            studentFound?.studentSchoolData?.currentClassLevel
+          )
+        ) {
+          studentFound.studentSchoolData.classLevels.push(
+            studentFound?.studentSchoolData?.currentClassLevel
+          );
+          await studentFound.save();
+        }
+        // push current academic year into students academic years array ✅
+        if (
+          !studentFound?.studentSchoolData?.academicYears?.includes(
+            studentFound?.studentSchoolData?.currentAcademicYear
+          )
+        ) {
+          studentFound.studentSchoolData.academicYears.push(
+            studentFound?.studentSchoolData?.currentAcademicYear
+          );
+          await studentFound.save();
+        }
+      }
+      // console.log(students);
+      // console.log(studentsData);
+
+      req.multiEnrollmentApprovalData = { students, adminFound };
+      next();
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: [`Internal Server Error!`],
+      },
+    });
+    return;
+  }
+}
+// For Students Promotions
+async function validatePromotionData(req, res, next) {
+  const { studentId } = req.params;
+  const { students, lastPromotedBy } = req.body;
+  const authAdmin = req.user;
+  try {
+    //Find admin taking action
+    const adminFound = await User.findOne({ _id: lastPromotedBy });
+    // Validate admin's ID
+    if (!adminFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    if (authAdmin && authAdmin?.id !== lastPromotedBy) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    //Find student to be promoted
+    const studentFound = await User.findOne({ uniqueId: studentId }).populate([
+      { path: "studentSchoolData.currentClassLevel" },
+    ]);
+    if (studentFound) {
+      if (
+        studentFound?.studentSchoolData?.currentClassLevel?.name === "Level 100"
+      ) {
+        req.promotionData = { studentFound, level100Student: true, adminFound };
+        next();
+      }
+      if (
+        studentFound?.studentSchoolData?.currentClassLevel?.name === "Level 200"
+      ) {
+        req.promotionData = { studentFound, level200Student: true, adminFound };
+        next();
+      }
+      if (
+        studentFound?.studentSchoolData?.currentClassLevel?.name === "Level 300"
+      ) {
+        req.promotionData = { studentFound, level300Student: true, adminFound };
+        next();
+      }
+    } else {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Student data not found!"],
+        },
+      });
+      return;
+    }
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      errorMessage: {
+        message: [`Internal Server Error! ${error?.message}`],
+      },
+    });
+  }
+}
+async function level100Promotion(req, res, next) {
+  const { studentFound, level100Student, adminFound } = req.promotionData;
+  try {
+    if (level100Student) {
+      //Find Student Current Class Level
+      const studentCurrentClassLevel = await ClassLevel.findOne({
+        _id: studentFound?.studentSchoolData?.currentClassLevel?._id,
+      });
+      if (!studentCurrentClassLevel) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's current class level data not found!"],
+          },
+        });
+        return;
+      }
+      //Find Student Next Class Level
+      const studentNextClassLevel = await ClassLevel.findOne({
+        name: "Level 200",
+      });
+      if (!studentNextClassLevel) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's next class level data not found!"],
+          },
+        });
+        return;
+      }
+      //Find Student Next Class Section
+      const studentNextClassSection = await ClassLevelSection.findOne({
+        classLevelName: "Level 200",
+        program: studentFound?.studentSchoolData?.divisionProgram
+          ? studentFound?.studentSchoolData?.divisionProgram
+          : studentFound?.studentSchoolData?.program,
+      });
+      if (!studentNextClassSection) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's next class section data not found!"],
+          },
+        });
+        return;
+      }
+      // Find student's next class teacher✅
+      const level200TeacherFound = await User.findOne({
+        _id: studentNextClassSection?.currentTeacher,
+      });
+      //Update student's currentClassLevel✅
+      //update his/her current classLevelSection✅
+      //Update student's next class-level-section teacher✅
+      //Update Student's Promotion Status Data✅
+      const promotedStudent = await User.findOneAndUpdate(
+        studentFound?._id,
+        {
+          "studentSchoolData.currentClassLevel": studentNextClassLevel?._id,
+          "studentSchoolData.currentClassLevelSection":
+            studentNextClassSection?._id,
+          "studentSchoolData.currentClassTeacher": level200TeacherFound?._id,
+          "studentStatusExtend.isPromoted": true,
+          "studentStatusExtend.isPromotedToLevel200": true,
+          "studentStatusExtend.lastPromotedBy": adminFound?._id,
+          "studentStatusExtend.promotionDate": new Date().toISOString(),
+        },
+        { new: true }
+      );
+      if (
+        level200TeacherFound &&
+        !studentFound?.studentSchoolData?.classTeachers?.includes(
+          level200TeacherFound?._id
+        )
+      ) {
+        studentFound.studentSchoolData.classTeachers.push(
+          level200TeacherFound?._id
+        );
+        await studentFound.save();
+      }
+      req.promotedStudent = promotedStudent;
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
+  }
+}
+async function level200Promotion(req, res, next) {
+  const { studentFound, level200Student, adminFound } = req.promotionData;
+  try {
+    if (level200Student) {
+      //Find Student Current Class Level
+      const studentCurrentClassLevel = await ClassLevel.findOne({
+        _id: studentFound?.studentSchoolData?.currentClassLevel?._id,
+      });
+      if (!studentCurrentClassLevel) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's current class level data not found!"],
+          },
+        });
+        return;
+      }
+      //Find Student Next Class Level
+      const studentNextClassLevel = await ClassLevel.findOne({
+        name: "Level 300",
+      });
+      if (!studentNextClassLevel) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's next class level data not found!"],
+          },
+        });
+        return;
+      }
+      //Find Student Next Class Section
+      const studentNextClassSection = await ClassLevelSection.findOne({
+        classLevelName: "Level 300",
+        program: studentFound?.studentSchoolData?.divisionProgram
+          ? studentFound?.studentSchoolData?.divisionProgram
+          : studentFound?.studentSchoolData?.program,
+      });
+      if (!studentNextClassSection) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's next class section data not found!"],
+          },
+        });
+        return;
+      }
+      // Find student's next class teacher✅
+      const level300TeacherFound = await User.findOne({
+        _id: studentNextClassSection?.currentTeacher,
+      });
+      //Update student's currentClassLevel✅
+      //update his/her current classLevelSection✅
+      //Update student's next class-level-section teacher✅
+      //Update Student's Promotion Status Data✅
+      const promotedStudent = await User.findOneAndUpdate(
+        studentFound?._id,
+        {
+          "studentSchoolData.currentClassLevel": studentNextClassLevel?._id,
+          "studentSchoolData.currentClassLevelSection":
+            studentNextClassSection?._id,
+          "studentSchoolData.currentClassTeacher": level300TeacherFound?._id,
+          "studentStatusExtend.isPromoted": true,
+          "studentStatusExtend.isPromotedToLevel300": true,
+          "studentStatusExtend.lastPromotedBy": adminFound?._id,
+          "studentStatusExtend.promotionDate": new Date().toISOString(),
+        },
+        { new: true }
+      );
+      if (
+        level300TeacherFound &&
+        !studentFound?.studentSchoolData?.classTeachers?.includes(
+          level300TeacherFound?._id
+        )
+      ) {
+        studentFound.studentSchoolData.classTeachers.push(
+          level300TeacherFound?._id
+        );
+        await studentFound.save();
+      }
+      req.promotedStudent = promotedStudent;
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
+  }
+}
+async function level300Promotion(req, res, next) {
+  const { studentFound, level300Student, adminFound } = req.promotionData;
+  try {
+    if (level300Student) {
+      const getCurrentYear = new Date().getFullYear();
+      //Find Student's House
+      const studentHouse = await House.findOne({
+        _id: studentFound?.studentSchoolData?.house,
+      });
+
+      //Find Student batch
+      let oldStudentsBatchFound;
+      if (getCurrentYear) {
+        const batchFound = await OldStudents.findOne({
+          yearOfGraduation: getCurrentYear,
+        });
+        if (batchFound) {
+          oldStudentsBatchFound = batchFound;
+        } else {
+          oldStudentsBatchFound = await OldStudents.create({
+            yearOfGraduation: getCurrentYear,
+          });
+        }
+      }
+      //Update student's currentClassLevel to null✅
+      //update his/her current classLevelSection to null✅
+      //update his/her currentAcademicYear state to null✅
+      //Update student's class teacher to null✅
+      //Update Student's Promotion Status Data✅
+      const graduatedStudent = await User.findOneAndUpdate(
+        studentFound?._id,
+        {
+          "studentSchoolData.currentClassLevel": null,
+          "studentSchoolData.currentClassLevelSection": null,
+          "studentSchoolData.currentAcademicYear": null,
+          "studentSchoolData.currentClassTeacher": null,
+          "studentStatusExtend.isGraduated": true,
+          "studentStatusExtend.enrollmentStatus": "graduated",
+          "studentStatusExtend.yearGraduated": new Date().getFullYear(),
+          "studentStatusExtend.isStudent": false,
+          "studentStatusExtend.graduatedBy": adminFound?._id,
+          "studentStatusExtend.dateGraduated": new Date().toISOString(),
+        },
+        { new: true }
+      );
+      if (studentHouse?.students?.includes(studentFound?._id)) {
+        studentHouse.students.pull(studentFound?._id);
+        await studentHouse.save();
+      }
+      if (
+        oldStudentsBatchFound &&
+        !oldStudentsBatchFound?.students?.includes(studentFound?._id)
+      ) {
+        oldStudentsBatchFound.students.push(studentFound?._id);
+        await oldStudentsBatchFound.save();
+      }
+      req.promotedStudent = graduatedStudent;
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
+  }
+}
+async function validateMultiStudentsPromotionData(req, res, next) {
+  const { students, classLevel, lastPromotedBy } = req.body;
+  const authAdmin = req.user;
+  try {
+    //Check if students data is greater than 0
+    if (!students || students?.length < 1) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`No student data selected!`],
+        },
+      });
+      return;
+    }
+    //Find admin taking action
+    const adminFound = await User.findOne({ _id: lastPromotedBy });
+    // Validate admin's ID
+    if (!adminFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    if (authAdmin && authAdmin?.id !== lastPromotedBy) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an authorized admin"],
+        },
+      });
+      return;
+    }
+    if (classLevel) {
+      if (classLevel === "Level 100") {
+        req.promotionData = { students, isLevel100Students: true, adminFound };
+        next();
+      }
+      if (classLevel === "Level 200") {
+        req.promotionData = { students, isLevel200Students: true, adminFound };
+        next();
+      }
+      if (classLevel === "Level 300") {
+        req.promotionData = { students, isLevel300Students: true, adminFound };
+        next();
+      }
+    } else {
+      res.status(404).json({
+        errorMessage: {
+          message: ["No class-level specified!"],
+        },
+      });
+      return;
+    }
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      errorMessage: {
+        message: [`Internal Server Error! ${error?.message}`],
+      },
+    });
+  }
+}
+async function level100MultiStudentsPromotion(req, res, next) {
+  const { students, isLevel100Students, adminFound } = req.promotionData;
+  try {
+    if (isLevel100Students) {
+      //Find Students Next Class Level
+      const studentNextClassLevel = await ClassLevel.findOne({
+        name: "Level 200",
+      });
+      if (!studentNextClassLevel) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's next class level data not found!"],
+          },
+        });
+        return;
+      }
+      students.forEach(async (student) => {
+        //Find Student Next Class Section
+        const studentNextClassSection = await ClassLevelSection.findOne({
+          classLevelName: "Level 200",
+          program: student?.studentSchoolData?.divisionProgram
+            ? student?.studentSchoolData?.divisionProgram
+            : student?.studentSchoolData?.program,
+        });
+        // if (!studentNextClassSection) {
+        //   res.status(404).json({
+        //     errorMessage: {
+        //       message: ["Student's next class section data not found!"],
+        //     },
+        //   });
+        //   return;
+        // }
+        // Find student's next class teacher✅
+        const level200TeacherFound = await User.findOne({
+          _id: studentNextClassSection?.currentTeacher,
+        });
+        //Update student's currentClassLevel✅
+        //update his/her current classLevelSection✅
+        //Update student's next class-level-section teacher✅
+        //Update Student's Promotion Status Data✅
+        await User.findOneAndUpdate(
+          student?._id,
+          {
+            "studentSchoolData.currentClassLevel": studentNextClassLevel?._id,
+            "studentSchoolData.currentClassLevelSection":
+              studentNextClassSection?._id,
+            "studentSchoolData.currentClassTeacher": level200TeacherFound?._id,
+            "studentStatusExtend.isPromoted": true,
+            "studentStatusExtend.isPromotedToLevel200": true,
+            "studentStatusExtend.lastPromotedBy": adminFound?._id,
+            "studentStatusExtend.promotionDate": new Date().toISOString(),
+          },
+          { new: true }
+        );
+        if (
+          level200TeacherFound &&
+          !student?.studentSchoolData?.classTeachers?.includes(
+            level200TeacherFound?._id
+          )
+        ) {
+          student.studentSchoolData.classTeachers.push(
+            level200TeacherFound?._id
+          );
+          await student.save();
+        }
+      });
+      req.promotedStudents = students;
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
+  }
+}
+async function level200MultiStudentsPromotion(req, res, next) {
+  const { students, isLevel200Students, adminFound } = req.promotionData;
+  try {
+    if (isLevel200Students) {
+      //Find Students Next Class Level
+      const studentNextClassLevel = await ClassLevel.findOne({
+        name: "Level 300",
+      });
+      if (!studentNextClassLevel) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Student's next class level data not found!"],
+          },
+        });
+        return;
+      }
+      students.forEach(async (student) => {
+        //Find Student Next Class Section
+        const studentNextClassSection = await ClassLevelSection.findOne({
+          classLevelName: "Level 300",
+          program: student?.studentSchoolData?.divisionProgram
+            ? student?.studentSchoolData?.divisionProgram
+            : student?.studentSchoolData?.program,
+        });
+        // if (!studentNextClassSection) {
+        //   res.status(404).json({
+        //     errorMessage: {
+        //       message: ["Student's next class section data not found!"],
+        //     },
+        //   });
+        //   return;
+        // }
+        // Find student's next class teacher✅
+        const level300TeacherFound = await User.findOne({
+          _id: studentNextClassSection?.currentTeacher,
+        });
+        //Update student's currentClassLevel✅
+        //update his/her current classLevelSection✅
+        //Update student's next class-level-section teacher✅
+        //Update Student's Promotion Status Data✅
+        await User.findOneAndUpdate(
+          student?._id,
+          {
+            "studentSchoolData.currentClassLevel": studentNextClassLevel?._id,
+            "studentSchoolData.currentClassLevelSection":
+              studentNextClassSection?._id,
+            "studentSchoolData.currentClassTeacher": level300TeacherFound?._id,
+            "studentStatusExtend.isPromoted": true,
+            "studentStatusExtend.isPromotedToLevel300": true,
+            "studentStatusExtend.lastPromotedBy": adminFound?._id,
+            "studentStatusExtend.promotionDate": new Date().toISOString(),
+          },
+          { new: true }
+        );
+        if (
+          level300TeacherFound &&
+          !student?.studentSchoolData?.classTeachers?.includes(
+            level300TeacherFound?._id
+          )
+        ) {
+          student.studentSchoolData.classTeachers.push(
+            level300TeacherFound?._id
+          );
+          await student.save();
+        }
+      });
+      req.promotedStudents = students;
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
+  }
+}
+async function level300MultiStudentsPromotion(req, res, next) {
+  const { students, isLevel300Students, adminFound } = req.promotionData;
+  const getCurrentYear = new Date().getFullYear();
+  try {
+    //Find Student batch
+    let oldStudentsBatchFound;
+    if (getCurrentYear) {
+      const batchFound = await OldStudents.findOne({
+        yearOfGraduation: getCurrentYear,
+      });
+      if (batchFound) {
+        oldStudentsBatchFound = batchFound;
+      } else {
+        oldStudentsBatchFound = await OldStudents.create({
+          yearOfGraduation: getCurrentYear,
+        });
+      }
+    }
+    if (isLevel300Students) {
+      students.forEach(async (student) => {
+        //Find Student's House
+        const studentHouse = await House.findOne({
+          _id: student?.studentSchoolData?.house,
+        });
+        //Update student's currentClassLevel to null✅
+        //update his/her current classLevelSection to null✅
+        //update his/her currentAcademicYear state to null✅
+        //Update student's class teacher to null✅
+        //Update Student's Promotion Status Data✅
+        await User.findOneAndUpdate(
+          student?._id,
+          {
+            "studentSchoolData.currentClassLevel": null,
+            "studentSchoolData.currentClassLevelSection": null,
+            "studentSchoolData.currentAcademicYear": null,
+            "studentSchoolData.currentClassTeacher": null,
+            "studentStatusExtend.isGraduated": true,
+            "studentStatusExtend.enrollmentStatus": "graduated",
+            "studentStatusExtend.yearGraduated": new Date().getFullYear(),
+            "studentStatusExtend.isStudent": false,
+            "studentStatusExtend.graduatedBy": adminFound?._id,
+            "studentStatusExtend.dateGraduated": new Date().toISOString(),
+          },
+          { new: true }
+        );
+        if (studentHouse?.students?.includes(student?._id)) {
+          studentHouse.students.pull(student?._id);
+          await studentHouse.save();
+        }
+        if (
+          oldStudentsBatchFound &&
+          !oldStudentsBatchFound?.students?.includes(student?._id)
+        ) {
+          oldStudentsBatchFound.students.push(student?._id);
+          await oldStudentsBatchFound.save();
+        }
+      });
+      req.promotedStudents = students;
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
+  }
+}
+
 module.exports = {
-  findSectionProgramme,
   validateStudentPlacementData,
   studentProgramme,
   studentClass,
   updateApprovedStudentData,
+  updateMultiApprovedStudentData,
+  validatePromotionData,
+  level100Promotion,
+  level200Promotion,
+  level300Promotion,
+  validateMultiStudentsPromotionData,
+  level100MultiStudentsPromotion,
+  level200MultiStudentsPromotion,
+  level300MultiStudentsPromotion,
 };

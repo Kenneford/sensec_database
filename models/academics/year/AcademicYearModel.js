@@ -5,7 +5,7 @@ const academicYearSchema = new mongoose.Schema(
     yearRange: {
       type: String,
       default: function () {
-        return `${this.fromYear}-${this.toYear}`;
+        return `${this.fromYear}/${this.toYear}`;
       },
     },
     fromYear: {
@@ -19,34 +19,30 @@ const academicYearSchema = new mongoose.Schema(
     description: {
       type: String,
       default: function () {
-        return `This is ${this.yearRange.replace(/-/g, "/")} academic year`;
+        return `This is ${this.yearRange} academic year`;
       },
     },
     isCurrent: {
       type: Boolean,
       default: false,
     },
+    isNext: {
+      type: Boolean,
+      default: false,
+    },
+    isAutoCreated: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      // required: true,
     },
     lastUpdatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    // students: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "User",
-    //   },
-    // ],
-    // teachers: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "User",
-    //   },
-    // ],
   },
   {
     timestamps: true,

@@ -6,7 +6,7 @@ const User = require("../../../models/user/UserModel");
 module.exports.createClassLevelSection = async (req, res) => {
   const currentUser = req.user;
   const programData = req.sectionProgram;
-  const data = req.body;
+  const { data } = req.body;
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
@@ -51,6 +51,16 @@ module.exports.createClassLevelSection = async (req, res) => {
         "studentSchoolData.divisionProgram": programData?.programFound?._id,
         "studentSchoolData.currentClassLevel": classLevelFound?._id,
       });
+      if (programData?.programFound?.divisionName !== data?.sectionName) {
+        res.status(404).json({
+          errorMessage: {
+            message: [
+              `Section name doesn't match selected division programme!`,
+            ],
+          },
+        });
+        return;
+      }
       //create
       const classSectionCreated = await ClassLevelSection.create({
         sectionName: data?.sectionName,
@@ -63,7 +73,7 @@ module.exports.createClassLevelSection = async (req, res) => {
       if (classSectionCreated) {
         //   push classLevelSection into admin's classLevel sections array❓
         if (
-          !adminFound?.adminActionsData?.classLevelSections.includes(
+          !adminFound?.adminActionsData?.classLevelSectionsCreated.includes(
             classSectionCreated._id
           )
         ) {
@@ -129,7 +139,7 @@ module.exports.createClassLevelSection = async (req, res) => {
       if (classSectionCreated) {
         //   push classLevelSection into admin's classLevel sections array❓
         if (
-          !adminFound?.adminActionsData?.classLevelSections.includes(
+          !adminFound?.adminActionsData?.classLevelSectionsCreatedCreated.includes(
             classSectionCreated._id
           )
         ) {
@@ -137,7 +147,8 @@ module.exports.createClassLevelSection = async (req, res) => {
             adminFound._id,
             {
               $push: {
-                "adminActionsData.classLevelSections": classSectionCreated?._id,
+                "adminActionsData.classLevelSectionsCreated":
+                  classSectionCreated?._id,
               },
             },
             { upsert: true }
@@ -196,21 +207,29 @@ module.exports.createClassLevelSection = async (req, res) => {
 };
 // Assign class section teacher ✅
 module.exports.assignClassSectionLecturer = async (req, res) => {
-  const { lecturerId, classSectionId } = req.body;
+  const { data } = req.body;
   const currentUser = req.user;
   try {
     //Find Admin
-    const adminFound = await User.findOne({ _id: currentUser?.id });
+    const adminFound = await User.findOne({ _id: data?.lecturerAssignedBy });
     if (!adminFound || !currentUser?.roles?.includes("admin")) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation denied! You're not an admin!"],
+        },
+      });
+      return;
+    }
+    if (currentUser?.id !== data?.lecturerAssignedBy) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an admin!"],
         },
       });
       return;
     }
     // Find lecturer
-    const lecturerFound = await User.findOne({ _id: lecturerId });
+    const lecturerFound = await User.findOne({ uniqueId: data?.lecturerId });
     if (!lecturerFound) {
       res.status(404).json({
         errorMessage: {
@@ -221,12 +240,12 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
     }
     // Check if lecturer's employment has been approved
     if (
-      (lecturerFound && !lecturerFound?.teacherStatusExtend?.isTeacher) ||
+      (lecturerFound && !lecturerFound?.lecturerStatusExtend?.isLecturer) ||
       lecturerFound?.employment?.employmentStatus !== "approved"
     ) {
       res.status(404).json({
         errorMessage: {
-          message: [`Teacher not yet approved!`],
+          message: [`Lecturer not yet approved!`],
         },
       });
       return;
@@ -234,7 +253,7 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
     // Check if lecturer already has a class
     if (
       lecturerFound &&
-      lecturerFound?.teacherSchoolData?.isClassLevelTeacher
+      lecturerFound?.lecturerSchoolData?.isClassLevelTeacher
     ) {
       res.status(404).json({
         errorMessage: {
@@ -244,20 +263,25 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
       return;
     }
     const classSectionFound = await ClassLevelSection.findOne({
-      _id: classSectionId,
+      _id: data?.classSectionId,
     });
     if (classSectionFound) {
+      // Find all students in this class
+      const studentsFoundInThisClass = await User?.find({
+        "studentSchoolData.currentClassLevelSection": classSectionFound?._id,
+        "studentStatusExtend.isStudent": true,
+      });
       //Assign teacher to classLevel section✅
       //Update teacher's classLevelHandling and isClassLevelTeacher status❓
       if (
         lecturerFound &&
-        !lecturerFound?.teacherSchoolData?.isClassLevelTeacher
+        !lecturerFound?.lecturerSchoolData?.isClassLevelTeacher
       ) {
         await User.findOneAndUpdate(
-          lecturerFound._id,
+          lecturerFound?._id,
           {
-            "teacherSchoolData.classLevelHandling": classSectionFound?._id,
-            "teacherSchoolData.isClassLevelTeacher": true,
+            "lecturerSchoolData.classLevelHandling": classSectionFound?._id,
+            "lecturerSchoolData.isClassLevelTeacher": true,
           },
           { new: true }
         );
@@ -265,15 +289,15 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
       //Push classLevel into teacher's classLevel array✅
       if (
         lecturerFound &&
-        !lecturerFound?.teacherSchoolData?.classLevels?.includes(
+        !lecturerFound?.lecturerSchoolData?.classLevels?.includes(
           classSectionFound?.classLevelId
         )
       ) {
         await User.findOneAndUpdate(
-          lecturerFound._id,
+          lecturerFound?._id,
           {
             $push: {
-              "teacherSchoolData.classLevels": classSectionFound?.classLevelId,
+              "lecturerSchoolData.classLevels": classSectionFound?.classLevelId,
             },
           },
           { upsert: true }
@@ -282,23 +306,56 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
       //Push class section into teacher's class sections array✅
       if (
         lecturerFound &&
-        !lecturerFound?.teacherSchoolData?.classSections?.includes(
+        !lecturerFound?.lecturerSchoolData?.classSections?.includes(
           classSectionFound?._id
         )
       ) {
         await User.findOneAndUpdate(
-          lecturerFound._id,
+          lecturerFound?._id,
           {
             $push: {
-              "teacherSchoolData.classSections": classSectionFound?._id,
+              "lecturerSchoolData.classSections": classSectionFound?._id,
             },
           },
           { upsert: true }
         );
       }
+      // Update current lecturer for all students
+      if (studentsFoundInThisClass) {
+        studentsFoundInThisClass?.forEach(async (student) => {
+          if (student) {
+            await User.findOneAndUpdate(
+              student._id,
+              {
+                "studentSchoolData.currentClassTeacher": lecturerFound?._id,
+              },
+              { new: true }
+            );
+          }
+          if (
+            student &&
+            !student?.studentSchoolData?.classTeachers?.includes(
+              lecturerFound?._id
+            )
+          )
+            await User.findOneAndUpdate(
+              student._id,
+              {
+                $push: {
+                  "studentSchoolData.classTeachers": lecturerFound?._id,
+                },
+              },
+              { upsert: true, new: true }
+            );
+        });
+      }
       const updatedClassSection = await ClassLevelSection.findOneAndUpdate(
         classSectionFound?._id,
-        { currentTeacher: lecturerFound._id, lastUpdatedBy: adminFound?.id },
+        {
+          currentTeacher: lecturerFound._id,
+          lecturerAssignedBy: adminFound?._id,
+          lastUpdatedBy: adminFound?._id,
+        },
         { new: true }
       );
       res.status(201).json({
@@ -324,21 +381,33 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
 };
 // Remove class section teacher ✅
 module.exports.removeClassSectionLecturer = async (req, res) => {
-  const { lecturerId } = req.params;
+  const { data } = req.body;
+  console.log(data?.previousLecturerRemovedBy);
+
   const currentUser = req.user;
   try {
     //Find Admin
-    const adminFound = await User.findOne({ _id: currentUser?.id });
+    const adminFound = await User.findOne({
+      _id: data?.previousLecturerRemovedBy,
+    });
     if (!adminFound || !currentUser?.roles?.includes("admin")) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation denied! You're not an admin!"],
+        },
+      });
+      return;
+    }
+    if (currentUser?.id !== data?.previousLecturerRemovedBy) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an admin!"],
         },
       });
       return;
     }
     // Find lecturer
-    const lecturerFound = await User.findOne({ _id: lecturerId });
+    const lecturerFound = await User.findOne({ uniqueId: data?.lecturerId });
     if (!lecturerFound) {
       res.status(404).json({
         errorMessage: {
@@ -348,24 +417,42 @@ module.exports.removeClassSectionLecturer = async (req, res) => {
       return;
     }
     const classSectionFound = await ClassLevelSection.findOne({
-      _id: lecturerFound?.teacherSchoolData?.classLevelHandling,
+      _id: data?.classSectionId,
     });
     if (classSectionFound) {
+      // Find all students in this class
+      const studentsFoundInThisClass = await User?.find({
+        "studentSchoolData.currentClassLevelSection": classSectionFound?._id,
+        "studentSchoolData.studentStatusExtend.isStudent": true,
+      });
       //Assign teacher to classLevel section✅
       //Update teacher's classLevelHandling and isClassLevelTeacher status❓
       if (lecturerFound) {
         await User.findOneAndUpdate(
           lecturerFound._id,
           {
-            "teacherSchoolData.classLevelHandling": null,
-            "teacherSchoolData.isClassLevelTeacher": false,
+            "lecturerSchoolData.classLevelHandling": null,
+            "lecturerSchoolData.isClassLevelTeacher": false,
           },
           { new: true }
         );
       }
+      // Update current lecturer for all students
+      if (studentsFoundInThisClass) {
+        studentsFoundInThisClass?.forEach(async (student) => {
+          if (student) {
+            student.studentSchoolData.currentClassTeacher = null;
+            await student.save();
+          }
+        });
+      }
       const updatedClassSection = await ClassLevelSection.findOneAndUpdate(
         classSectionFound?._id,
-        { currentTeacher: null, lastUpdatedBy: adminFound?.id },
+        {
+          currentTeacher: null,
+          previousLecturerRemovedBy: adminFound?._id,
+          lastUpdatedBy: adminFound?._id,
+        },
         { new: true }
       );
       res.status(201).json({
@@ -394,6 +481,8 @@ exports.getAllClassLevelSections = async (req, res) => {
   try {
     const classSections = await ClassLevelSection.find({}).populate([
       { path: "currentTeacher" },
+      { path: "program" },
+      { path: "divisionProgram" },
       { path: "createdBy" },
       {
         path: "lastUpdatedBy",
@@ -544,7 +633,7 @@ exports.deleteClassLevelSection = async (req, res) => {
     });
     if (
       deletedClassSection &&
-      adminFound?.adminActionsData?.classLevelSections?.includes(
+      adminFound?.adminActionsData?.classLevelSectionsCreated?.includes(
         deletedClassSection?._id
       )
     ) {

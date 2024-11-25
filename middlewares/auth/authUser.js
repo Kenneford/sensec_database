@@ -168,7 +168,11 @@ async function validateUserSignUpData(req, res, next) {
     }
     // Check if user is an admin and his/her employment has been approved
     if (userFound && userFound?.roles?.includes("admin")) {
-      if (userFound && userFound?.employment?.employmentStatus !== "approved") {
+      if (
+        userFound &&
+        userFound?.employment?.employmentStatus !== "approved" &&
+        !userFound?.adminStatusExtend?.isAdmin
+      ) {
         res.status(404).json({
           errorMessage: {
             message: [`Sign-up denied! Your employment not yet approved!`],

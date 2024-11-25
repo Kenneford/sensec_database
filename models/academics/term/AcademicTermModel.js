@@ -22,6 +22,10 @@ const academicTermSchema = new Schema(
       type: Date,
       required: true,
     },
+    year: {
+      type: String,
+      required: true,
+    },
     duration: {
       type: String,
       required: true,
@@ -36,6 +40,10 @@ const academicTermSchema = new Schema(
       ref: "User",
     },
     isCurrent: {
+      type: Boolean,
+      default: false,
+    },
+    isNext: {
       type: Boolean,
       default: false,
     },

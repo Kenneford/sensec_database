@@ -2,13 +2,13 @@ const House = require("../../../models/academics/house/HouseModel");
 const User = require("../../../models/user/UserModel");
 
 module.exports.createHouse = async (req, res) => {
-  const { name, createdBy } = req.body;
+  const { data } = req.body;
   try {
     const error = [];
-    if (!name) {
+    if (!data?.name) {
       error.push("Name Of House Required!");
     }
-    if (!createdBy) {
+    if (!data?.createdBy) {
       error.push("Operation Denied! You're Not An admin!");
     }
     if (error.length > 0) {
@@ -19,7 +19,7 @@ module.exports.createHouse = async (req, res) => {
       });
       return;
     }
-    const foundAdmin = await User.findOne({ _id: createdBy });
+    const foundAdmin = await User.findOne({ _id: data?.createdBy });
     if (!foundAdmin) {
       res.status(403).json({
         errorMessage: {
@@ -28,27 +28,31 @@ module.exports.createHouse = async (req, res) => {
       });
       return;
     }
-    const existingHouse = await House.findOne({ name });
+    const existingHouse = await House.findOne({ name: data?.name });
     if (existingHouse) {
       res.status(400).json({
         errorMessage: {
-          message: [`${existingHouse.name} Already Exists!`],
+          message: [`${existingHouse.name} already exists!`],
         },
       });
       return;
     } else {
       const newHouse = await House.create({
-        name,
-        createdBy,
+        name: data?.name,
+        createdBy: data?.createdBy,
       });
       if (newHouse) {
         try {
-          if (!foundAdmin?.adminActionsData?.houses?.includes(newHouse?._id)) {
+          if (
+            !foundAdmin?.adminActionsData?.housesCreated?.includes(
+              newHouse?._id
+            )
+          ) {
             await User.findOneAndUpdate(
               foundAdmin?._id,
               {
                 $push: {
-                  "adminActionsData.houses": newHouse?._id,
+                  "adminActionsData.housesCreated": newHouse?._id,
                 },
               },
               { upsert: true }
