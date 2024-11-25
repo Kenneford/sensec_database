@@ -13,7 +13,7 @@ const {
 const router = require("express").Router();
 
 router.post(
-  "/placement/batches/add",
+  "/placement/batches/create",
   authUser,
   authUserRole({ userRoles: { admin: "admin" } }),
   addPlacementBatch

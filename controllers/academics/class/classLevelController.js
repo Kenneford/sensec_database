@@ -4,18 +4,10 @@ const User = require("../../../models/user/UserModel");
 // Create class level ✅
 module.exports.createClassLevel = async (req, res) => {
   const currentUser = req.user;
-  const data = req.body;
-  if (!data?.name) {
-    res.status(403).json({
-      errorMessage: {
-        message: ["Class level's name required!"],
-      },
-    });
-    return;
-  }
+  const { classLevelData } = req.body;
   try {
     //Find Admin
-    const adminFound = await User.findOne({ _id: data?.createdBy });
+    const adminFound = await User.findOne({ _id: classLevelData?.createdBy });
 
     if (!adminFound || !currentUser?.roles?.includes("admin")) {
       res.status(403).json({
@@ -25,26 +17,34 @@ module.exports.createClassLevel = async (req, res) => {
       });
       return;
     }
+    if (!classLevelData?.name) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Class level's name required!"],
+        },
+      });
+      return;
+    }
     //Check if class level exists
-    const classLevel = await ClassLevel.findOne({ name: data?.name });
+    const classLevel = await ClassLevel.findOne({ name: classLevelData?.name });
     if (classLevel) {
       res.status(403).json({
         errorMessage: {
-          message: ["Class Level Already Exists!"],
+          message: [`Class ${classLevel?.name} already exists!`],
         },
       });
       return;
     }
     //create
     const classLevelCreated = await ClassLevel.create({
-      name: data?.name,
-      createdBy: data?.createdBy,
+      name: classLevelData?.name,
+      createdBy: classLevelData?.createdBy,
     });
     if (classLevelCreated) {
       //   push class-level into admin's class levels array✅
       if (
         adminFound &&
-        !adminFound?.adminActionsData?.classLevels.includes(
+        !adminFound?.adminActionsData?.classLevelsCreated.includes(
           classLevelCreated._id
         )
       ) {
@@ -52,7 +52,7 @@ module.exports.createClassLevel = async (req, res) => {
           adminFound._id,
           {
             $push: {
-              "adminActionsData.classLevels": classLevelCreated?._id,
+              "adminActionsData.classLevelsCreated": classLevelCreated?._id,
             },
           },
           { upsert: true }
@@ -70,6 +70,8 @@ module.exports.createClassLevel = async (req, res) => {
       classLevel: classLevelCreated,
     });
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({
       errorMessage: {
         message: ["Internal Server Error!"],

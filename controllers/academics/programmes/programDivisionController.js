@@ -4,21 +4,28 @@ const User = require("../../../models/user/UserModel");
 
 // Create Program Division ✅
 module.exports.createDivisionProgram = async (req, res) => {
-  const data = req.body;
-  const user = req.user;
+  const currentUser = req.user;
+  const { data } = req.body;
   console.log(data);
   try {
     //Find Admin
-    const foundAdmin = await User.findOne({ _id: data?.createdBy });
-    if (!foundAdmin || !user?.roles?.includes("admin")) {
+    const adminFound = await User.findOne({ _id: data?.createdBy });
+    if (!adminFound || !currentUser?.roles?.includes("admin")) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation denied! You're not an admin!"],
         },
       });
       return;
     }
-
+    if (currentUser?.id !== data?.createdBy) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation denied! You're not an admin!"],
+        },
+      });
+      return;
+    }
     //Find program
     const program = await Program.findOne({ _id: data?.programId });
     if (!program) {
@@ -49,23 +56,6 @@ module.exports.createDivisionProgram = async (req, res) => {
       createdBy: data?.createdBy,
     });
     try {
-      //   push division program into admin's programs array✅
-      if (
-        foundAdmin &&
-        !foundAdmin?.adminActionsData?.programs?.includes(
-          newDivisionProgram?._id
-        )
-      ) {
-        await User.findOneAndUpdate(
-          foundAdmin?._id,
-          {
-            $push: {
-              "adminActionsData.programs": newDivisionProgram?._id,
-            },
-          },
-          { upsert: true }
-        );
-      }
       // Push newly created division programme into its mother-programme divisionPrograms array✅
       if (
         program &&

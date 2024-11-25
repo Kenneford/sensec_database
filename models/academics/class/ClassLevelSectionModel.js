@@ -88,6 +88,14 @@ const classLevelSectionSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    lecturerAssignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    previousLecturerRemovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     lastUpdatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

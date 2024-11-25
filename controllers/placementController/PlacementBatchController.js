@@ -3,7 +3,7 @@ const User = require("../../models/user/UserModel");
 
 // Create placement batch ✅
 module.exports.addPlacementBatch = async (req, res) => {
-  const { year, createdBy } = req.body;
+  const { placementBatch } = req.body;
   const currentUser = req.user;
   try {
     //Find Admin
@@ -16,7 +16,7 @@ module.exports.addPlacementBatch = async (req, res) => {
       });
       return;
     }
-    if (currentUser?.id !== createdBy) {
+    if (currentUser?.id !== placementBatch?.createdBy) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admin!"],
@@ -24,7 +24,7 @@ module.exports.addPlacementBatch = async (req, res) => {
       });
       return;
     }
-    if (!year) {
+    if (!placementBatch?.year) {
       res.status(400).json({
         errorMessage: {
           message: [`Placement Batch Year Required!`],
@@ -32,21 +32,40 @@ module.exports.addPlacementBatch = async (req, res) => {
       });
       return;
     }
-    const existingBatch = await PlacementBatch.findOne({ year });
+    const existingBatch = await PlacementBatch.findOne({
+      year: placementBatch?.year,
+    });
     if (existingBatch) {
       res.status(400).json({
         errorMessage: {
-          message: [`Placement Batch Year ${year} Already Exists!`],
+          message: [`Placement batch ${existingBatch?.year} already exists!`],
         },
       });
       return;
     }
     const newBatch = await PlacementBatch.create({
-      year,
-      createdBy,
+      year: placementBatch?.year,
+      createdBy: placementBatch?.createdBy,
     });
+    //   push placement batch into admin's created placement batches array✅
+    if (
+      adminFound &&
+      !adminFound?.adminActionsData?.placementBatchesCreated.includes(
+        newBatch._id
+      )
+    ) {
+      await User.findOneAndUpdate(
+        adminFound._id,
+        {
+          $push: {
+            "adminActionsData.placementBatchesCreated": newBatch?._id,
+          },
+        },
+        { upsert: true }
+      );
+    }
     res.status(201).json({
-      successMessage: "Placement Batch Added Successfully...",
+      successMessage: "Placement batch created successfully",
       placementBatch: newBatch,
     });
   } catch (error) {

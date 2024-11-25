@@ -4,20 +4,9 @@ const User = require("../../../models/user/UserModel");
 // Create Academic Term ✅
 module.exports.createAcademicTerm = async (req, res) => {
   const currentUser = req.user;
-  const data = req.body;
-  if (currentUser?.id !== data?.createdBy) {
-    res.status(403).json({
-      errorMessage: { message: ["Operation denied! You're not an admin!"] },
-    });
-    return;
-  }
-  const requiredField = data?.name || data?.from || data?.to || data?.createdBy;
-  if (!requiredField) {
-    res.status(403).json({
-      errorMessage: { message: ["Fill all required fields!"] },
-    });
-    return;
-  }
+  const { academicTermData } = req.body;
+  console.log(academicTermData);
+
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
@@ -27,9 +16,26 @@ module.exports.createAcademicTerm = async (req, res) => {
       });
       return;
     }
+    if (currentUser?.id !== academicTermData?.createdBy) {
+      res.status(403).json({
+        errorMessage: { message: ["Operation denied! You're not an admin!"] },
+      });
+      return;
+    }
+    const requiredField =
+      academicTermData?.name ||
+      academicTermData?.from ||
+      academicTermData?.to ||
+      academicTermData?.createdBy;
+    if (!requiredField) {
+      res.status(403).json({
+        errorMessage: { message: ["Fill all required fields!"] },
+      });
+      return;
+    }
     //check if exists
     const academicTerm = await AcademicTerm.findOne({
-      name: data?.name,
+      name: academicTermData?.name,
     });
     if (academicTerm) {
       res.status(403).json({
@@ -41,16 +47,16 @@ module.exports.createAcademicTerm = async (req, res) => {
     }
     //create
     const academicTermCreated = await AcademicTerm.create({
-      name: data?.name,
-      from: data?.from,
-      to: data?.to,
-      duration: data?.duration,
-      createdBy: data?.createdBy,
+      name: academicTermData?.name,
+      from: academicTermData?.from,
+      to: academicTermData?.to,
+      duration: academicTermData?.duration,
+      createdBy: academicTermData?.createdBy,
     });
     if (academicTermCreated) {
       // Push academic term into admin
       if (
-        !adminFound?.adminActionsData?.academicTerms.includes(
+        !adminFound?.adminActionsData?.academicTermsCreated.includes(
           academicTermCreated?._id
         )
       ) {
@@ -58,7 +64,7 @@ module.exports.createAcademicTerm = async (req, res) => {
           adminFound._id,
           {
             $push: {
-              "adminActionsData.academicTerms": academicTermCreated?._id,
+              "adminActionsData.academicTermsCreated": academicTermCreated?._id,
             },
           },
           { upsert: true }
@@ -84,7 +90,7 @@ module.exports.createAcademicTerm = async (req, res) => {
   }
 };
 // Get all Academic Terms ✅
-exports.getAllAcademicTerms = async (req, res) => {
+module.exports.getAllAcademicTerms = async (req, res) => {
   try {
     const academicTerms = await AcademicTerm.find({});
     if (academicTerms) {
@@ -108,7 +114,7 @@ exports.getAllAcademicTerms = async (req, res) => {
   }
 };
 // Get single Academic Term ✅
-exports.getSingleAcademicTerm = async (req, res) => {
+module.exports.getSingleAcademicTerm = async (req, res) => {
   const { termId } = req.params;
   try {
     const academicTerm = await AcademicTerm.findOne({ _id: termId });
@@ -132,8 +138,65 @@ exports.getSingleAcademicTerm = async (req, res) => {
     return;
   }
 };
+// Set next academic term ✅
+module.exports.setNextAcademicTerm = async (req, res) => {
+  const { semesterId } = req.params;
+
+  try {
+    // Step 1: Ensure all other semesters' `isNext` is set to false
+    await AcademicTerm.updateMany({}, { $set: { isNext: false } });
+
+    // Step 2: Set the selected semester as `isNext`
+    const updatedSemester = await AcademicTerm.findOneAndUpdate(
+      semesterId,
+      { $set: { isNext: true } },
+      { new: true }
+    );
+
+    if (!updatedSemester) {
+      return res
+        .status(404)
+        .json({ errorMessage: { message: "Semester not found" } });
+    }
+
+    res.status(200).json({
+      message: `Semester ${updatedSemester.name} is now marked as next.`,
+      nextSemester: updatedSemester,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating semester", error });
+  }
+};
+module.exports.getCurrentAcademicTerm = async (req, res) => {
+  const now = new Date();
+  try {
+    const currentAcademicTerm = await AcademicTerm.findOne({
+      from: { $lte: now },
+      to: { $gte: now },
+      isCurrent: true,
+    });
+    if (currentAcademicTerm) {
+      res.status(201).json({
+        successMessage: "Academic semester fetched successfully!",
+        currentAcademicTerm,
+      });
+    } else {
+      res.status(404).json({
+        errorMessage: {
+          message: ["No active semester found!"],
+        },
+      });
+      return;
+    }
+  } catch (error) {
+    res.status(403).json({
+      errorMessage: { message: [`Internal Server Error! ${error?.message}`] },
+    });
+    return;
+  }
+};
 // Update  Academic Term ✅
-exports.updateAcademicTerm = async (req, res) => {
+module.exports.updateAcademicTerm = async (req, res) => {
   const currentUser = req.user;
   const { termId } = req.params;
   const data = req.body;
@@ -179,6 +242,9 @@ exports.updateAcademicTerm = async (req, res) => {
           new: true,
         }
       );
+      // Trigger the isCurrent semester update function
+      await updateCurrentSemester();
+
       res.status(201).json({
         successMessage: "Academic term updated successfully!",
         updatedAcademicTerm,
@@ -198,7 +264,7 @@ exports.updateAcademicTerm = async (req, res) => {
   }
 };
 // Delete  Academic Term ✅
-exports.deleteAcademicTerm = async (req, res) => {
+module.exports.deleteAcademicTerm = async (req, res) => {
   const currentUser = req.user;
   const { termId } = req.params;
   try {

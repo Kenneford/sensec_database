@@ -16,6 +16,15 @@ const PlacementBatchesModelSchema = new mongoose.Schema(
       ref: "User",
       // required: true,
     },
+    isAutoCreated: {
+      type: Boolean,
+      default: false,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      // required: true,
+    },
     lastUpdatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

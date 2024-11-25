@@ -8,6 +8,12 @@ const {
   getAllProgramOptionalElectiveSubjects,
 } = require("../../../controllers/academics/subjects/subjectController");
 const {
+  validateSubjectData,
+  coreSubject,
+  programmeElectiveSubject,
+  divisionProgrammeElectiveSubject,
+} = require("../../../middlewares/academics/subjectMiddleware");
+const {
   authUser,
   authUserRole,
 } = require("../../../middlewares/auth/authUser");
@@ -15,25 +21,31 @@ const {
 const router = require("express").Router();
 
 router.post(
-  "/academics/subjects/add",
+  "/academics/subjects/core/create",
   authUser,
   authUserRole({
     userRoles: {
       admin: "admin",
     },
   }),
+  validateSubjectData,
+  coreSubject,
   createSubject
 );
-router.get(
-  "/academics/subjects/fetch_all",
+router.post(
+  "/academics/subjects/elective/create",
   authUser,
   authUserRole({
     userRoles: {
       admin: "admin",
     },
   }),
-  getAllSubjects
+  validateSubjectData,
+  programmeElectiveSubject,
+  divisionProgrammeElectiveSubject,
+  createSubject
 );
+router.get("/academics/subjects/fetch_all", getAllSubjects);
 router.get(
   "/academics/subjects/:subjectId/fetch",
   authUser,

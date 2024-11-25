@@ -4,14 +4,18 @@ const { Schema } = mongoose;
 
 const electiveSubjectSchema = new Schema(
   {
-    nameOfProgram: {
-      type: String,
-      required: true,
-    },
+    // nameOfProgram: {
+    //   type: String,
+    //   required: true,
+    // },
     programId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Program",
       required: true,
+    },
+    divisionProgramId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProgramDivision",
     },
     isElectiveSubject: {
       type: Boolean,

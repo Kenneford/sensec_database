@@ -22,12 +22,16 @@ const BatchesModelSchema = new mongoose.Schema(
         return `${this.yearRange} academic batch`;
       },
     },
-    students: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    // students: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "User",
+    //   },
+    // ],
+    isAutoCreated: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
