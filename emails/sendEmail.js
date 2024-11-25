@@ -240,9 +240,9 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
   transporter.sendMail(mailTemplate, (error, info) => {
     if (error) {
       console.log("Error sending email:", error);
-      return res
-        .status(400)
-        .json({ errorMessage: { message: "Failed to send email." } });
+      // return res
+      //   .status(400)
+      //   .json({ errorMessage: { message: "Failed to send email." } });
     } else {
       console.log("Verification email sent!");
       next();

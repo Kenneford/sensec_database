@@ -84,6 +84,7 @@ module.exports.addNewEmployee = async (req, res) => {
               "employment.employmentType": employeeData?.typeOfEmployment,
               "adminStatusExtend.isAdmin": false, //===>>> isAdmin: will be updated during employment approval
               "employment.employmentStatus": "pending",
+              // "adminActionsData.createdAt": new Date().toISOString(),
             });
             if (
               newEmployeeData &&
@@ -395,6 +396,7 @@ module.exports.approveEmployment = async (req, res, next) => {
     });
   }
 };
+// Works ✅
 module.exports.approveMultiEmployees = async (req, res) => {
   const { employees } = req.body;
   const { employmentApprovedBy } = req.params;

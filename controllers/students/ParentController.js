@@ -56,36 +56,27 @@ module.exports.createStudentParent = async (req, res, next) => {
       },
       { new: true }
     );
-    if (parentCreated) {
-      //Send enrolment E-mail to student
-      if (foundStudent && foundStudent?.contactAddress?.email !== "") {
-        sendEnrollmentEmail({ foundStudent });
-      }
-      //Send enrolment SMS to student
-      // if (
-      //   foundStudent &&
-      //   foundStudent?.contactAddress?.mobile !== "" &&
-      //   parentCreated?.studentStatusExtend?.enrollmentStatus === "pending"
-      // ) {
-      //   studentSMSEnrollmentTemplate({ userInfo: foundStudent });
-      // }
-      //Update placement student's enrolled status✅
-      if (placementStudentFound && placementStudentFound.enrolled === false) {
-        placementStudentFound.enrolled = true;
-        await placementStudentFound.save();
-      }
-      console.log("Student's Parent Added Successfully...");
-      res.status(201).json({
-        successMessage: "Student's Parent Added Successfully...",
-        parent: parentCreated,
-      });
-    } else {
-      return res.status(500).json({
-        errorMessage: {
-          message: ["Could not create student's parent data!"],
-        },
-      });
+    //Update placement student's enrolled status✅
+    if (placementStudentFound && placementStudentFound.enrolled === false) {
+      placementStudentFound.enrolled = true;
+      await placementStudentFound.save();
     }
+    //Send enrolment E-mail to student
+    if (foundStudent && foundStudent?.contactAddress?.email !== "") {
+      sendEnrollmentEmail({ foundStudent });
+    }
+    //Send enrolment SMS to student
+    // if (
+    //   foundStudent &&
+    //   foundStudent?.contactAddress?.mobile !== ""
+    // ) {
+    //   studentSMSEnrollmentTemplate({ userInfo: foundStudent });
+    // }
+    console.log("Student's Parent Added Successfully...");
+    res.status(201).json({
+      successMessage: "Student's Parent Added Successfully...",
+      parent: parentCreated,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({

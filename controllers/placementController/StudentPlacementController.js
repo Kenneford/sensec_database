@@ -7,7 +7,6 @@ const User = require("../../models/user/UserModel");
 module.exports.uploadPlacementFile = async (req, res, next) => {
   const currentUser = req.user;
   const { data } = req.body;
-  console.log(data);
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
@@ -57,6 +56,7 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
         if (!existingPlacementBatch) {
           existingPlacementBatch = await PlacementBatch.create({
             year: data?.placementYear,
+            isAutoCreated: true,
           });
         }
         const newStudents = await PlacementStudent.insertMany(data?.students);
@@ -95,7 +95,6 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
     }
   } catch (error) {
     console.log(error);
-
     res.status(500).json({
       errorMessage: {
         message: [error?.message],

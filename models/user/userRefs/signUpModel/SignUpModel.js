@@ -17,15 +17,15 @@ const signUpSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    chatPassword: {
-      type: String,
-      select: false,
-      min: 6,
-    },
-    chatPasswordResetRequest: {
-      type: Boolean,
-      default: false,
-    },
+    // chatPassword: {
+    //   type: String,
+    //   select: false,
+    //   min: 6,
+    // },
+    // chatPasswordResetRequest: {
+    //   type: Boolean,
+    //   default: false,
+    // },
   },
   { timestamps: true }
 );
