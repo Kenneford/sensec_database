@@ -151,24 +151,26 @@ async function programmeElectiveSubject(req, res, next) {
         programFound.optionalElectiveSubjects.push(subjectCreated?._id);
         await programFound.save();
       }
-      // Push elective subject into each student's elective subjects✅
-      allStudents?.forEach(async (student) => {
-        if (
-          !student?.studentSchoolData?.electiveSubjects?.includes(
-            subjectCreated?._id
-          )
-        ) {
-          await User.findOneAndUpdate(
-            student?._id,
-            {
-              $push: {
-                "studentSchoolData.electiveSubjects": subjectCreated?._id,
+      // Push non-optional elective subject into each student's elective subjects✅
+      if (!subjectCreated?.electiveSubInfo?.isOptional) {
+        allStudents?.forEach(async (student) => {
+          if (
+            !student?.studentSchoolData?.electiveSubjects?.includes(
+              subjectCreated?._id
+            )
+          ) {
+            await User.findOneAndUpdate(
+              student?._id,
+              {
+                $push: {
+                  "studentSchoolData.electiveSubjects": subjectCreated?._id,
+                },
               },
-            },
-            { upsert: true }
-          );
-        }
-      });
+              { upsert: true }
+            );
+          }
+        });
+      }
       req.subjectCreated = subjectCreated;
       next();
     } else {
@@ -245,24 +247,26 @@ async function divisionProgrammeElectiveSubject(req, res, next) {
         divisionProgramFound.optionalElectiveSubjects.push(subjectCreated?._id);
         await divisionProgramFound.save();
       }
-      // Push elective subject into each student's elective subjects✅
-      allStudents?.forEach(async (student) => {
-        if (
-          !student?.studentSchoolData?.electiveSubjects?.includes(
-            subjectCreated?._id
-          )
-        ) {
-          await User.findOneAndUpdate(
-            student?._id,
-            {
-              $push: {
-                "studentSchoolData.electiveSubjects": subjectCreated?._id,
+      // Push non0optional elective subject into each student's elective subjects✅
+      if (!subjectCreated?.electiveSubInfo?.isOptional) {
+        allStudents?.forEach(async (student) => {
+          if (
+            !student?.studentSchoolData?.electiveSubjects?.includes(
+              subjectCreated?._id
+            )
+          ) {
+            await User.findOneAndUpdate(
+              student?._id,
+              {
+                $push: {
+                  "studentSchoolData.electiveSubjects": subjectCreated?._id,
+                },
               },
-            },
-            { upsert: true }
-          );
-        }
-      });
+              { upsert: true }
+            );
+          }
+        });
+      }
       req.subjectCreated = subjectCreated;
       next();
     } else {

@@ -1,11 +1,13 @@
 const { sendEnrollmentEmail } = require("../../emails/sendEmail");
+const {
+  selectStudentHouse,
+} = require("../../middlewares/student/studentMiddleware");
 const PlacementStudent = require("../../models/PlacementStudent/PlacementStudentModel");
 const User = require("../../models/user/UserModel");
 
 module.exports.createStudentParent = async (req, res, next) => {
   const { parentData } = req.body;
   const { studentId } = req.params;
-  console.log(parentData);
   try {
     // Find student
     const foundStudent = await User.findOne({
@@ -56,6 +58,7 @@ module.exports.createStudentParent = async (req, res, next) => {
       },
       { new: true }
     );
+    selectStudentHouse(foundStudent);
     //Update placement student's enrolled status✅
     if (placementStudentFound && placementStudentFound.enrolled === false) {
       placementStudentFound.enrolled = true;

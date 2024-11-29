@@ -174,7 +174,7 @@ async function studentProgramme(req, res, next) {
       ) {
         res.status(404).json({
           errorMessage: {
-            message: [`Selection Of One Optional Elective Subject Required!`],
+            message: [`Selection of one optional elective subject required!`],
           },
         });
         return;
@@ -270,6 +270,43 @@ async function studentClass(req, res, next) {
     });
   }
 }
+const selectStudentHouse = async (foundStudent) => {
+  //Find a house for student who wants to enroll
+  const allHouses = await House.find({ isFull: false });
+  if (allHouses) {
+    let selectedHouse = Math.floor(Math.random() * allHouses?.length);
+    // console.log(allHouses[selectedHouse]?._id);
+    const houseFound = await House.findOne({
+      _id: allHouses[selectedHouse]?._id,
+    });
+    if (
+      foundStudent &&
+      houseFound &&
+      !houseFound?.students?.includes(foundStudent?._id)
+    ) {
+      houseFound.students.push(foundStudent?._id);
+      await houseFound.save();
+    }
+    if (foundStudent && houseFound) {
+      await User.findOneAndUpdate(
+        foundStudent?._id,
+        {
+          "studentSchoolData.house": houseFound?._id,
+        },
+        { new: true }
+      );
+    }
+    if (
+      houseFound &&
+      houseFound?.students?.length === 30 &&
+      houseFound.isFull === false
+    ) {
+      houseFound.isFull = true;
+      await houseFound.save();
+    }
+  }
+  return foundStudent;
+};
 // For Enrollment Approvals
 async function updateApprovedStudentData(req, res, next) {
   const currentUser = req.user;
@@ -507,13 +544,19 @@ async function level100Promotion(req, res, next) {
         });
         return;
       }
+      let studentNextClassSection;
       //Find Student Next Class Section
-      const studentNextClassSection = await ClassLevelSection.findOne({
-        classLevelName: "Level 200",
-        program: studentFound?.studentSchoolData?.divisionProgram
-          ? studentFound?.studentSchoolData?.divisionProgram
-          : studentFound?.studentSchoolData?.program,
-      });
+      if (studentFound?.studentSchoolData?.divisionProgram) {
+        studentNextClassSection = await ClassLevelSection.findOne({
+          classLevelName: "Level 200",
+          divisionProgram: studentFound?.studentSchoolData?.divisionProgram,
+        });
+      } else {
+        studentNextClassSection = await ClassLevelSection.findOne({
+          classLevelName: "Level 200",
+          program: studentFound?.studentSchoolData?.program,
+        });
+      }
       if (!studentNextClassSection) {
         res.status(404).json({
           errorMessage: {
@@ -544,6 +587,18 @@ async function level100Promotion(req, res, next) {
         },
         { new: true }
       );
+      // Push student's current class-level into his/her classLevels array
+      if (
+        !studentFound?.studentSchoolData?.classLevels?.includes(
+          studentNextClassLevel?._id
+        )
+      ) {
+        studentFound.studentSchoolData.classLevels.push(
+          studentNextClassLevel?._id
+        );
+        await studentFound.save();
+      }
+      // Push new lecturer into student's classTeachers array
       if (
         level200TeacherFound &&
         !studentFound?.studentSchoolData?.classTeachers?.includes(
@@ -596,13 +651,19 @@ async function level200Promotion(req, res, next) {
         });
         return;
       }
+      let studentNextClassSection;
       //Find Student Next Class Section
-      const studentNextClassSection = await ClassLevelSection.findOne({
-        classLevelName: "Level 300",
-        program: studentFound?.studentSchoolData?.divisionProgram
-          ? studentFound?.studentSchoolData?.divisionProgram
-          : studentFound?.studentSchoolData?.program,
-      });
+      if (studentFound?.studentSchoolData?.divisionProgram) {
+        studentNextClassSection = await ClassLevelSection.findOne({
+          classLevelName: "Level 300",
+          divisionProgram: studentFound?.studentSchoolData?.divisionProgram,
+        });
+      } else {
+        studentNextClassSection = await ClassLevelSection.findOne({
+          classLevelName: "Level 300",
+          program: studentFound?.studentSchoolData?.program,
+        });
+      }
       if (!studentNextClassSection) {
         res.status(404).json({
           errorMessage: {
@@ -633,6 +694,18 @@ async function level200Promotion(req, res, next) {
         },
         { new: true }
       );
+      // Push student's current class-level into his/her classLevels array
+      if (
+        !studentFound?.studentSchoolData?.classLevels?.includes(
+          studentNextClassLevel?._id
+        )
+      ) {
+        studentFound.studentSchoolData.classLevels.push(
+          studentNextClassLevel?._id
+        );
+        await studentFound.save();
+      }
+      // Push new lecturer into student's classTeachers array
       if (
         level300TeacherFound &&
         !studentFound?.studentSchoolData?.classTeachers?.includes(
@@ -665,6 +738,10 @@ async function level300Promotion(req, res, next) {
       //Find Student's House
       const studentHouse = await House.findOne({
         _id: studentFound?.studentSchoolData?.house,
+      });
+      // Find student placement Data
+      const studentPlacementData = await PlacementStudent.findOne({
+        enrollmentId: studentFound?.uniqueId,
       });
 
       //Find Student batch
@@ -705,6 +782,10 @@ async function level300Promotion(req, res, next) {
       if (studentHouse?.students?.includes(studentFound?._id)) {
         studentHouse.students.pull(studentFound?._id);
         await studentHouse.save();
+      }
+      if (studentPlacementData) {
+        studentPlacementData.isGraduated = true;
+        await studentPlacementData.save();
       }
       if (
         oldStudentsBatchFound &&
@@ -807,12 +888,19 @@ async function level100MultiStudentsPromotion(req, res, next) {
       }
       students.forEach(async (student) => {
         //Find Student Next Class Section
-        const studentNextClassSection = await ClassLevelSection.findOne({
-          classLevelName: "Level 200",
-          program: student?.studentSchoolData?.divisionProgram
-            ? student?.studentSchoolData?.divisionProgram
-            : student?.studentSchoolData?.program,
-        });
+        let studentNextClassSection;
+        //Find Student Next Class Section
+        if (studentFound?.studentSchoolData?.divisionProgram) {
+          studentNextClassSection = await ClassLevelSection.findOne({
+            classLevelName: "Level 200",
+            divisionProgram: studentFound?.studentSchoolData?.divisionProgram,
+          });
+        } else {
+          studentNextClassSection = await ClassLevelSection.findOne({
+            classLevelName: "Level 200",
+            program: studentFound?.studentSchoolData?.program,
+          });
+        }
         // if (!studentNextClassSection) {
         //   res.status(404).json({
         //     errorMessage: {
@@ -843,16 +931,28 @@ async function level100MultiStudentsPromotion(req, res, next) {
           },
           { new: true }
         );
+        // Push student's current class-level into his/her classLevels array
+        if (
+          !studentFound?.studentSchoolData?.classLevels?.includes(
+            studentNextClassLevel?._id
+          )
+        ) {
+          studentFound.studentSchoolData.classLevels.push(
+            studentNextClassLevel?._id
+          );
+          await studentFound.save();
+        }
+        // Push new lecturer into student's classTeachers array
         if (
           level200TeacherFound &&
-          !student?.studentSchoolData?.classTeachers?.includes(
+          !studentFound?.studentSchoolData?.classTeachers?.includes(
             level200TeacherFound?._id
           )
         ) {
-          student.studentSchoolData.classTeachers.push(
+          studentFound.studentSchoolData.classTeachers.push(
             level200TeacherFound?._id
           );
-          await student.save();
+          await studentFound.save();
         }
       });
       req.promotedStudents = students;
@@ -885,13 +985,19 @@ async function level200MultiStudentsPromotion(req, res, next) {
         return;
       }
       students.forEach(async (student) => {
+        let studentNextClassSection;
         //Find Student Next Class Section
-        const studentNextClassSection = await ClassLevelSection.findOne({
-          classLevelName: "Level 300",
-          program: student?.studentSchoolData?.divisionProgram
-            ? student?.studentSchoolData?.divisionProgram
-            : student?.studentSchoolData?.program,
-        });
+        if (studentFound?.studentSchoolData?.divisionProgram) {
+          studentNextClassSection = await ClassLevelSection.findOne({
+            classLevelName: "Level 300",
+            divisionProgram: studentFound?.studentSchoolData?.divisionProgram,
+          });
+        } else {
+          studentNextClassSection = await ClassLevelSection.findOne({
+            classLevelName: "Level 300",
+            program: studentFound?.studentSchoolData?.program,
+          });
+        }
         // if (!studentNextClassSection) {
         //   res.status(404).json({
         //     errorMessage: {
@@ -922,16 +1028,28 @@ async function level200MultiStudentsPromotion(req, res, next) {
           },
           { new: true }
         );
+        // Push student's current class-level into his/her classLevels array
+        if (
+          !studentFound?.studentSchoolData?.classLevels?.includes(
+            studentNextClassLevel?._id
+          )
+        ) {
+          studentFound.studentSchoolData.classLevels.push(
+            studentNextClassLevel?._id
+          );
+          await studentFound.save();
+        }
+        // Push new lecturer into student's classTeachers array
         if (
           level300TeacherFound &&
-          !student?.studentSchoolData?.classTeachers?.includes(
+          !studentFound?.studentSchoolData?.classTeachers?.includes(
             level300TeacherFound?._id
           )
         ) {
-          student.studentSchoolData.classTeachers.push(
+          studentFound.studentSchoolData.classTeachers.push(
             level300TeacherFound?._id
           );
-          await student.save();
+          await studentFound.save();
         }
       });
       req.promotedStudents = students;
@@ -971,6 +1089,9 @@ async function level300MultiStudentsPromotion(req, res, next) {
         const studentHouse = await House.findOne({
           _id: student?.studentSchoolData?.house,
         });
+        const studentPlacementData = await PlacementStudent.findOne({
+          enrollmentId: student?.uniqueId,
+        });
         //Update student's currentClassLevel to null✅
         //update his/her current classLevelSection to null✅
         //update his/her currentAcademicYear state to null✅
@@ -995,6 +1116,10 @@ async function level300MultiStudentsPromotion(req, res, next) {
         if (studentHouse?.students?.includes(student?._id)) {
           studentHouse.students.pull(student?._id);
           await studentHouse.save();
+        }
+        if (studentPlacementData) {
+          studentPlacementData.isGraduated = true;
+          await studentPlacementData.save();
         }
         if (
           oldStudentsBatchFound &&
@@ -1022,6 +1147,7 @@ module.exports = {
   validateStudentPlacementData,
   studentProgramme,
   studentClass,
+  selectStudentHouse,
   updateApprovedStudentData,
   updateMultiApprovedStudentData,
   validatePromotionData,
