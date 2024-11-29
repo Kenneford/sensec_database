@@ -1,4 +1,7 @@
 const {
+  fetchAllPlacementBatches,
+} = require("../../controllers/placementController/PlacementBatchController");
+const {
   verifyPlacementStudent,
   fetchAllVerifiedPlacementStudents,
   fetchAllPlacementStudents,
@@ -31,5 +34,6 @@ router.get(
   "/students/placement/verified/fetch_all",
   fetchAllVerifiedPlacementStudents
 );
+router.get("/students/placement/verified/fetch_all", fetchAllPlacementBatches);
 
 module.exports = router;

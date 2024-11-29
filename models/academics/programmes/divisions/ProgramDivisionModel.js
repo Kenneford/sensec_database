@@ -45,18 +45,18 @@ const programDivisionsSchema = new Schema(
       type: String,
     },
     //we will push the teachers that are in charge of the program
-    teachers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    students: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    // teachers: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "User",
+    //   },
+    // ],
+    // students: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "User",
+    //   },
+    // ],
     //I will push the subjects that are in the program when the program is created
     electiveSubjects: [
       {

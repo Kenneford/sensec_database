@@ -89,12 +89,27 @@ module.exports.fetchAllPlacementBatches = async (req, res) => {
       return;
     }
     if (batchesFound) {
+      let sortedStudents;
+      batchesFound?.forEach((batch) => {
+        sortedStudents =
+          batch &&
+          [...batch.students].sort(
+            (oldBatch, newBatch) => newBatch?.createdAt - oldBatch?.createdAt
+          );
+        console.log(sortedStudents);
+      });
+      const sortedBatches = [...batchesFound]?.sort(
+        (oldBatch, newBatch) => newBatch?.year - oldBatch?.year
+      );
+
       res.status(200).json({
-        successMessage: "All placements batches fetched successfully...",
-        batchesFound,
+        successMessage: "All placements batches fetched successfully!",
+        batchesFound: sortedBatches,
       });
     }
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       errorMessage: {
         message: [`Internal Server Error!`],

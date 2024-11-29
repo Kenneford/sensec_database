@@ -1,5 +1,8 @@
 const { sendEnrollmentApprovalEmail } = require("../../emails/sendEmail");
 const { cloudinary } = require("../../middlewares/cloudinary/cloudinary");
+const {
+  selectStudentHouse,
+} = require("../../middlewares/student/studentMiddleware");
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
 const AcademicYear = require("../../models/academics/year/AcademicYearModel");
 const User = require("../../models/user/UserModel");
@@ -135,23 +138,23 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
             }
           );
           //push student into division programme's students✅
-          if (
-            !program?.studentDivisionProgramFound?.students?.includes(
-              newStudentData?._id
-            )
-          ) {
-            program?.studentDivisionProgramFound?.students?.push(
-              newStudentData?._id
-            );
-            await program.studentDivisionProgramFound.save();
-          }
+          // if (
+          //   !program?.studentDivisionProgramFound?.students?.includes(
+          //     newStudentData?._id
+          //   )
+          // ) {
+          //   program?.studentDivisionProgramFound?.students?.push(
+          //     newStudentData?._id
+          //   );
+          //   await program.studentDivisionProgramFound.save();
+          // }
           //push student into main programme's students✅
-          if (
-            !program?.mainProgramFound?.students?.includes(newStudentData?._id)
-          ) {
-            program?.mainProgramFound?.students?.push(newStudentData?._id);
-            await program.mainProgramFound.save();
-          }
+          // if (
+          //   !program?.mainProgramFound?.students?.includes(newStudentData?._id)
+          // ) {
+          //   program?.mainProgramFound?.students?.push(newStudentData?._id);
+          //   await program.mainProgramFound.save();
+          // }
         }
         if (!program?.isDivisionProgram) {
           // Add student's elective subjects
@@ -176,12 +179,12 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
             }
           );
           //push student into main programme's students✅
-          if (
-            !program?.mainProgramFound?.students?.includes(newStudentData?._id)
-          ) {
-            program?.mainProgramFound?.students?.push(newStudentData?._id);
-            await program.mainProgramFound.save();
-          }
+          // if (
+          //   !program?.mainProgramFound?.students?.includes(newStudentData?._id)
+          // ) {
+          //   program?.mainProgramFound?.students?.push(newStudentData?._id);
+          //   await program.mainProgramFound.save();
+          // }
         }
         //Push optionalElectiveSubject into student's electiveSubjects array
         if (

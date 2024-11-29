@@ -69,6 +69,10 @@ const placementStudentsModelSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isGraduated: {
+      type: Boolean,
+      default: false,
+    },
     dateOfBirth: {
       type: Date,
     },

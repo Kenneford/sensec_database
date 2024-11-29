@@ -1,11 +1,13 @@
 const { sendEnrollmentEmail } = require("../../emails/sendEmail");
+const {
+  selectStudentHouse,
+} = require("../../middlewares/student/studentMiddleware");
 const PlacementStudent = require("../../models/PlacementStudent/PlacementStudentModel");
 const User = require("../../models/user/UserModel");
 
 module.exports.createStudentGuardian = async (req, res) => {
   const { guardianData } = req.body;
   const { studentId } = req.params;
-  console.log(guardianData);
   try {
     // Find student
     const foundStudent = await User.findOne({
@@ -54,36 +56,29 @@ module.exports.createStudentGuardian = async (req, res) => {
       },
       { new: true }
     );
-    if (guardianCreated) {
-      //Send enrolment E-mail to student
-      if (foundStudent && foundStudent?.contactAddress?.email !== "") {
-        sendEnrollmentEmail({ foundStudent });
-      }
-      //Send enrolment SMS to student
-      // if (
-      //   foundStudent &&
-      //   foundStudent?.contactAddress?.mobile !== "" &&
-      //   guardianCreated?.studentStatusExtend?.enrollmentStatus === "pending"
-      // ) {
-      //   studentSMSEnrollmentTemplate({ userInfo: foundStudent });
-      // }
-      //Update placement student's enrolled status✅
-      if (placementStudentFound && placementStudentFound.enrolled === false) {
-        placementStudentFound.enrolled = true;
-        await placementStudentFound.save();
-      }
-      console.log("Student's guardian added successfully...");
-      res.status(201).json({
-        successMessage: "Student's guardian added successfully...",
-        guardian: guardianCreated,
-      });
-    } else {
-      return res.status(500).json({
-        errorMessage: {
-          message: ["Could not create student's guardian data!"],
-        },
-      });
+    selectStudentHouse(foundStudent);
+    //Send enrolment E-mail to student
+    if (foundStudent && foundStudent?.contactAddress?.email !== "") {
+      sendEnrollmentEmail({ foundStudent });
     }
+    //Send enrolment SMS to student
+    // if (
+    //   foundStudent &&
+    //   foundStudent?.contactAddress?.mobile !== "" &&
+    //   guardianCreated?.studentStatusExtend?.enrollmentStatus === "pending"
+    // ) {
+    //   studentSMSEnrollmentTemplate({ userInfo: foundStudent });
+    // }
+    //Update placement student's enrolled status✅
+    if (placementStudentFound && placementStudentFound.enrolled === false) {
+      placementStudentFound.enrolled = true;
+      await placementStudentFound.save();
+    }
+    console.log("Student's guardian added successfully...");
+    res.status(201).json({
+      successMessage: "Student's guardian added successfully...",
+      guardian: guardianCreated,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
