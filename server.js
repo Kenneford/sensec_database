@@ -12,14 +12,7 @@ const path = require("path");
 const UsersRoute = require("./routes/auth/UserRoute");
 const AdminsRoute = require("./routes/admins/adminRoutes");
 const EmploymentRoute = require("./routes/employmentRoutes/employmentRoutes");
-console.log("Current directory:", __dirname);
-// const StudentsRoute = require("./routes/students/studentRoutes");
-const StudentsRoute = require(path.resolve(
-  __dirname,
-  "routes",
-  "students",
-  "studentRoutes.js"
-));
+const StudentsRoute = require("./routes/students/studentRoutes.js");
 const ProgrammesRoute = require("./routes/academics/programs/programsRoutes");
 const SubjectsRoute = require("./routes/academics/subjects/subjectsRoutes");
 const ClassLevelRoute = require("./routes/academics/class/classLevelRoutes");
