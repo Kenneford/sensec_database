@@ -1,6 +1,6 @@
 const {
   createStudentGuardian,
-} = require("../../controllers/students/GaurdianController");
+} = require("../../controllers/students/GuardianController");
 const {
   createStudentParent,
 } = require("../../controllers/students/ParentController");
