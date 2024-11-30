@@ -11,7 +11,7 @@ const cron = require("node-cron");
 const UsersRoute = require("./routes/auth/UserRoute");
 const AdminsRoute = require("./routes/admins/adminRoutes");
 const EmploymentRoute = require("./routes/employmentRoutes/employmentRoutes");
-const StudentsRoute = require("./routes/students/studentRoutes.js");
+const studentsRoute = require("./routes/students/studentRoutes");
 const ProgrammesRoute = require("./routes/academics/programs/programsRoutes");
 const SubjectsRoute = require("./routes/academics/subjects/subjectsRoutes");
 const ClassLevelRoute = require("./routes/academics/class/classLevelRoutes");
@@ -109,7 +109,7 @@ const start = async (req, res) => {
       UsersRoute,
       AdminsRoute,
       EmploymentRoute,
-      StudentsRoute,
+      studentsRoute,
       ProgrammesRoute,
       SubjectsRoute,
       ClassLevelRoute,
