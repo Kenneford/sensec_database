@@ -7,11 +7,19 @@ const app = express();
 const cors = require("cors");
 const CircuitBreaker = require("opossum");
 const cron = require("node-cron");
+const path = require("path");
 
 const UsersRoute = require("./routes/auth/UserRoute");
 const AdminsRoute = require("./routes/admins/adminRoutes");
 const EmploymentRoute = require("./routes/employmentRoutes/employmentRoutes");
-const studentsRoute = require("./routes/students/studentRoutes");
+console.log("Current directory:", __dirname);
+// const StudentsRoute = require("./routes/students/studentRoutes");
+const StudentsRoute = require(path.resolve(
+  __dirname,
+  "routes",
+  "students",
+  "studentRoutes.js"
+));
 const ProgrammesRoute = require("./routes/academics/programs/programsRoutes");
 const SubjectsRoute = require("./routes/academics/subjects/subjectsRoutes");
 const ClassLevelRoute = require("./routes/academics/class/classLevelRoutes");
@@ -23,7 +31,6 @@ const SensosanRoute = require("./routes/graduatesRoutes/OldStudentsRoutes");
 const StudentPlacementRoute = require("./routes/studentPlacementRoutes/StudentPlacementRoutes");
 const PlacementBatchRoute = require("./routes/studentPlacementRoutes/placementBatchRoutes/placementBatchRoutes");
 const HouseRoute = require("./routes/academics/house/HouseRoutes");
-const AcademicTerm = require("./models/academics/term/AcademicTermModel");
 const {
   updateCurrentSemester,
   updateAcademicYear,
@@ -109,7 +116,7 @@ const start = async (req, res) => {
       UsersRoute,
       AdminsRoute,
       EmploymentRoute,
-      studentsRoute,
+      StudentsRoute,
       ProgrammesRoute,
       SubjectsRoute,
       ClassLevelRoute,
