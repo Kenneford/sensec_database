@@ -12,7 +12,7 @@ const path = require("path");
 const UsersRoute = require("./routes/auth/UserRoute");
 const AdminsRoute = require("./routes/admins/adminRoutes");
 const EmploymentRoute = require("./routes/employmentRoutes/employmentRoutes");
-// const StudentsRoute = require("./routes/students/studentRoutes.js");
+const StudentsRoute = require("./routes/students/studentRoutes");
 const ProgrammesRoute = require("./routes/academics/programs/programsRoutes");
 const SubjectsRoute = require("./routes/academics/subjects/subjectsRoutes");
 const ClassLevelRoute = require("./routes/academics/class/classLevelRoutes");
@@ -35,7 +35,8 @@ const start = async (req, res) => {
   try {
     // Configure CORS options if needed
     const corsOptions = {
-      origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
+      origin: "*", // or '*' to allow all origins
+      // origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
       methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
       // allowedHeaders: "Content-Type,Authorization",
     };
@@ -108,7 +109,7 @@ const start = async (req, res) => {
       UsersRoute,
       AdminsRoute,
       EmploymentRoute,
-      // StudentsRoute,
+      StudentsRoute,
       ProgrammesRoute,
       SubjectsRoute,
       ClassLevelRoute,
