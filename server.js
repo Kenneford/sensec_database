@@ -35,7 +35,7 @@ const start = async (req, res) => {
   try {
     // Configure CORS options if needed
     const corsOptions = {
-      origin: "https://sensec-database.onrender.com/", // or '*' to allow all origins
+      origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
       methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
       // allowedHeaders: "Content-Type,Authorization",
     };
