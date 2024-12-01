@@ -102,7 +102,13 @@ const start = async (req, res) => {
     const port = process.env.PORT || 7006;
 
     app.use(express.static("public"));
+    const path = require("path");
+    app.use(express.static(path.join(__dirname, "dist"))); // Make sure this points to the correct build directory
 
+    // Catch-all route to send back index.html for all other routes
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "dist", "index.html")); // Serve index.html for SPA
+    });
     // Routes
     app.use(
       "/api/sensec_db/v1",
