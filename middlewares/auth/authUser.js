@@ -52,7 +52,7 @@ async function generateUserToken(req, res, next) {
       req.token = token;
       next();
     } else {
-      res.status(400).json({
+      return res.status(400).json({
         errorMessage: {
           message: ["Login failed! Invalid credentials!"],
         },
