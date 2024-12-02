@@ -83,6 +83,7 @@ async function verifyUserMiddleware(req, res, next) {
       {
         id: userFound?._id,
         uniqueId: userFound?.uniqueId,
+        personalInfo: userFound?.personalInfo,
         roles: userFound?.roles,
         isVerified: userFound?.isVerified,
         isVerifiedSensosa: userFound?.isVerifiedSensosa,
