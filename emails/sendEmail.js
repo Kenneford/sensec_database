@@ -34,10 +34,11 @@ const sendVerificationEmail = async (req, res, next) => {
     const userVerificationData = await UserVerificationData.findOne({
       userId: verificationData?.userId,
     });
-    if (userFound && userFound?.contactAddress?.email) {
+    if (userFound?.contactAddress?.email) {
       if (userVerificationData) {
         const currentYear = new Date().getFullYear();
-        const url = "http://192.168.178.22:2025";
+        const url = "https://official-sensec-website.onrender.com";
+        // const url = "http://192.168.178.22:2025";
 
         const transporter = createGMailTransporter();
 
@@ -106,7 +107,9 @@ const sendVerificationEmail = async (req, res, next) => {
     }
   } catch (error) {
     return res.status(500).json({
-      errorMessage: { message: "Internal server error!" },
+      errorMessage: {
+        message: [`Internal Server Error! ${error?.message}`],
+      },
     });
   }
 };
@@ -140,7 +143,8 @@ async function passwordResetRequestEmail(req, res, next) {
 
 const sendEnrollmentEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
-  const url = "http://192.168.178.22:2025";
+  const url = "https://official-sensec-website.onrender.com";
+  // const url = "http://192.168.178.22:2025";
 
   const transporter = createGMailTransporter();
 
@@ -196,7 +200,8 @@ const sendEnrollmentEmail = async ({ foundStudent }) => {
 
 const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
-  const url = "http://192.168.178.22:2025";
+  const url = "https://official-sensec-website.onrender.com";
+  // const url = "http://192.168.178.22:2025";
 
   const transporter = createGMailTransporter();
 
@@ -259,9 +264,9 @@ Hello ${student?.personalInfo?.firstName},
 
 CONGRATULATIONS TO YOU...
 
-We're thankful once again for your enrolment into our school.
+We're thankful once again for your enrollment into our school.
 This message is to inform you that your enrolment has been approved, and you're now a student of SENYA SENIOR HIGH SCHOOL (SENSEC).
-Click: "http://localhost:3000/sensec/students/placement_check" to check for your placement into our school.
+Click: "https://official-sensec-website.onrender.com/sensec/students/placement_check" to check for your placement into our school.
 
 Yours Sincerely,
 
@@ -311,7 +316,8 @@ Senya Senior High School.
 const userSignUpSMS = async (req, res, next) => {
   const userInfo = req?.newSignedUpUserData?.newSignedUpUser;
   const userPassword = req?.newSignedUpUserData?.password;
-  const url = "http://192.168.178.22:2025";
+  const url = "https://official-sensec-website.onrender.com";
+  // const url = "http://192.168.178.22:2025";
   let body = `
 
 Hello ${userInfo?.personalInfo?.firstName},
@@ -389,7 +395,8 @@ const sendEmploymentEmail = async ({ foundUser }) => {
   console.log(foundUser);
 
   const currentYear = new Date().getFullYear();
-  const url = "http://192.168.178.22:2025";
+  const url = "https://official-sensec-website.onrender.com";
+  // const url = "http://192.168.178.22:2025";
   try {
     const transporter = createGMailTransporter();
 
@@ -446,7 +453,8 @@ const sendEmploymentEmail = async ({ foundUser }) => {
   }
 };
 const employmentSMS = async ({ foundUser }) => {
-  const url = "http://192.168.178.22:2025";
+  const url = "https://official-sensec-website.onrender.com";
+  // const url = "http://192.168.178.22:2025";
   try {
     let body = `
 
