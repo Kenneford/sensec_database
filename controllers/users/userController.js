@@ -25,42 +25,51 @@ module.exports.userSignUp = async (req, res) => {
   }
 };
 
+module.exports.fetchUserVerificationData = async (req, res) => {
+  const { emailToken } = req.params;
+  const verificationDataFound = await UserVerificationData.findOne({
+    emailToken,
+  });
+  if (!verificationDataFound) {
+    return res.status(404).json({
+      errorMessage: { message: ["Verification Data Not Found!"] },
+    });
+  } else {
+    res.status(200).json({
+      successMessage: "Verification data fetched successfully!",
+      verificationDataFound,
+    });
+  }
+};
 module.exports.userVerification = async (req, res) => {
-  const { userId, emailToken } = req.params;
+  const { emailToken } = req.params;
   //   console.log(req?.data, "L-79");
   const userInfo = req?.data?.userFound;
   const token = req?.data?.token;
-  if (!userId) {
-    return res.status(403).json({
-      errorMessage: {
-        message: [`User-ID required!`],
-      },
-    });
-  }
-  if (!emailToken) {
-    return res.status(403).json({
-      errorMessage: {
-        message: [`Email Token Not Found!`],
-      },
-    });
-  }
-  const userVerificationData = await UserVerificationData.findOne({
-    userId,
-    emailToken,
-  });
-  // Update userFound's isVerified state
   try {
+    if (!emailToken) {
+      return res.status(403).json({
+        errorMessage: {
+          message: [`Email Token Not Found!`],
+        },
+      });
+    }
+    // const userVerificationData = await UserVerificationData.findOne({
+    //   userId,
+    //   emailToken,
+    // });
+    // Update userFound's isVerified state
     if (!userInfo?.isVerified) {
       userInfo.isVerified = true;
       await userInfo.save();
     }
-    if (!userInfo.isVerifiedSensosa) {
-      userInfo.isVerifiedSensosa = true;
-      await userInfo.save();
-    }
-    await UserVerificationData.findOneAndDelete({
-      _id: userVerificationData?._id,
-    });
+    // if (!userInfo.isVerifiedSensosa) {
+    //   userInfo.isVerifiedSensosa = true;
+    //   await userInfo.save();
+    // }
+    // await UserVerificationData.findOneAndDelete({
+    //   _id: userVerificationData?._id,
+    // });
   } catch (error) {
     return res.status(500).json({
       errorMessage: {
@@ -71,7 +80,7 @@ module.exports.userVerification = async (req, res) => {
   //   console.log(userInfo);
 
   res.status(200).cookie("verifyToken", token).json({
-    successMessage: "Email Verification Successful!",
+    successMessage: "Email verification successful!",
     user: userInfo,
     token,
     emailToken,

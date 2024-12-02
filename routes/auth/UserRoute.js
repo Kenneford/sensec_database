@@ -9,6 +9,7 @@ const {
   removeUserRole,
   fetchAllUsers,
   refreshUserToken,
+  fetchUserVerificationData,
 } = require("../../controllers/users/userController");
 const {
   sendVerificationEmail,
@@ -24,6 +25,7 @@ const {
 const {
   verifyUserMiddleware,
   deleteExpiredVerificationData,
+  deleteVerificationDataAfterVerification,
 } = require("../../middlewares/auth/emailVerification/emailVerification");
 const {
   requestPasswordReset,
@@ -40,10 +42,15 @@ router.post(
   userSignUpSMS,
   userSignUp
 );
+router.get(
+  "/users/verification_data/:emailToken/fetch",
+  fetchUserVerificationData
+);
 router.put(
   "/users/:userId/:emailToken/verify",
   deleteExpiredVerificationData,
   verifyUserMiddleware,
+  deleteVerificationDataAfterVerification,
   userVerification
 );
 router.post("/users/login", generateUserToken, userLogin);
