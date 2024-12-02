@@ -8,6 +8,22 @@ async function deleteExpiredVerificationData(req, res, next) {
   const userId = req?.params?.userId;
   const emailToken = req?.params?.emailToken;
   try {
+    // Find user by unique-ID
+    const userFound = await User.findOne({ uniqueId: userId });
+    if (!userFound) {
+      return res.status(404).json({
+        errorMessage: {
+          message: [`User data not found!`],
+        },
+      });
+    }
+    if (userFound?.isVerified) {
+      return res.status(404).json({
+        errorMessage: {
+          message: [`User already verified!`],
+        },
+      });
+    }
     // Find user's verification data by both userId and emailToken
     const userVerificationData = await UserVerificationData.findOne({
       userId,
@@ -42,6 +58,7 @@ async function deleteExpiredVerificationData(req, res, next) {
         },
       });
     } else {
+      req.userFound = userFound;
       next();
     }
   } catch (error) {
@@ -55,17 +72,9 @@ async function deleteExpiredVerificationData(req, res, next) {
 // User verification middleware
 async function verifyUserMiddleware(req, res, next) {
   const { userId, emailToken } = req.params;
+  const userFound = req.userFound;
   // console.log(userId, "User-ID");
   try {
-    // Find user by unique-ID
-    const userFound = await User.findOne({ uniqueId: userId });
-    if (!userFound) {
-      return res.status(404).json({
-        errorMessage: {
-          message: [`User data not found!`],
-        },
-      });
-    }
     // Find user's verification data by both userId and emailToken
     const userVerificationData = await UserVerificationData.findOne({
       userId,
