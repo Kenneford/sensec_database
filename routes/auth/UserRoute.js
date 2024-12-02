@@ -46,7 +46,7 @@ router.get(
   "/users/verification_data/:emailToken/fetch",
   fetchUserVerificationData
 );
-router.put(
+router.post(
   "/users/:userId/:emailToken/verify",
   deleteExpiredVerificationData,
   verifyUserMiddleware,
