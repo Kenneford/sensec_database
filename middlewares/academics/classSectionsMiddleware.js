@@ -7,7 +7,6 @@ async function validateSubjectData(req, res, next) {}
 
 async function findSectionProgramme(req, res, next) {
   const { data } = req.body;
-  console.log(data);
 
   try {
     let programFound;
@@ -66,6 +65,7 @@ async function validateClassSection(req, res, next) {
   }
 }
 async function hasLecturer(req, res, next) {
+  const { data } = req.body;
   const currentUser = req.user;
   const classSectionFound = req.classSectionFound;
   try {
