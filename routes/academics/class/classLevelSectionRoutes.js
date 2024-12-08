@@ -9,6 +9,9 @@ const {
 } = require("../../../controllers/academics/class/classLevelSectionController");
 const {
   findSectionProgramme,
+  hasLecturer,
+  validateLecturer,
+  validateClassSection,
 } = require("../../../middlewares/academics/classSectionsMiddleware");
 const {
   authUser,
@@ -38,6 +41,9 @@ router.put(
       admin: "admin",
     },
   }),
+  validateClassSection,
+  hasLecturer,
+  validateLecturer,
   assignClassSectionLecturer
 );
 // Remove lecturer

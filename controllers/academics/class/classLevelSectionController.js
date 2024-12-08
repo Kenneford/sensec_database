@@ -207,169 +207,101 @@ module.exports.createClassLevelSection = async (req, res) => {
 };
 // Assign class section teacher ✅
 module.exports.assignClassSectionLecturer = async (req, res) => {
-  const { data } = req.body;
-  const currentUser = req.user;
+  const classSectionFound = req.classSectionFound;
+  const lecturerFound = req.lecturerFound;
+  const adminFound = req.adminFound;
   try {
-    //Find Admin
-    const adminFound = await User.findOne({ _id: data?.lecturerAssignedBy });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation denied! You're not an admin!"],
-        },
-      });
-      return;
-    }
-    if (currentUser?.id !== data?.lecturerAssignedBy) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation denied! You're not an admin!"],
-        },
-      });
-      return;
-    }
-    // Find lecturer
-    const lecturerFound = await User.findOne({ uniqueId: data?.lecturerId });
-    if (!lecturerFound) {
-      res.status(404).json({
-        errorMessage: {
-          message: [`Lecturer data not found!`],
-        },
-      });
-      return;
-    }
-    // Check if lecturer's employment has been approved
-    if (
-      (lecturerFound && !lecturerFound?.lecturerStatusExtend?.isLecturer) ||
-      lecturerFound?.employment?.employmentStatus !== "approved"
-    ) {
-      res.status(404).json({
-        errorMessage: {
-          message: [`Lecturer not yet approved!`],
-        },
-      });
-      return;
-    }
-    // Check if lecturer already has a class
-    if (
-      lecturerFound &&
-      lecturerFound?.lecturerSchoolData?.isClassLevelTeacher
-    ) {
-      res.status(404).json({
-        errorMessage: {
-          message: [`Teacher already has a class handling!`],
-        },
-      });
-      return;
-    }
-    const classSectionFound = await ClassLevelSection.findOne({
-      _id: data?.classSectionId,
+    // Find all students in this class
+    const studentsFoundInThisClass = await User?.find({
+      "studentSchoolData.currentClassLevelSection": classSectionFound?._id,
+      "studentStatusExtend.isStudent": true,
     });
-    if (classSectionFound) {
-      // Find all students in this class
-      const studentsFoundInThisClass = await User?.find({
-        "studentSchoolData.currentClassLevelSection": classSectionFound?._id,
-        "studentStatusExtend.isStudent": true,
-      });
-      //Assign teacher to classLevel section✅
-      //Update teacher's classLevelHandling and isClassLevelTeacher status❓
-      if (
-        lecturerFound &&
-        !lecturerFound?.lecturerSchoolData?.isClassLevelTeacher
-      ) {
-        await User.findOneAndUpdate(
-          lecturerFound?._id,
-          {
-            "lecturerSchoolData.classLevelHandling": classSectionFound?._id,
-            "lecturerSchoolData.isClassLevelTeacher": true,
-          },
-          { new: true }
-        );
-      }
-      //Push classLevel into teacher's classLevel array✅
-      if (
-        lecturerFound &&
-        !lecturerFound?.lecturerSchoolData?.classLevels?.includes(
-          classSectionFound?.classLevelId
-        )
-      ) {
-        await User.findOneAndUpdate(
-          lecturerFound?._id,
-          {
-            $push: {
-              "lecturerSchoolData.classLevels": classSectionFound?.classLevelId,
-            },
-          },
-          { upsert: true }
-        );
-      }
-      //Push class section into teacher's class sections array✅
-      if (
-        lecturerFound &&
-        !lecturerFound?.lecturerSchoolData?.classSections?.includes(
-          classSectionFound?._id
-        )
-      ) {
-        await User.findOneAndUpdate(
-          lecturerFound?._id,
-          {
-            $push: {
-              "lecturerSchoolData.classSections": classSectionFound?._id,
-            },
-          },
-          { upsert: true }
-        );
-      }
-      // Update current lecturer for all students
-      if (studentsFoundInThisClass) {
-        studentsFoundInThisClass?.forEach(async (student) => {
-          if (student) {
-            await User.findOneAndUpdate(
-              student._id,
-              {
-                "studentSchoolData.currentClassTeacher": lecturerFound?._id,
-              },
-              { new: true }
-            );
-          }
-          if (
-            student &&
-            !student?.studentSchoolData?.classTeachers?.includes(
-              lecturerFound?._id
-            )
-          )
-            await User.findOneAndUpdate(
-              student._id,
-              {
-                $push: {
-                  "studentSchoolData.classTeachers": lecturerFound?._id,
-                },
-              },
-              { upsert: true, new: true }
-            );
-        });
-      }
-      const updatedClassSection = await ClassLevelSection.findOneAndUpdate(
-        classSectionFound?._id,
+    //Assign lecturer to classLevel section✅
+    //Update lecturer's classLevelHandling and isClassLevelTeacher status❓
+    if (!lecturerFound?.lecturerSchoolData?.isClassLevelTeacher) {
+      await User.findOneAndUpdate(
+        lecturerFound?._id,
         {
-          currentTeacher: lecturerFound._id,
-          lecturerAssignedBy: adminFound?._id,
-          lastUpdatedBy: adminFound?._id,
+          "lecturerSchoolData.classLevelHandling": classSectionFound?._id,
+          "lecturerSchoolData.isClassLevelTeacher": true,
         },
         { new: true }
       );
-      res.status(201).json({
-        successMessage: `Class assigned to Lecturer successfully!`,
-        updatedClassSection,
-      });
-    } else {
-      res.status(404).json({
-        errorMessage: {
-          message: [`Class section data not found!`],
-        },
-      });
-      return;
     }
+    //Push classLevel into teacher's classLevel array✅
+    if (
+      !lecturerFound?.lecturerSchoolData?.classLevels?.includes(
+        classSectionFound?.classLevelId
+      )
+    ) {
+      await User.findOneAndUpdate(
+        lecturerFound?._id,
+        {
+          $push: {
+            "lecturerSchoolData.classLevels": classSectionFound?.classLevelId,
+          },
+        },
+        { upsert: true }
+      );
+    }
+    //Push class section into teacher's class sections array✅
+    if (
+      !lecturerFound?.lecturerSchoolData?.classSections?.includes(
+        classSectionFound?._id
+      )
+    ) {
+      await User.findOneAndUpdate(
+        lecturerFound?._id,
+        {
+          $push: {
+            "lecturerSchoolData.classSections": classSectionFound?._id,
+          },
+        },
+        { upsert: true }
+      );
+    }
+    // Update current lecturer for all students
+    if (studentsFoundInThisClass) {
+      studentsFoundInThisClass?.forEach(async (student) => {
+        if (student) {
+          await User.findOneAndUpdate(
+            student._id,
+            {
+              "studentSchoolData.currentClassTeacher": lecturerFound?._id,
+            },
+            { new: true }
+          );
+        }
+        if (
+          student &&
+          !student?.studentSchoolData?.classTeachers?.includes(
+            lecturerFound?._id
+          )
+        )
+          await User.findOneAndUpdate(
+            student._id,
+            {
+              $push: {
+                "studentSchoolData.classTeachers": lecturerFound?._id,
+              },
+            },
+            { upsert: true, new: true }
+          );
+      });
+    }
+    const updatedClassSection = await ClassLevelSection.findOneAndUpdate(
+      classSectionFound?._id,
+      {
+        currentTeacher: lecturerFound._id,
+        lecturerAssignedBy: adminFound?._id,
+        lastUpdatedBy: adminFound?._id,
+      },
+      { new: true }
+    );
+    res.status(201).json({
+      successMessage: `Class assigned to Lecturer successfully!`,
+      updatedClassSection,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
