@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "start": "cross-env NODE_ENV=production node server.js"
   },
   "author": "Patrick Kenneford Annan",
   "license": "ISC",
@@ -28,5 +29,8 @@
     "opossum": "^8.1.4",
     "twilio": "^5.2.3",
     "validator": "^13.12.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }

@@ -22,10 +22,10 @@ const academicTermSchema = new Schema(
       type: Date,
       required: true,
     },
-    year: {
-      type: String,
-      required: true,
-    },
+    // year: {
+    //   type: String,
+    //   required: true,
+    // },
     duration: {
       type: String,
       required: true,

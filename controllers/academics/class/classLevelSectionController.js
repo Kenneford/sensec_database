@@ -350,8 +350,18 @@ module.exports.removeClassSectionLecturer = async (req, res) => {
     }
     const classSectionFound = await ClassLevelSection.findOne({
       _id: data?.classSectionId,
-    });
+    }).populate([{ path: "previousLecturerRemovedBy" }]);
     if (classSectionFound) {
+      if (classSectionFound?.previousTeacher === lecturerFound?._id) {
+        res.status(404).json({
+          errorMessage: {
+            message: [
+              `Lecturer has been unassigned by ${classSectionFound?.previousLecturerRemovedBy?.personalInfo?.fullName}!`,
+            ],
+          },
+        });
+        return;
+      }
       // Find all students in this class
       const studentsFoundInThisClass = await User?.find({
         "studentSchoolData.currentClassLevelSection": classSectionFound?._id,
@@ -382,6 +392,7 @@ module.exports.removeClassSectionLecturer = async (req, res) => {
         classSectionFound?._id,
         {
           currentTeacher: null,
+          previousTeacher: lecturerFound?._id,
           previousLecturerRemovedBy: adminFound?._id,
           lastUpdatedBy: adminFound?._id,
         },

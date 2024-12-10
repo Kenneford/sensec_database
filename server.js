@@ -54,7 +54,7 @@ const start = async (req, res) => {
       next(err); // Pass to the next error handler
     }
 
-    const mongodbConnection = `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_URL}/sensec_website`;
+    const mongodbConnection = `${process.env.MONGO_URL}`;
     if (!mongodbConnection) {
       throw new Error("auth DB_URI must be defined");
     }
@@ -100,8 +100,8 @@ const start = async (req, res) => {
     app.use(cors(corsOptions));
     app.use(dbErrorHandler);
 
-    const port = process.env.PORT || 7006;
-
+    const API_URL = process.env.API_BASE_URL || "http://localhost:7006";
+    const PORT = process.env.PORT || 7006;
     app.use(express.static("public"));
     // Routes
     app.use(
@@ -155,19 +155,22 @@ const start = async (req, res) => {
     });
     // Schedule the function to run at midnight on September 1
     cron.schedule("0 0 1 9 *", async () => {
-      console.log("Running academic year update...");
       await createNextAcademicYear();
     });
 
-    app.listen(port, () => console.log(`Server listening at port ${port}`));
+    app.listen(PORT, () =>
+      console.log(
+        `Server running in ${process.env.NODE_ENV} mode on ${API_URL}`
+      )
+    );
   } catch (error) {
     console.log(error);
-
     res.status(500).json({
       errorMessage: {
         message: [`Server could not start!`],
       },
     });
+    process.exit(1); // Exit the app if the connection fails
     // throw new Error(`Server could not start!`);
   }
 };
