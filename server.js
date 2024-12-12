@@ -105,7 +105,16 @@ const start = async (req, res) => {
     const PORT = process.env.PORT || 7006;
     const HOST = process.env.HOST;
     const API_URL = process.env.API_BASE_URL || `http://${HOST}:7006`;
+    const allowedIps = [HOST, "192.168.178.22", "127.0.0.1"];
     app.use(express.static("public"));
+    // Validate IP-Address
+    app.use((req, res, next) => {
+      const clientIp = req.ip;
+      if (!allowedIps.includes(clientIp)) {
+        return res.status(403).send("Forbidden");
+      }
+      next();
+    });
     // Routes
     app.use(
       "/api/sensec_db/v1",
