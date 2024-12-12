@@ -273,7 +273,7 @@ async function studentClass(req, res, next) {
 const selectStudentHouse = async (foundStudent) => {
   //Find a house for student who wants to enroll
   const allHouses = await House.find({ isFull: false });
-  if (allHouses) {
+  if (allHouses && !foundStudent?.studentSchoolData?.house) {
     let selectedHouse = Math.floor(Math.random() * allHouses?.length);
     // console.log(allHouses[selectedHouse]?._id);
     const houseFound = await House.findOne({
