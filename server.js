@@ -102,8 +102,9 @@ const start = async (req, res) => {
     app.use(cors(corsOptions));
     app.use(dbErrorHandler);
 
-    const API_URL = process.env.API_BASE_URL || "http://localhost:7006";
     const PORT = process.env.PORT || 7006;
+    const HOST = "192.168.178.22";
+    const API_URL = process.env.API_BASE_URL || `http://${HOST}:7006`;
     app.use(express.static("public"));
     // Routes
     app.use(
@@ -160,7 +161,7 @@ const start = async (req, res) => {
       await createNextAcademicYear();
     });
 
-    app.listen(PORT, () =>
+    app.listen(PORT, HOST, () =>
       console.log(
         `Server running in ${process.env.NODE_ENV} mode on ${API_URL}`
       )
