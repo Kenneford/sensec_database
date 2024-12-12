@@ -103,7 +103,7 @@ const start = async (req, res) => {
     app.use(dbErrorHandler);
 
     const PORT = process.env.PORT || 7006;
-    const HOST = "192.168.178.22";
+    const HOST = process.env.HOST;
     const API_URL = process.env.API_BASE_URL || `http://${HOST}:7006`;
     app.use(express.static("public"));
     // Routes
@@ -161,11 +161,14 @@ const start = async (req, res) => {
       await createNextAcademicYear();
     });
 
-    app.listen(PORT, HOST, () =>
+    const server = app.listen(PORT, HOST, () =>
       console.log(
         `Server running in ${process.env.NODE_ENV} mode on ${API_URL}`
       )
     );
+    server.on("error", (err) => {
+      console.error("Server error:", err);
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
