@@ -272,8 +272,10 @@ module.exports.approveStudentEnrollment = async (req, res) => {
           "studentStatusExtend.enrollmentStatus": "approved",
           "studentStatusExtend.isStudent": true,
           "studentStatusExtend.enrollmentApprovedBy": admin?._id,
-          "studentSchoolData.currentClassTeacher":
-            studentClassSection?.currentTeacher,
+          // "studentSchoolData.currentClassLevelSection":
+          //   studentClassSection?._id,
+          // "studentSchoolData.currentClassTeacher":
+          //   studentClassSection?.currentTeacher,
           "studentStatusExtend.enrollmentApprovementDate":
             new Date().toISOString(),
         },
@@ -289,6 +291,25 @@ module.exports.approveStudentEnrollment = async (req, res) => {
           },
           { upsert: true }
         );
+      }
+      // Update student's current class section
+      if (
+        studentClassSection &&
+        !studentApproved?.studentSchoolData?.currentClassLevelSection
+      ) {
+        studentApproved.studentSchoolData.currentClassLevelSection =
+          studentClassSection?._id;
+        await studentApproved.save();
+      }
+      // Update student's current class teacher
+      if (
+        studentClassSection &&
+        studentClassSection?.currentTeacher &&
+        !studentApproved?.studentSchoolData?.currentClassTeacher
+      ) {
+        studentApproved.studentSchoolData.currentClassTeacher =
+          studentClassSection?.currentTeacher;
+        await studentApproved.save();
       }
       // Push student's current class teacher into student's classTeachers array
       if (
