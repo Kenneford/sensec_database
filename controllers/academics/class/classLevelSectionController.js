@@ -214,7 +214,7 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
     // Find all students in this class
     const studentsFoundInThisClass = await User?.find({
       "studentSchoolData.currentClassLevelSection": classSectionFound?._id,
-      "studentStatusExtend.isStudent": true,
+      // "studentStatusExtend.isStudent": true,
     });
     //Assign lecturer to classLevel section✅
     //Update lecturer's classLevelHandling and isClassLevelTeacher status❓
@@ -314,7 +314,6 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
 // Remove class section teacher ✅
 module.exports.removeClassSectionLecturer = async (req, res) => {
   const { data } = req.body;
-  console.log(data?.previousLecturerRemovedBy);
 
   const currentUser = req.user;
   try {
@@ -351,6 +350,7 @@ module.exports.removeClassSectionLecturer = async (req, res) => {
     const classSectionFound = await ClassLevelSection.findOne({
       _id: data?.classSectionId,
     }).populate([{ path: "previousLecturerRemovedBy" }]);
+
     if (classSectionFound) {
       if (classSectionFound?.previousTeacher === lecturerFound?._id) {
         res.status(404).json({
@@ -365,8 +365,9 @@ module.exports.removeClassSectionLecturer = async (req, res) => {
       // Find all students in this class
       const studentsFoundInThisClass = await User?.find({
         "studentSchoolData.currentClassLevelSection": classSectionFound?._id,
-        "studentSchoolData.studentStatusExtend.isStudent": true,
+        // "studentSchoolData.studentStatusExtend.isStudent": true,
       });
+      // console.log("Student In Class: ", studentsFoundInThisClass);
       //Assign teacher to classLevel section✅
       //Update teacher's classLevelHandling and isClassLevelTeacher status❓
       if (lecturerFound) {
