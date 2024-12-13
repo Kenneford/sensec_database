@@ -2,6 +2,7 @@ const { sendEnrollmentEmail } = require("../../emails/sendEmail");
 const {
   selectStudentHouse,
 } = require("../../middlewares/student/studentMiddleware");
+const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
 const PlacementStudent = require("../../models/PlacementStudent/PlacementStudentModel");
 const User = require("../../models/user/UserModel");
 
@@ -12,6 +13,10 @@ module.exports.createStudentParent = async (req, res, next) => {
     // Find student
     const foundStudent = await User.findOne({
       uniqueId: studentId,
+    });
+    //Find Student Class Section
+    const studentClassSection = await ClassLevelSection.findOne({
+      _id: foundStudent?.studentSchoolData?.currentClassLevelSection,
     });
     if (!foundStudent) {
       res.status(404).json({
@@ -52,6 +57,9 @@ module.exports.createStudentParent = async (req, res, next) => {
         "parent.email": parentData?.email,
         "parent.address": parentData?.address,
         "parent.mobile": parentData?.mobile,
+        "studentSchoolData.currentClassLevelSection": studentClassSection?._id,
+        "studentSchoolData.currentClassTeacher":
+          studentClassSection?.currentTeacher,
         "studentStatusExtend.enrollmentStatus": "pending",
         "studentStatusExtend.enrolledOnline": true,
         "studentStatusExtend.dateEnrolled": new Date(),

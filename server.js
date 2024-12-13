@@ -163,7 +163,7 @@ const start = async (req, res) => {
 
     app.listen(PORT, HOST, () =>
       console.log(
-        `Server running in ${process.env.NODE_ENV} mode on ${API_URL}`
+        `Server running in ${process.env.NODE_ENV} mode and hosted on ${API_URL}`
       )
     );
   } catch (error) {
