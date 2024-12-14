@@ -211,6 +211,14 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
       "lecturerSchoolData.classLevelHandling":
         foundStudent?.studentSchoolData?.currentClassLevelSection,
     });
+    //Find student's Program✅
+    const programFound = await Program.findOne({
+      _id: foundStudent?.studentSchoolData?.program,
+    });
+    //Find student's Class
+    const studentClass = await ClassLevelSection.findOne({
+      _id: foundStudent?.studentSchoolData?.currentClassLevelSection,
+    });
     const nextSemester = await AcademicTerm.findOne({
       isNext: true,
     });
@@ -247,18 +255,14 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
       subject: "Your Enrollment Status",
       template: "enrollmentApprovalEmail",
       context: {
-        studentProgram: foundStudent?.studentSchoolData?.program
-          ? foundStudent?.studentSchoolData?.program?.name
-          : "Unknown",
-        studentClass: foundStudent?.studentSchoolData?.currentClassLevelSection
-          ? foundStudent?.studentSchoolData?.currentClassLevelSection?.label
-          : "Unknown",
+        studentProgram: programFound ? programFound?.name : "Unknown",
+        studentClass: studentClass ? studentClass?.label : "Unknown",
         studentLecturer: studentLecturer?.personalInfo
           ? studentLecturer?.personalInfo?.fullName
           : "Unknown",
         studentLecturerGender:
           studentLecturer?.personalInfo?.gender === "Male" ? "Mr." : "Mrs.",
-        nextSemester,
+        nextSemester: nextSemester?.from,
         userImage: foundStudent?.personalInfo?.profilePicture.url,
         uniqueId: foundStudent?.uniqueId,
         firstName: foundStudent?.personalInfo?.firstName,
