@@ -247,8 +247,17 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
       subject: "Your Enrollment Status",
       template: "enrollmentApprovalEmail",
       context: {
-        userInfo: foundStudent,
-        studentLecturer,
+        studentProgram: foundStudent?.studentSchoolData?.program
+          ? foundStudent?.studentSchoolData?.program?.name
+          : "Unknown",
+        studentClass: foundStudent?.studentSchoolData?.currentClassLevelSection
+          ? foundStudent?.studentSchoolData?.currentClassLevelSection?.label
+          : "Unknown",
+        studentLecturer: studentLecturer?.personalInfo
+          ? studentLecturer?.personalInfo?.fullName
+          : "Unknown",
+        studentLecturerGender:
+          studentLecturer?.personalInfo?.gender === "Male" ? "Mr." : "Mrs.",
         nextSemester,
         userImage: foundStudent?.personalInfo?.profilePicture.url,
         uniqueId: foundStudent?.uniqueId,
