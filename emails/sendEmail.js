@@ -41,7 +41,9 @@ const sendVerificationEmail = async (req, res, next) => {
     if (userFound?.contactAddress?.email) {
       if (userVerificationData) {
         const currentYear = new Date().getFullYear();
-        const url = "https://official-sensec-website.onrender.com";
+        const url = (process.env.NODE_ENV = "development"
+          ? "http://192.168.178.22:2025"
+          : "https://official-sensec-website.onrender.com");
         // const url = "http://192.168.178.22:2025";
 
         const transporter = createGMailTransporter();
@@ -147,7 +149,9 @@ async function passwordResetRequestEmail(req, res, next) {
 
 const sendEnrollmentEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
-  const url = "https://official-sensec-website.onrender.com";
+  const url = (process.env.NODE_ENV = "development"
+    ? "http://192.168.178.22:2025"
+    : "https://official-sensec-website.onrender.com");
   // const url = "http://192.168.178.22:2025";
 
   const transporter = createGMailTransporter();
@@ -177,7 +181,7 @@ const sendEnrollmentEmail = async ({ foundStudent }) => {
       firstName: foundStudent?.personalInfo?.firstName,
       lastName: foundStudent?.personalInfo?.lastName,
       company: "Senya Senior High School",
-      urlLink: `${url}/sensec/students/enrollment/online/${foundStudent?.uniqueId}/success`,
+      urlLink: `${url}/sensec/homepage`,
       linkText: "Visit Our Website",
       currentYear,
     },
@@ -301,6 +305,9 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
 const studentEnrollmentApprovalSMS = async (req, res, next) => {
   const student = req?.enrollmentApprovalData?.studentFound;
   const admin = req?.enrollmentApprovalData?.adminFound;
+  const url = (process.env.NODE_ENV = "development"
+    ? "http://192.168.178.22:2025"
+    : "https://official-sensec-website.onrender.com");
   let body = `
 
 Hello ${student?.personalInfo?.firstName},
@@ -309,7 +316,7 @@ CONGRATULATIONS TO YOU...
 
 We're thankful once again for your enrollment into our school.
 This message is to inform you that your enrolment has been approved, and you're now a student of SENYA SENIOR HIGH SCHOOL (SENSEC).
-Click: "https://official-sensec-website.onrender.com/sensec/students/placement_check" to check for your enrollment data.
+Click: "${url}/sensec/students/placement_check" to check for your enrollment data.
 
 Unique ID: ${foundStudent?.uniqueId}
 Course: ${foundStudent?.studentSchoolData?.program?.name}
@@ -366,7 +373,9 @@ Senya Senior High School.
 const userSignUpSMS = async (req, res, next) => {
   const userInfo = req?.newSignedUpUserData?.newSignedUpUser;
   const userPassword = req?.newSignedUpUserData?.password;
-  const url = "https://official-sensec-website.onrender.com";
+  const url = (process.env.NODE_ENV = "development"
+    ? "http://192.168.178.22:2025"
+    : "https://official-sensec-website.onrender.com");
   // const url = "http://192.168.178.22:2025";
   let body = `
 
@@ -445,7 +454,9 @@ const sendEmploymentEmail = async ({ foundUser }) => {
   console.log(foundUser);
 
   const currentYear = new Date().getFullYear();
-  const url = "https://official-sensec-website.onrender.com";
+  const url = (process.env.NODE_ENV = "development"
+    ? "http://192.168.178.22:2025"
+    : "https://official-sensec-website.onrender.com");
   // const url = "http://192.168.178.22:2025";
   try {
     const transporter = createGMailTransporter();
@@ -506,7 +517,9 @@ const sendEmploymentApprovalEmail = async ({ employeeFound }) => {
   console.log(employeeFound);
 
   const currentYear = new Date().getFullYear();
-  const url = "https://official-sensec-website.onrender.com";
+  const url = (process.env.NODE_ENV = "development"
+    ? "http://192.168.178.22:2025"
+    : "https://official-sensec-website.onrender.com");
   // const url = "http://192.168.178.22:2025";
   try {
     const classHandling = await ClassLevelSection.findOne({
@@ -578,7 +591,9 @@ const sendEmploymentApprovalEmail = async ({ employeeFound }) => {
   }
 };
 const employmentSMS = async ({ foundUser }) => {
-  const url = "https://official-sensec-website.onrender.com";
+  const url = (process.env.NODE_ENV = "development"
+    ? "http://192.168.178.22:2025"
+    : "https://official-sensec-website.onrender.com");
   // const url = "http://192.168.178.22:2025";
   try {
     let body = `
