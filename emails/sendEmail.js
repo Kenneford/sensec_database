@@ -204,7 +204,9 @@ const sendEnrollmentEmail = async ({ foundStudent }) => {
 
 const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
-  const url = "https://official-sensec-website.onrender.com";
+  const url = (process.env.NODE_ENV = "development"
+    ? "http://192.168.178.22:2025"
+    : "https://official-sensec-website.onrender.com");
   // const url = "http://192.168.178.22:2025";
   try {
     const studentLecturer = await User.findOne({
@@ -268,7 +270,7 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
         firstName: foundStudent?.personalInfo?.firstName,
         lastName: foundStudent?.personalInfo?.lastName,
         company: "Senya Senior High School",
-        urlLink: `${url}/sensec/homepage`,
+        urlLink: `${url}/sensec/students/enrollment/online/${foundStudent?.uniqueId}/success`,
         linkText: "Visit Our Website",
         currentYear,
       },
