@@ -4,6 +4,7 @@ const {
 } = require("./createMailTransporter");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
+const { format } = require("date-fns");
 
 // Text message engine
 const twilioClient = require("twilio")(
@@ -22,6 +23,9 @@ const vonage = new Vonage({
 });
 
 const UserVerificationData = require("../models/user/userRefs/signUpModel/UserVerificationModel");
+const AcademicTerm = require("../models/academics/term/AcademicTermModel");
+const ClassLevelSection = require("../models/academics/class/ClassLevelSectionModel");
+const Program = require("../models/academics/programmes/ProgramsModel");
 
 const sendVerificationEmail = async (req, res, next) => {
   // Get verification data
@@ -49,8 +53,8 @@ const sendVerificationEmail = async (req, res, next) => {
             layoutsDir: path.resolve("./emails/forSignUpVerification/"),
             defaultLayout: "",
           },
-          viewPath: path.resolve("./emails/forSignUpVerification/"),
-          extName: ".hbs",
+          viewPath: path.resolve("./emails/forSignUpVerification/"), // Path to the templates
+          extName: ".hbs", // Extension for templates
         };
 
         // use a template file with nodemailer
@@ -202,57 +206,81 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
   const url = "https://official-sensec-website.onrender.com";
   // const url = "http://192.168.178.22:2025";
+  try {
+    const studentLecturer = await User.findOne({
+      "lecturerSchoolData.classLevelHandling":
+        foundStudent?.studentSchoolData?.currentClassLevelSection,
+    });
+    const nextSemester = await AcademicTerm.findOne({
+      isNext: true,
+    });
+    const transporter = createGMailTransporter();
 
-  const transporter = createGMailTransporter();
-
-  const handlebarOptions = {
-    viewEngine: {
-      extname: "hbs",
-      partialsDir: path.resolve("./emails/forEnrollment/"),
-      layoutsDir: path.resolve("./emails/forEnrollment/"),
-      defaultLayout: "",
-    },
-    viewPath: path.resolve("./emails/forEnrollment/"),
-    extName: ".hbs",
-  };
-
-  // use a template file with nodemailer
-  transporter.use("compile", hbs(handlebarOptions));
-
-  let mailTemplate = {
-    from: `Senya Senior High School <${process.env.NODEMAILER_GMAIL}>`,
-    to: foundStudent?.contactAddress?.email,
-    subject: "Your Enrollment Status",
-    template: "enrollmentApprovalEmail",
-    context: {
-      userImage: foundStudent?.personalInfo?.profilePicture.url,
-      uniqueId: foundStudent?.uniqueId,
-      firstName: foundStudent?.personalInfo?.firstName,
-      lastName: foundStudent?.personalInfo?.lastName,
-      company: "Senya Senior High School",
-      urlLink: `${url}/sensec/homepage`,
-      linkText: "Visit Our Website",
-      currentYear,
-    },
-    attachments: [
-      {
-        filename: "school-logo.png",
-        path: path.resolve(__dirname, "assets/sensec-logo1.png"), // Path to school logo
-        cid: "schoolLogo", // Same CID as in the HTML template
+    const handlebarOptions = {
+      viewEngine: {
+        extname: "hbs",
+        partialsDir: path.resolve("./emails/forEnrollment/"),
+        layoutsDir: path.resolve("./emails/forEnrollment/"),
+        defaultLayout: "",
+        helpers: {
+          // Define a custom helper for date formatting
+          formatDate: (date, dateFormat) => {
+            try {
+              return format(new Date(date), dateFormat || "yyyy-MM-dd");
+            } catch (err) {
+              console.error("Error formatting date:", err);
+              return date; // Return the original date if formatting fails
+            }
+          },
+        },
       },
-    ],
-  };
-  transporter.sendMail(mailTemplate, (error, info) => {
-    if (error) {
-      console.log("Error sending email:", error);
-      // return res
-      //   .status(400)
-      //   .json({ errorMessage: { message: "Failed to send email." } });
-    } else {
-      console.log("Verification email sent!");
-      next();
-    }
-  });
+      viewPath: path.resolve("./emails/forEnrollment/"),
+      extName: ".hbs",
+    };
+
+    // use a template file with nodemailer
+    transporter.use("compile", hbs(handlebarOptions));
+
+    let mailTemplate = {
+      from: `Senya Senior High School <${process.env.NODEMAILER_GMAIL}>`,
+      to: foundStudent?.contactAddress?.email,
+      subject: "Your Enrollment Status",
+      template: "enrollmentApprovalEmail",
+      context: {
+        userInfo: foundStudent,
+        studentLecturer,
+        nextSemester,
+        userImage: foundStudent?.personalInfo?.profilePicture.url,
+        uniqueId: foundStudent?.uniqueId,
+        firstName: foundStudent?.personalInfo?.firstName,
+        lastName: foundStudent?.personalInfo?.lastName,
+        company: "Senya Senior High School",
+        urlLink: `${url}/sensec/homepage`,
+        linkText: "Visit Our Website",
+        currentYear,
+      },
+      attachments: [
+        {
+          filename: "school-logo.png",
+          path: path.resolve(__dirname, "assets/sensec-logo1.png"), // Path to school logo
+          cid: "schoolLogo", // Same CID as in the HTML template
+        },
+      ],
+    };
+    transporter.sendMail(mailTemplate, (error, info) => {
+      if (error) {
+        console.log("Error sending email:", error);
+        // return res
+        //   .status(400)
+        //   .json({ errorMessage: { message: "Failed to send email." } });
+      } else {
+        console.log("Verification email sent!");
+        next();
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const studentEnrollmentApprovalSMS = async (req, res, next) => {
@@ -266,7 +294,14 @@ CONGRATULATIONS TO YOU...
 
 We're thankful once again for your enrollment into our school.
 This message is to inform you that your enrolment has been approved, and you're now a student of SENYA SENIOR HIGH SCHOOL (SENSEC).
-Click: "https://official-sensec-website.onrender.com/sensec/students/placement_check" to check for your placement into our school.
+Click: "https://official-sensec-website.onrender.com/sensec/students/placement_check" to check for your enrollment data.
+
+Unique ID: ${foundStudent?.uniqueId}
+Course: ${foundStudent?.studentSchoolData?.program?.name}
+Class: ${foundStudent?.studentSchoolData?.currentClassLevelSection?.label}
+Class Lecturer: ${foundStudent?.studentSchoolData?.currentClassTeacher}
+Start Date: 22.10.2024
+Duration: 3 Years
 
 Yours Sincerely,
 
@@ -452,6 +487,81 @@ const sendEmploymentEmail = async ({ foundUser }) => {
     console.log(error);
   }
 };
+const sendEmploymentApprovalEmail = async ({ employeeFound }) => {
+  console.log(employeeFound);
+
+  const currentYear = new Date().getFullYear();
+  const url = "https://official-sensec-website.onrender.com";
+  // const url = "http://192.168.178.22:2025";
+  try {
+    const classHandling = await ClassLevelSection.findOne({
+      _id: employeeFound?.lecturerSchoolData?.classLevelHandling,
+    });
+    //Find lecturer's Program✅
+    const programFound = await Program.findOne({
+      _id: employeeFound?.lecturerSchoolData?.program,
+    });
+    const transporter = createGMailTransporter();
+
+    const handlebarOptions = {
+      viewEngine: {
+        extname: "hbs",
+        partialsDir: path.resolve("./emails/forEnrollment/"),
+        layoutsDir: path.resolve("./emails/forEnrollment/"),
+        defaultLayout: "",
+        helper: { classHandling },
+      },
+      viewPath: path.resolve("./emails/forEnrollment/"),
+      extName: ".hbs",
+    };
+
+    // use a template file with nodemailer
+    transporter.use("compile", hbs(handlebarOptions));
+
+    let mailTemplate = {
+      from: `Senya Senior High School <${process.env.NODEMAILER_GMAIL}>`,
+      to: employeeFound?.contactAddress?.email,
+      subject: "Your Employment Status",
+      template: "employmentApprovalEmail",
+      context: {
+        employeeFound,
+        isLecturer: employeeFound.roles.includes("lecturer"),
+        classHandling: classHandling
+          ? classHandling?.label
+          : "Not yet assigned!",
+        userImage: employeeFound?.personalInfo?.profilePicture.url,
+        uniqueId: employeeFound?.uniqueId,
+        program: programFound?.name,
+        firstName: employeeFound?.personalInfo?.firstName,
+        lastName: employeeFound?.personalInfo?.lastName,
+        company: "Senya Senior High School",
+        urlLink: `${url}/sensec/homepage`,
+        linkText: "Visit Our Website",
+        currentYear,
+      },
+      attachments: [
+        {
+          filename: "school-logo.png",
+          path: path.resolve(__dirname, "assets/sensec-logo1.png"), // Path to school logo
+          cid: "schoolLogo", // Same CID as in the HTML template
+        },
+      ],
+    };
+    transporter.sendMail(mailTemplate, (error, info) => {
+      if (error) {
+        console.log("Error sending email:", error?.message);
+        // return res
+        //   .status(400)
+        //   .json({ errorMessage: { message: "Failed to send email." } });
+      } else {
+        console.log("Employment email sent!");
+        // next();
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 const employmentSMS = async ({ foundUser }) => {
   const url = "https://official-sensec-website.onrender.com";
   // const url = "http://192.168.178.22:2025";
@@ -530,4 +640,5 @@ module.exports = {
   userSignUpSMS,
   sendEmploymentEmail,
   employmentSMS,
+  sendEmploymentApprovalEmail,
 };

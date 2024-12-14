@@ -1,6 +1,7 @@
 const {
   sendEmploymentEmail,
   employmentSMS,
+  sendEmploymentApprovalEmail,
 } = require("../../emails/sendEmail");
 const { cloudinary } = require("../../middlewares/cloudinary/cloudinary");
 const User = require("../../models/user/UserModel");
@@ -383,6 +384,7 @@ module.exports.approveEmployment = async (req, res, next) => {
         { upsert: true, new: true }
       );
     }
+    sendEmploymentApprovalEmail({ employeeFound });
     res.status(200).json({
       successMessage: "Employment approved successfully!",
       userEmploymentApproved,

@@ -170,7 +170,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Enrollment Confirmation</title>
+    <title>Employee Approval Email</title>
     <style>
       body { font-family: "Arial", sans-serif; margin: 0; padding: 0;
       background-color: #f4f4f4; } .container { width: 100%; max-width: 600px;
@@ -207,34 +207,24 @@
         <!-- Student's Photo -->
         <img src={{userImage}} alt="Student Photo" class="student-picture" />
         <p>Hi {{firstName}} {{lastName}},</p>
-        <p>Congratulation to you! Your enrollment has been approved, and you're
-          now a student of SENYA SENIOR HIGH SCHOOL (SENSEC).</p>
-        <p>Thank you for enrolling in our school! Below are brief information
-          about your enrollment:</p>
+        <p>Congratulation to you! Your employment has been approved, and you're
+          now an employee of SENYA SENIOR HIGH SCHOOL (SENSEC).</p>
+        <p>Thank you for joining our school! Below are brief information about
+          your employment:</p>
         <ul>
-          <li><strong>Unique ID:</strong> {{userInfo?.uniqueId}}</li>
-          <li><strong>Course:</strong>
-            {{userInfo?.studentSchoolData?.program?.name}}</li>
-          <li><strong>Class:</strong>
-            {{userInfo?.studentSchoolData?.currentClassLevelSection?.label}}</li>
-          <li><strong>Class Lecturer:</strong>
-            {studentLecturer?.personalInfo?.gender === "Male" && "Mr."}
-            {studentLecturer?.personalInfo?.gender === "Female" && "Mrs."}{" "}
-            {{studentLecturer?.personalInfo?.fullName
-              ?
-              studentLecturer?.personalInfo?.fullName
-              :
-              ""
-            }}{" "}
-          </li>
-          <li><strong>Start Date:</strong>
-            {{formatDate nextSemester?.from "MMMM do, yyyy"}}</li>
-          <li><strong>Duration:</strong> 3 years</li>
+          <li><strong>Unique ID:</strong> {{uniqueId}}</li>
+          {{#if isLecturer}}
+            <li><strong>Programme:</strong>
+              {{program}}</li>
+            <li><strong>Class:</strong>
+              {{classHandling}}</li>
+          {{/if}}
         </ul>
-        <p>We’re excited to have you on board and look forward to your learning
-          journey!</p>
+        <p>Your ID will be required when signing up as a user!</p>
+        <p>We’re excited to have you on board and look forward to have good
+          times with you.</p>
         <p class="linkBtn">
-          <a href="{{urlLink}}" class="button">View Your Enrollment</a>
+          <a href="{{urlLink}}" class="button">{{linkText}}</a>
         </p>
         <p>Yours Sincerely,</p>
         <h4 style="font-weight: 600; padding-bottom: -.5rem; margin: 0">Ebenezer
