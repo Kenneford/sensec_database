@@ -47,6 +47,10 @@ const programSchema = new Schema(
       type: String,
       default: true,
     },
+    hasDivisions: {
+      type: String,
+      default: false,
+    },
     aboutProgram: {
       type: String,
     },

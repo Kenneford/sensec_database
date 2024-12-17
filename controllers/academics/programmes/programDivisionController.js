@@ -55,22 +55,20 @@ module.exports.createDivisionProgram = async (req, res) => {
       divisionName: data?.divisionName,
       createdBy: data?.createdBy,
     });
-    try {
-      // Push newly created division programme into its mother-programme divisionPrograms array✅
-      if (
-        program &&
-        !program?.programDivisions?.includes(newDivisionProgram?._id)
-      ) {
-        program.programDivisions.push(newDivisionProgram?._id);
-        await program.save();
-      }
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({
-        errorMessage: {
-          message: ["Internal Server Error!"],
-        },
-      });
+    // Push newly created division programme into its mother-programme divisionPrograms array✅
+    if (
+      program &&
+      !program?.programDivisions?.includes(newDivisionProgram?._id)
+    ) {
+      program.programDivisions.push(newDivisionProgram?._id);
+      await program.save();
+    }
+    if (newDivisionProgram) {
+      await Program.findOneAndUpdate(
+        { _id: program?._id },
+        { hasDivisions: true },
+        { new: true }
+      );
     }
     res.status(201).json({
       successMessage: "Division programme created successfully!",
@@ -86,7 +84,7 @@ module.exports.createDivisionProgram = async (req, res) => {
     });
   }
 };
-// Fetch all division Programmes ✅
+// Fetch all division Programmes By Program ID ✅
 exports.getAllDivisionPrograms = async (req, res) => {
   const { programId } = req.params;
   try {
@@ -109,6 +107,26 @@ exports.getAllDivisionPrograms = async (req, res) => {
         },
       });
     }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!"],
+      },
+    });
+  }
+};
+// Fetch all created division Programmes ✅
+exports.getAllCreatedDivisionPrograms = async (req, res) => {
+  try {
+    const divisionProgramsFound = await ProgramDivision.find({}).populate([
+      { path: "optionalElectiveSubjects" },
+      { path: "electiveSubjects" },
+    ]);
+    res.status(200).json({
+      successMessage: "Division programs fetched successfully...",
+      divisionProgramsFound,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
