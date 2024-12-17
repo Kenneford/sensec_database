@@ -44,7 +44,7 @@ const sendVerificationEmail = async (req, res, next) => {
         const url = (process.env.NODE_ENV = "development"
           ? "http://192.168.178.22:2025"
           : "https://official-sensec-website.onrender.com");
-        // const url = "http://192.168.178.22:2025";
+        // const url = "https://official-sensec-website.onrender.com";
 
         const transporter = createGMailTransporter();
 
@@ -150,7 +150,7 @@ async function passwordResetRequestEmail(req, res, next) {
 const sendEnrollmentEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
   const url = process.env.EMAIL_URL;
-  // const url = "http://192.168.178.22:2025";
+  // const url = "https://official-sensec-website.onrender.com";
 
   const transporter = createGMailTransporter();
 
@@ -207,7 +207,7 @@ const sendEnrollmentEmail = async ({ foundStudent }) => {
 const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
   const url = process.env.EMAIL_URL;
-  // const url = "http://192.168.178.22:2025";
+  // const url = "https://official-sensec-website.onrender.com";
   try {
     const studentLecturer = await User.findOne({
       "lecturerSchoolData.classLevelHandling":
@@ -368,7 +368,7 @@ const userSignUpSMS = async (req, res, next) => {
   const userInfo = req?.newSignedUpUserData?.newSignedUpUser;
   const userPassword = req?.newSignedUpUserData?.password;
   const url = process.env.EMAIL_URL;
-  // const url = "http://192.168.178.22:2025";
+  // const url = "https://official-sensec-website.onrender.com";
   let body = `
 
 Hello ${userInfo?.personalInfo?.firstName},
@@ -447,7 +447,7 @@ const sendEmploymentEmail = async ({ foundUser }) => {
 
   const currentYear = new Date().getFullYear();
   const url = process.env.EMAIL_URL;
-  // const url = "http://192.168.178.22:2025";
+  // const url = "https://official-sensec-website.onrender.com";
   try {
     const transporter = createGMailTransporter();
 
@@ -508,7 +508,7 @@ const sendEmploymentApprovalEmail = async ({ employeeFound }) => {
 
   const currentYear = new Date().getFullYear();
   const url = process.env.EMAIL_URL;
-  // const url = "http://192.168.178.22:2025";
+  // const url = "https://official-sensec-website.onrender.com";
   try {
     const classHandling = await ClassLevelSection.findOne({
       _id: employeeFound?.lecturerSchoolData?.classLevelHandling,
@@ -580,7 +580,7 @@ const sendEmploymentApprovalEmail = async ({ employeeFound }) => {
 };
 const employmentSMS = async ({ foundUser }) => {
   const url = process.env.EMAIL_URL;
-  // const url = "http://192.168.178.22:2025";
+  // const url = "https://official-sensec-website.onrender.com";
   try {
     let body = `
 

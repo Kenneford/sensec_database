@@ -13,6 +13,7 @@ const {
   getSingleDivisionProgram,
   updateDivisionProgram,
   deleteDivisionProgram,
+  getAllCreatedDivisionPrograms,
 } = require("../../../controllers/academics/programmes/programDivisionController");
 const {
   authUser,
@@ -67,6 +68,10 @@ router.post(
 router.get(
   "/academics/programs/:programId/divisions/fetch_all",
   getAllDivisionPrograms
+);
+router.get(
+  "/academics/programs/divisions/fetch_all",
+  getAllCreatedDivisionPrograms
 );
 router.get(
   "/academics/programs/:programId/divisions/fetch",
