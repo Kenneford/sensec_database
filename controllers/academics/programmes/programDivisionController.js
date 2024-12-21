@@ -91,7 +91,7 @@ exports.getAllDivisionPrograms = async (req, res) => {
     const program = await Program.findOne({ _id: programId });
     if (program) {
       const divisionProgramsFound = await ProgramDivision.find({
-        programId,
+        programId: program?._id,
       }).populate([
         { path: "optionalElectiveSubjects" },
         { path: "electiveSubjects" },
@@ -108,7 +108,6 @@ exports.getAllDivisionPrograms = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       errorMessage: {
         message: ["Something went wrong!"],
@@ -128,7 +127,6 @@ exports.getAllCreatedDivisionPrograms = async (req, res) => {
       divisionProgramsFound,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       errorMessage: {
         message: ["Something went wrong!"],
