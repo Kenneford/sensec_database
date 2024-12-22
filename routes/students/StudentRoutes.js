@@ -14,6 +14,8 @@ const {
   approveMultiStudents,
   rejectMultiStudents,
   rejectStudentEnrollment,
+  studentPersonalDataUpdate,
+  studentSchoolDataUpdate,
 } = require("../../controllers/students/StudentController");
 const {
   sendEnrollmentEmail,
@@ -35,6 +37,7 @@ const {
   level100MultiStudentsPromotion,
   level200MultiStudentsPromotion,
   level300MultiStudentsPromotion,
+  updateStudentsProfileImage,
 } = require("../../middlewares/student/studentMiddleware");
 
 const router = require("express").Router();
@@ -56,6 +59,15 @@ router.post(
   "/students/:studentId/enrolment/online/guardian/add",
   createStudentGuardian
 );
+// Update student's personal data
+router.put(
+  "/students/:userId/personal_data/update",
+  uploadImageFile.single("profilePicture"),
+  updateStudentsProfileImage,
+  studentPersonalDataUpdate
+);
+// Update student's school data
+router.put("/students/:studentId/school_data/update", studentSchoolDataUpdate);
 // For Enrollment Approval/Rejection
 router.put(
   "/students/:studentId/enrolment/approve",

@@ -6,6 +6,7 @@ const Program = require("../../models/academics/programmes/ProgramsModel");
 const OldStudents = require("../../models/graduates/OldStudentsModel");
 const PlacementStudent = require("../../models/PlacementStudent/PlacementStudentModel");
 const User = require("../../models/user/UserModel");
+const { cloudinary } = require("../cloudinary/cloudinary");
 
 // For New Students Enrollment
 async function validateStudentPlacementData(req, res, next) {
@@ -1142,6 +1143,85 @@ async function level300MultiStudentsPromotion(req, res, next) {
     });
   }
 }
+// For Student Data Update
+async function updateStudentsProfileImage(req, res, next) {
+  const { userId } = req.params;
+  const { updateData } = req.body;
+
+  try {
+    // Find the student by ID
+    const foundUser = await User.findOne({ uniqueId: userId });
+    if (!foundUser) {
+      return res.status(404).json({
+        errorMessage: {
+          message: ["Student data not found!"],
+        },
+      });
+    }
+
+    // Determine the profile picture source (for web vs Postman)
+    const profilePictureSource = req.file?.path || updateData?.profilePicture;
+
+    if (!profilePictureSource) {
+      return res.status(400).json({
+        errorMessage: {
+          message: ["No profile picture provided!"],
+        },
+      });
+    }
+
+    // Handle existing image deletion if applicable
+    const existingImgId = foundUser?.personalInfo?.profilePicture?.url;
+    if (existingImgId) {
+      await cloudinary.uploader.destroy(existingImgId);
+    }
+
+    // Upload new image to Cloudinary
+    const result = await cloudinary.uploader.upload(profilePictureSource, {
+      folder: "Students",
+      transformation: [
+        { width: 300, height: 400, crop: "fill", gravity: "center" },
+        { quality: "auto" },
+        { fetch_format: "auto" },
+      ],
+    });
+
+    // Update the student's profile picture in the database
+    const updatedUser = await User.findByIdAndUpdate(
+      foundUser._id,
+      {
+        "personalInfo.profilePicture": {
+          public_id: result.public_id,
+          url: result.secure_url,
+        },
+        lastUpdatedBy: updateData?.lastUpdatedBy,
+        updatedDate: new Date().toISOString(),
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(500).json({
+        errorMessage: {
+          message: ["Failed to update profile image."],
+        },
+      });
+    }
+
+    // Attach the updated student data to the request object
+    req.foundUser = updatedUser;
+
+    // Proceed to the next middleware or handler
+    next();
+  } catch (error) {
+    console.error("Error updating user profile image:", error);
+    res.status(500).json({
+      errorMessage: {
+        message: [error.message],
+      },
+    });
+  }
+}
 
 module.exports = {
   validateStudentPlacementData,
@@ -1158,4 +1238,5 @@ module.exports = {
   level100MultiStudentsPromotion,
   level200MultiStudentsPromotion,
   level300MultiStudentsPromotion,
+  updateStudentsProfileImage,
 };
