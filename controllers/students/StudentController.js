@@ -4,6 +4,7 @@ const {
   selectStudentHouse,
 } = require("../../middlewares/student/studentMiddleware");
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
+const Program = require("../../models/academics/programmes/ProgramsModel");
 const AcademicYear = require("../../models/academics/year/AcademicYearModel");
 const User = require("../../models/user/UserModel");
 
@@ -554,5 +555,127 @@ module.exports.rejectMultiStudents = async (req, res) => {
         message: [error?.message],
       },
     });
+  }
+};
+
+module.exports.studentPersonalDataUpdate = async (req, res) => {
+  const { userId } = req.params;
+  const { updateData } = req.body;
+  const foundStudent = req.foundUser;
+  console.log(userId);
+  console.log(updateData);
+
+  try {
+    //Update student Info
+    const studentInfoUpdated = await User.findOneAndUpdate(
+      foundStudent._id,
+      {
+        "personalInfo.firstName": updateData?.firstName,
+        "personalInfo.lastName": updateData?.lastName,
+        "personalInfo.otherName": updateData?.otherName,
+        "personalInfo.dateOfBirth": updateData?.dateOfBirth,
+        "personalInfo.placeOfBirth": updateData?.placeOfBirth,
+        "personalInfo.gender": updateData?.gender,
+        "personalInfo.nationality": updateData?.nationality,
+        "personalInfo.fullName": `${updateData?.firstName} ${updateData?.otherName} ${updateData?.lastName}`,
+        "contactAddress.homeTown": updateData?.homeTown,
+        "contactAddress.district": updateData?.district,
+        "contactAddress.region": updateData?.region,
+        "contactAddress.currentCity": updateData?.currentCity,
+        "contactAddress.gpsAddress": updateData?.gpsAddress,
+        "contactAddress.residentialAddress": updateData?.residentialAddress,
+        "contactAddress.mobile": updateData?.mobile,
+        "contactAddress.email": updateData?.email,
+        "status.height": updateData?.height,
+        "status.weight": updateData?.weight,
+        "status.complexion": updateData?.complexion,
+        "status.motherTongue": updateData?.motherTongue,
+        "status.otherTongue": updateData?.otherTongue,
+        lastUpdatedBy: updateData?.lastUpdatedBy,
+        previouslyUpdatedBy: foundStudent?.lastUpdatedBy
+          ? foundStudent?.lastUpdatedBy
+          : null,
+        updatedDate: new Date().toISOString(),
+      },
+      {
+        new: true,
+      }
+    );
+    res.status(201).json({
+      successMessage: "Student's data updated successfully!",
+      updatedStudent: studentInfoUpdated,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      errorMessage: {
+        message: [`Student Update Failed! ${error?.message}`],
+      },
+    });
+    return;
+  }
+};
+
+module.exports.studentSchoolDataUpdate = async (req, res) => {
+  const { studentId } = req.params;
+  const { updateData } = req.body;
+  try {
+    const foundStudent = await User.findOne({
+      uniqueId: studentId,
+    });
+    if (!foundStudent) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Student data not found!"],
+        },
+      });
+      return;
+    }
+    const foundProgram = await Program.findOne({
+      _id: updateData?.program,
+    });
+    if (!foundProgram) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Programme Not Found!"],
+        },
+      });
+      return;
+    }
+    //Update student school data
+    if (foundStudent) {
+      const studentInfoUpdated = await User.findOneAndUpdate(
+        foundStudent._id,
+        {
+          "studentSchoolData.jhsAttended": updateData?.jhsAttended,
+          "studentSchoolData.completedJhs": updateData?.completedJhs,
+          "studentSchoolData.program": updateData?.program,
+          "studentSchoolData.divisionProgram": updateData?.programDivision,
+          "studentSchoolData.currentClassLevel": updateData?.currentClassLevel,
+          "studentSchoolData.batch": updateData?.batch,
+          "status.residentialStatus": updateData?.residentialStatus,
+          lastUpdatedBy: updateData?.lastUpdatedBy,
+          previouslyUpdatedBy: foundStudent?.lastUpdatedBy
+            ? foundStudent?.lastUpdatedBy
+            : "",
+          updatedDate: new Date().toISOString(),
+        },
+        {
+          new: true,
+        }
+      );
+      res.status(201).json({
+        successMessage: "Student's school data updated successfully!",
+        updatedStudent: studentInfoUpdated,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: [`Student school data update failed! ${error?.message}`],
+      },
+    });
+    return;
   }
 };
