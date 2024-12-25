@@ -423,3 +423,45 @@ module.exports.fetchAllUsers = async (req, res) => {
     });
   }
 };
+module.exports.fetchSingleUser = async (req, res) => {
+  const { userId } = req.params;
+  console.log(userId);
+
+  try {
+    const userFound = await User.findOne({ uniqueId: userId }).populate([
+      // { path: "employment.employmentProcessedBy" },
+      // { path: "employment.employmentApprovedBy" },
+      // { path: "adminActionsData.admins" },
+      {
+        path: "lecturerSchoolData.program",
+      },
+      { path: "lecturerSchoolData.classLevelHandling" },
+      { path: "lecturerSchoolData.teachingSubjects" },
+      { path: "studentSchoolData.batch" },
+      { path: "studentSchoolData.program" },
+      { path: "studentSchoolData.divisionProgram" },
+      { path: "studentSchoolData.currentClassLevel" },
+      { path: "studentSchoolData.currentClassTeacher" },
+      { path: "studentSchoolData.currentClassLevelSection" },
+      { path: "studentSchoolData.house" },
+      { path: "studentStatusExtend.enrollmentApprovedBy" },
+    ]);
+
+    if (userFound) {
+      res.status(200).json({
+        successMessage: `User data fetched successfully!`,
+        userFound,
+      });
+    } else {
+      res.status(200).json({
+        successMessage: `No user data found!`,
+      });
+    }
+  } catch (error) {
+    return res.status(400).json({
+      errorMessage: {
+        message: [`Could not fetch users data!`],
+      },
+    });
+  }
+};
