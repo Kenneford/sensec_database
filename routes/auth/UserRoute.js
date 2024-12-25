@@ -10,12 +10,16 @@ const {
   fetchAllUsers,
   refreshUserToken,
   fetchUserVerificationData,
+  fetchSingleUser,
 } = require("../../controllers/users/userController");
 const {
   sendVerificationEmail,
   passwordResetRequestEmail,
   userSignUpSMS,
 } = require("../../emails/sendEmail");
+const {
+  verifyApiKey,
+} = require("../../middlewares/apiKeyVerification/apiKeyVerification");
 const {
   createUserVerificationData,
   generateUserToken,
@@ -70,5 +74,6 @@ router.post(
 router.put("/users/role/assign", assignUserRole);
 router.put("/users/role/remove", removeUserRole);
 router.get("/users/fetch_all", fetchAllUsers);
+router.get("/users/:userId", verifyApiKey, fetchSingleUser);
 
 module.exports = router;
