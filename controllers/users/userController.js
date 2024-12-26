@@ -25,6 +25,62 @@ module.exports.userSignUp = async (req, res) => {
   }
 };
 
+module.exports.userPersonalDataUpdate = async (req, res) => {
+  const { userId } = req.params;
+  const { updateData } = req.body;
+  const foundUser = req.foundUser;
+
+  try {
+    //Update user Info
+    const userInfoUpdated = await User.findOneAndUpdate(
+      foundUser._id,
+      {
+        "personalInfo.firstName": updateData?.firstName,
+        "personalInfo.lastName": updateData?.lastName,
+        "personalInfo.otherName": updateData?.otherName,
+        "personalInfo.dateOfBirth": updateData?.dateOfBirth,
+        "personalInfo.placeOfBirth": updateData?.placeOfBirth,
+        "personalInfo.gender": updateData?.gender,
+        "personalInfo.nationality": updateData?.nationality,
+        "personalInfo.fullName": `${updateData?.firstName} ${updateData?.otherName} ${updateData?.lastName}`,
+        "contactAddress.homeTown": updateData?.homeTown,
+        "contactAddress.district": updateData?.district,
+        "contactAddress.region": updateData?.region,
+        "contactAddress.currentCity": updateData?.currentCity,
+        "contactAddress.gpsAddress": updateData?.gpsAddress,
+        "contactAddress.residentialAddress": updateData?.residentialAddress,
+        "contactAddress.mobile": updateData?.mobile,
+        "contactAddress.email": updateData?.email,
+        "status.height": updateData?.height,
+        "status.weight": updateData?.weight,
+        "status.complexion": updateData?.complexion,
+        "status.motherTongue": updateData?.motherTongue,
+        "status.otherTongue": updateData?.otherTongue,
+        lastUpdatedBy: updateData?.lastUpdatedBy,
+        previouslyUpdatedBy: foundUser?.lastUpdatedBy
+          ? foundUser?.lastUpdatedBy
+          : null,
+        updatedDate: new Date().toISOString(),
+      },
+      {
+        new: true,
+      }
+    );
+    res.status(201).json({
+      successMessage: "User's data updated successfully!",
+      updatedUser: userInfoUpdated,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      errorMessage: {
+        message: [`User Update Failed! ${error?.message}`],
+      },
+    });
+    return;
+  }
+};
 module.exports.fetchUserVerificationData = async (req, res) => {
   const { emailToken } = req.params;
   const verificationDataFound = await UserVerificationData.findOne({

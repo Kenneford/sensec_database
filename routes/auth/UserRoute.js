@@ -11,6 +11,7 @@ const {
   refreshUserToken,
   fetchUserVerificationData,
   fetchSingleUser,
+  updateUserDataFromChatApp,
 } = require("../../controllers/users/userController");
 const {
   sendVerificationEmail,
@@ -75,5 +76,6 @@ router.put("/users/role/assign", assignUserRole);
 router.put("/users/role/remove", removeUserRole);
 router.get("/users/fetch_all", fetchAllUsers);
 router.get("/users/:userId", verifyApiKey, fetchSingleUser);
+// router.put("/users/:userId/update", verifyApiKey, updateUserDataFromChatApp);
 
 module.exports = router;

@@ -18,10 +18,17 @@ const {
   studentSchoolDataUpdate,
 } = require("../../controllers/students/StudentController");
 const {
+  userPersonalDataUpdate,
+} = require("../../controllers/users/userController");
+const {
   sendEnrollmentEmail,
   studentEnrollmentApprovalSMS,
 } = require("../../emails/sendEmail");
-const { authUser, authUserRole } = require("../../middlewares/auth/authUser");
+const {
+  authUser,
+  authUserRole,
+  updateUserProfileImage,
+} = require("../../middlewares/auth/authUser");
 const { uploadImageFile } = require("../../middlewares/multer/multer");
 const {
   validateStudentPlacementData,
@@ -63,8 +70,8 @@ router.post(
 router.put(
   "/students/:userId/personal_data/update",
   uploadImageFile.single("profilePicture"),
-  updateStudentsProfileImage,
-  studentPersonalDataUpdate
+  updateUserProfileImage,
+  userPersonalDataUpdate
 );
 // Update student's school data
 router.put("/students/:studentId/school_data/update", studentSchoolDataUpdate);

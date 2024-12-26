@@ -658,7 +658,7 @@ module.exports.studentSchoolDataUpdate = async (req, res) => {
           lastUpdatedBy: updateData?.lastUpdatedBy,
           previouslyUpdatedBy: foundStudent?.lastUpdatedBy
             ? foundStudent?.lastUpdatedBy
-            : "",
+            : null,
           updatedDate: new Date().toISOString(),
         },
         {
