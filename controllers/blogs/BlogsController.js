@@ -143,6 +143,8 @@ module.exports.deleteBlog = async (req, res) => {
       _id: authAdmin?.id,
     });
     const blog = await Blog.findOne({ _id: blogId });
+    console.log(blog);
+
     if (isAdmin && isAdmin?.roles?.includes("admin")) {
       if (blog) {
         const blogDeleted = await Blog.findOneAndDelete({ _id: blog?._id });
