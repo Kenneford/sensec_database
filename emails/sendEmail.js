@@ -42,10 +42,10 @@ const sendVerificationEmail = async (req, res, next) => {
       if (userVerificationData) {
         const currentYear = new Date().getFullYear();
         // Change url base on current environment mode
-        // const url = (process.env.NODE_ENV = "development"
-        //   ? "http://192.168.178.22:2025"
-        //   : "https://official-sensec-website.onrender.com");
-        const url = "https://official-sensec-website.onrender.com";
+        const url = (process.env.NODE_ENV = "development"
+          ? "http://192.168.178.22:2025"
+          : "https://official-sensec-website.onrender.com");
+        // const url = "https://official-sensec-website.onrender.com";
 
         const transporter = createGMailTransporter();
 

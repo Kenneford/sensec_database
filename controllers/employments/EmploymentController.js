@@ -4,6 +4,7 @@ const {
   sendEmploymentApprovalEmail,
 } = require("../../emails/sendEmail");
 const { cloudinary } = require("../../middlewares/cloudinary/cloudinary");
+const Program = require("../../models/academics/programmes/ProgramsModel");
 const User = require("../../models/user/UserModel");
 
 // Works ✅
@@ -274,6 +275,85 @@ module.exports.addNewEmployee = async (req, res) => {
       });
       // Handle other potential errors
     }
+  }
+};
+module.exports.employeeSchoolDataUpdate = async (req, res) => {
+  const { employeeId } = req.params;
+  console.log(employeeId);
+
+  const { updateData } = req.body;
+  try {
+    let lecturerProgram;
+    const foundEmployee = await User.findOne({
+      uniqueId: employeeId,
+    });
+    if (!foundEmployee) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Student data not found!"],
+        },
+      });
+      return;
+    }
+    if (updateData?.program) {
+      const foundProgram = await Program.findOne({
+        _id: updateData?.program,
+      });
+      if (!foundProgram) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Programme Not Found!"],
+          },
+        });
+        return;
+      } else {
+        lecturerProgram = foundProgram;
+      }
+    }
+    //Update employee school data
+    if (foundEmployee) {
+      const employeeUpdated = await User.findOneAndUpdate(
+        foundEmployee._id,
+        {
+          "employment.employmentType": updateData?.employmentType,
+          "status.residentialStatus": updateData?.residentialStatus,
+          lastUpdatedBy: updateData?.lastUpdatedBy,
+          previouslyUpdatedBy: foundEmployee?.lastUpdatedBy
+            ? foundEmployee?.lastUpdatedBy
+            : null,
+          updatedDate: new Date().toISOString(),
+        },
+        {
+          new: true,
+        }
+      );
+      if (foundEmployee?.lecturerSchoolData) {
+        await User.findOneAndUpdate(
+          foundEmployee._id,
+          {
+            "lecturerSchoolData.program": lecturerProgram
+              ? lecturerProgram?._id
+              : foundEmployee?.lecturerSchoolData?.program,
+          },
+          {
+            new: true,
+          }
+        );
+      }
+      res.status(201).json({
+        successMessage: "Employee's school data updated successfully!",
+        updatedEmployee: employeeUpdated,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      errorMessage: {
+        message: [`Student school data update failed! ${error?.message}`],
+      },
+    });
+    return;
   }
 };
 // Works ✅

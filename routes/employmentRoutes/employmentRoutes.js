@@ -4,9 +4,23 @@ const {
   rejectEmployment,
   approveMultiEmployees,
   rejectMultiEmployees,
+  employeeSchoolDataUpdate,
 } = require("../../controllers/employments/EmploymentController");
-const { authUser, authUserRole } = require("../../middlewares/auth/authUser");
+const {
+  studentPersonalDataUpdate,
+} = require("../../controllers/students/StudentController");
+const {
+  userPersonalDataUpdate,
+} = require("../../controllers/users/userController");
+const {
+  authUser,
+  authUserRole,
+  updateUserProfileImage,
+} = require("../../middlewares/auth/authUser");
 const { uploadImageFile } = require("../../middlewares/multer/multer");
+const {
+  updateStudentsProfileImage,
+} = require("../../middlewares/student/studentMiddleware");
 
 const router = require("express").Router();
 
@@ -38,6 +52,19 @@ router.put(
   authUser,
   authUserRole({ userRoles: { admin: "admin" } }),
   rejectMultiEmployees
+);
+// Update employees's personal data
+router.put(
+  "/employment/:userId/personal_data/update",
+  uploadImageFile.single("profilePicture"),
+  authUser,
+  updateUserProfileImage,
+  userPersonalDataUpdate
+);
+// Update employees's school data
+router.put(
+  "/employment/:employeeId/school_data/update",
+  employeeSchoolDataUpdate
 );
 
 module.exports = router;
