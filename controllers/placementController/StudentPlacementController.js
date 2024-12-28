@@ -148,7 +148,9 @@ module.exports.updatePlacementData = async (req, res) => {
 };
 // Check student placement ✅
 module.exports.studentCheckPlacement = async (req, res) => {
-  const { studentIndexNo } = req.params;
+  const { studentIndexNo, yearGraduated } = req.params;
+  console.log(yearGraduated);
+
   try {
     if (!studentIndexNo) {
       res.status(400).json({
@@ -158,15 +160,18 @@ module.exports.studentCheckPlacement = async (req, res) => {
       });
       return;
     }
+    if (!yearGraduated) {
+      res.status(400).json({
+        errorMessage: {
+          message: ["Year graduated required!"],
+        },
+      });
+      return;
+    }
     const foundStudent = await PlacementStudent.findOne({
       jhsIndexNo: studentIndexNo,
     });
-    if (foundStudent) {
-      res.status(200).json({
-        successMessage: `Placement Data With Your Index Number ${studentIndexNo} Found Successfully!`,
-        foundStudent,
-      });
-    } else {
+    if (!foundStudent) {
       res.status(404).json({
         errorMessage: {
           message: [`Placement data not found!`],
@@ -174,6 +179,33 @@ module.exports.studentCheckPlacement = async (req, res) => {
       });
       return;
     }
+    //Find student's placement batch
+    const placementBatch = await PlacementBatch.findOne({
+      year: yearGraduated,
+    });
+    if (!placementBatch) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Placement batch not found!`],
+        },
+      });
+      return;
+    }
+    if (
+      placementBatch &&
+      !placementBatch?.students?.includes(foundStudent?._id)
+    ) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Student data not found in this placement batch!`],
+        },
+      });
+      return;
+    }
+    res.status(200).json({
+      successMessage: `Placement data with your index number ${studentIndexNo} found successfully!`,
+      foundStudent,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -218,6 +250,29 @@ module.exports.verifyPlacementStudent = async (req, res) => {
       res.status(404).json({
         errorMessage: {
           message: [`Year completed JHS not correct!`],
+        },
+      });
+      return;
+    }
+    //Find student's placement batch
+    const placementBatch = await PlacementBatch.findOne({
+      year: data?.yearGraduated,
+    });
+    if (!placementBatch) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Placement batch not found!`],
+        },
+      });
+      return;
+    }
+    if (
+      placementBatch &&
+      !placementBatch?.students?.includes(foundStudent?._id)
+    ) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Student data not found in this placement batch!`],
         },
       });
       return;

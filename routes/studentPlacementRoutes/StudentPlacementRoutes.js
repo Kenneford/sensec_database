@@ -23,7 +23,10 @@ router.post(
   uploadPlacementFile
 );
 router.put("/students/:studentIndexNo/placement/update", updatePlacementData);
-router.get("/students/placement/:studentIndexNo/check", studentCheckPlacement);
+router.get(
+  "/students/:studentIndexNo/placement/:yearGraduated/check",
+  studentCheckPlacement
+);
 router.put("/students/placement/verify", verifyPlacementStudent);
 router.get("/students/placement/fetch_all", fetchAllPlacementStudents);
 router.get(
