@@ -102,11 +102,23 @@ const UsersModelSchema = new mongoose.Schema(
     updatedDate: {
       type: Date,
     },
-    roles: [
-      {
-        type: String,
-      },
-    ],
+    roles: {
+      type: [String],
+      enum: [
+        "Headmaster",
+        "Admin",
+        "Academic",
+        "Domestic",
+        "Secretary",
+        "Housemaster",
+        "Housemistress",
+        "Lecturer",
+        "Student",
+        "IT",
+        "NT-Staff",
+      ],
+      default: ["NT-Staff"],
+    },
   },
   {
     timestamps: true,
