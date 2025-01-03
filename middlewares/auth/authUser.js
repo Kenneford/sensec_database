@@ -9,14 +9,36 @@ const { cloudinary } = require("../cloudinary/cloudinary");
 
 // Generate token for login user
 async function generateUserToken(req, res, next) {
-  const { uniqueId, password } = req.body;
+  const { uniqueId, password, rememberMe } = req.body;
   console.log(req.body);
 
   try {
+    if (!uniqueId) {
+      return res.status(404).json({
+        errorMessage: {
+          message: [`Your unique-ID required!`],
+        },
+      });
+    }
+    if (!password) {
+      return res.status(404).json({
+        errorMessage: {
+          message: [`Password required`],
+        },
+      });
+    }
     const userFound = await User.findOne({
       uniqueId,
     }).select("+userSignUpDetails.password");
 
+    if (!userFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["User data not found!"],
+        },
+      });
+      return;
+    }
     if (!userFound?.isVerified) {
       res.status(400).json({
         errorMessage: {
@@ -31,26 +53,48 @@ async function generateUserToken(req, res, next) {
       userFound?.userSignUpDetails?.password
     );
     if (matchPassword) {
-      // Generate user token
-      const token = jwt.sign(
-        {
-          id: userFound?._id,
-          uniqueId: userFound?.uniqueId,
-          personalInfo: userFound?.personalInfo,
-          userSignUpDetails: userFound?.userSignUpDetails,
-          roles: userFound?.roles,
-          isVerified: userFound?.isVerified,
-          isVerifiedSensosa: userFound?.isVerifiedSensosa,
-          lastUpdatedBy: userFound?.lastUpdatedBy,
-          updatedDate: userFound?.updatedDate,
-        },
-        process.env.TOKEN_SECRET,
-        {
-          // expiresIn: Date.now() + 60000, // Expires in just a minute
-          expiresIn: process.env.TOKEN_EXP,
-        }
-      );
-      req.token = token;
+      // Generate user tokens
+      let token;
+      if (rememberMe) {
+        token = jwt.sign(
+          {
+            id: userFound?._id,
+            uniqueId: userFound?.uniqueId,
+            personalInfo: userFound?.personalInfo,
+            userSignUpDetails: userFound?.userSignUpDetails,
+            roles: userFound?.roles,
+            isVerified: userFound?.isVerified,
+            isVerifiedSensosa: userFound?.isVerifiedSensosa,
+            lastUpdatedBy: userFound?.lastUpdatedBy,
+            updatedDate: userFound?.updatedDate,
+          },
+          process.env.TOKEN_SECRET,
+          {
+            // expiresIn: Date.now() + 60000, // Expires in just a minute
+            expiresIn: process.env.TOKEN_EXP,
+          }
+        );
+      } else {
+        token = jwt.sign(
+          {
+            id: userFound?._id,
+            uniqueId: userFound?.uniqueId,
+            personalInfo: userFound?.personalInfo,
+            userSignUpDetails: userFound?.userSignUpDetails,
+            roles: userFound?.roles,
+            isVerified: userFound?.isVerified,
+            isVerifiedSensosa: userFound?.isVerifiedSensosa,
+            lastUpdatedBy: userFound?.lastUpdatedBy,
+            updatedDate: userFound?.updatedDate,
+          },
+          process.env.TOKEN_SECRET,
+          {
+            // expiresIn: Date.now() + 60000, // Expires in just a minute
+            expiresIn: process.env.SHORT_LIFE_TOKEN_EXP,
+          }
+        );
+      }
+      req.tokenData = { token, rememberMe, userFound };
       next();
     } else {
       return res.status(400).json({
@@ -400,61 +444,69 @@ async function updateUserProfileImage(req, res, next) {
         },
       });
     }
+    if (
+      foundUser?.personalInfo?.profilePicture?.public_id ===
+      updateData?.profilePicture?.public_id
+    ) {
+      // Attach the updated student data to the request object
+      req.foundUser = foundUser;
+      next();
+    } else {
+      // Determine the profile picture source (for web vs Postman)
+      const profilePictureSource = req.file?.path || updateData?.profilePicture;
 
-    // Determine the profile picture source (for web vs Postman)
-    const profilePictureSource = req.file?.path || updateData?.profilePicture;
+      if (!profilePictureSource) {
+        return res.status(400).json({
+          errorMessage: {
+            message: ["No profile picture provided!"],
+          },
+        });
+      }
 
-    if (!profilePictureSource) {
-      return res.status(400).json({
-        errorMessage: {
-          message: ["No profile picture provided!"],
-        },
+      // Handle existing image deletion if applicable
+      const existingImgId = foundUser?.personalInfo?.profilePicture?.public_id;
+      if (existingImgId) {
+        await cloudinary.uploader.destroy(existingImgId);
+      }
+
+      // Upload new image to Cloudinary
+      const result = await cloudinary.uploader.upload(profilePictureSource, {
+        folder: "Students",
+        transformation: [
+          { width: 300, height: 400, crop: "fill", gravity: "center" },
+          { quality: "auto" },
+          { fetch_format: "auto" },
+        ],
       });
-    }
 
-    // Handle existing image deletion if applicable
-    const existingImgId = foundUser?.personalInfo?.profilePicture?.public_id;
-    if (existingImgId) {
-      await cloudinary.uploader.destroy(existingImgId);
-    }
-
-    // Upload new image to Cloudinary
-    const result = await cloudinary.uploader.upload(profilePictureSource, {
-      folder: "Students",
-      transformation: [
-        { width: 300, height: 400, crop: "fill", gravity: "center" },
-        { quality: "auto" },
-        { fetch_format: "auto" },
-      ],
-    });
-
-    // Update the student's profile picture in the database
-    const updatedUser = await User.findOneAndUpdate(
-      foundUser._id,
-      {
-        "personalInfo.profilePicture": {
-          public_id: result.public_id,
-          url: result.secure_url,
+      // Update the student's profile picture in the database
+      const updatedUser = await User.findOneAndUpdate(
+        foundUser._id,
+        {
+          "personalInfo.profilePicture": {
+            public_id: result.public_id,
+            url: result.secure_url,
+          },
+          lastUpdatedBy: updateData?.lastUpdatedBy,
+          updatedDate: new Date().toISOString(),
         },
-        lastUpdatedBy: updateData?.lastUpdatedBy,
-        updatedDate: new Date().toISOString(),
-      },
-      { new: true }
-    );
+        { new: true }
+      );
 
-    if (!updatedUser) {
-      return res.status(500).json({
-        errorMessage: {
-          message: ["Failed to update profile image."],
-        },
-      });
+      if (!updatedUser) {
+        return res.status(500).json({
+          errorMessage: {
+            message: ["Failed to update profile image."],
+          },
+        });
+      }
+
+      // Attach the updated student data to the request object
+      req.foundUser = updatedUser;
+
+      // Proceed to the next middleware or handler
+      next();
     }
-
-    // Attach the updated student data to the request object
-    req.foundUser = updatedUser;
-
-    // Proceed to the next middleware or handler
-    next();
   } catch (error) {
     console.error("Error updating user profile image:", error);
     res.status(500).json({

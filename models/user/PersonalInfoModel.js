@@ -11,6 +11,9 @@ const PersonalInfoSchema = new mongoose.Schema(
     otherName: {
       type: String,
     },
+    fullName: {
+      type: String,
+    },
     dateOfBirth: {
       type: Date,
       default: function () {
@@ -19,17 +22,17 @@ const PersonalInfoSchema = new mongoose.Schema(
     },
     placeOfBirth: {
       type: String,
-      default: "",
+      // default: "",
       // require: true,
     },
     nationality: {
       type: String,
-      default: "",
+      // default: "",
       // require: true,
     },
     gender: {
       type: String,
-      default: "",
+      enum: ["Male", "Female"],
     },
     profilePicture: {
       public_id: {
@@ -41,19 +44,6 @@ const PersonalInfoSchema = new mongoose.Schema(
         // required: true,
       },
     },
-    fullName: {
-      type: String,
-      default: function () {
-        return (
-          `${this.firstName ? this.firstName : ""}` +
-          " " +
-          `${this.otherName ? this.otherName : ""}` +
-          " " +
-          `${this.lastName ? this.lastName : ""}`
-        );
-      },
-    },
-    // createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   {
     timestamps: true,

@@ -10,12 +10,12 @@ const { cloudinary } = require("../cloudinary/cloudinary");
 
 // For New Students Enrollment
 async function validateStudentPlacementData(req, res, next) {
-  const { data } = req.body;
+  const { newStudentData } = req.body;
 
   try {
     // Find placement student✅
     const placementStudentFound = await PlacementStudent.findOne({
-      jhsIndexNo: data?.newStudent?.jhsIndexNo,
+      jhsIndexNo: newStudentData?.jhsIndexNo,
     });
 
     // Validate placement student data
@@ -28,9 +28,7 @@ async function validateStudentPlacementData(req, res, next) {
       return;
     }
     // Validate student's JHS completion year
-    if (
-      placementStudentFound?.yearGraduated !== data?.newStudent?.completedJhs
-    ) {
+    if (placementStudentFound?.yearGraduated !== newStudentData?.completedJhs) {
       res.status(400).json({
         errorMessage: {
           message: [`Please provide the right year of completion!`],
@@ -39,7 +37,7 @@ async function validateStudentPlacementData(req, res, next) {
       return;
     }
     // Validate student's JHS attended
-    if (placementStudentFound?.jhsAttended !== data?.newStudent?.jhsAttended) {
+    if (placementStudentFound?.jhsAttended !== newStudentData?.jhsAttended) {
       res.status(400).json({
         errorMessage: {
           message: [`Please provide the right JHS attended!`],
@@ -48,7 +46,7 @@ async function validateStudentPlacementData(req, res, next) {
       return;
     }
     // Validate student's gender
-    if (placementStudentFound?.gender !== data?.newStudent?.gender) {
+    if (placementStudentFound?.gender !== newStudentData?.gender) {
       res.status(400).json({
         errorMessage: {
           message: [
@@ -61,7 +59,7 @@ async function validateStudentPlacementData(req, res, next) {
     // Validate student's selected residentialStatus
     if (
       placementStudentFound?.boardingStatus !==
-      data?.newStudent?.residentialStatus
+      newStudentData?.residentialStatus
     ) {
       res.status(400).json({
         errorMessage: {
@@ -77,7 +75,9 @@ async function validateStudentPlacementData(req, res, next) {
     const placementDOB = placementStudentFound?.dateOfBirth
       .toISOString()
       .split("T")[0];
-    const inputDOB = new Date(data?.dateOfBirth).toISOString().split("T")[0];
+    const inputDOB = new Date(newStudentData?.dateOfBirth)
+      .toISOString()
+      .split("T")[0];
 
     if (placementDOB && inputDOB && inputDOB !== placementDOB) {
       res.status(400).json({
@@ -90,7 +90,7 @@ async function validateStudentPlacementData(req, res, next) {
       return;
     }
     // Validate student's contact
-    if (placementStudentFound?.smsContact !== data?.newStudent?.mobile) {
+    if (placementStudentFound?.smsContact !== newStudentData?.mobile) {
       res.status(400).json({
         errorMessage: {
           message: [
@@ -102,8 +102,8 @@ async function validateStudentPlacementData(req, res, next) {
     }
     // Validate student's name
     if (
-      placementStudentFound?.firstName !== data?.newStudent?.firstName ||
-      placementStudentFound?.lastName !== data?.newStudent?.lastName
+      placementStudentFound?.firstName !== newStudentData?.firstName ||
+      placementStudentFound?.lastName !== newStudentData?.lastName
     ) {
       res.status(400).json({
         errorMessage: {
@@ -132,16 +132,16 @@ async function validateStudentPlacementData(req, res, next) {
   }
 }
 async function studentProgramme(req, res, next) {
-  const { data } = req.body;
+  const { newStudentData } = req.body;
 
   try {
     // Find placement student✅
     const placementStudentFound = await PlacementStudent.findOne({
-      jhsIndexNo: data?.newStudent?.jhsIndexNo,
+      jhsIndexNo: newStudentData?.jhsIndexNo,
     });
     //Find student's Program✅
     const mainProgramFound = await Program.findOne({
-      _id: data?.newStudent?.program,
+      _id: newStudentData?.program,
     });
     if (!mainProgramFound) {
       res.status(404).json({
@@ -165,13 +165,13 @@ async function studentProgramme(req, res, next) {
       });
       return;
     }
-    if (data?.newStudent?.divisionProgram) {
+    if (newStudentData?.divisionProgram) {
       const studentDivisionProgramFound = await ProgramDivision.findOne({
-        _id: data?.newStudent?.divisionProgram,
+        _id: newStudentData?.divisionProgram,
       });
       if (
         studentDivisionProgramFound?.optionalElectiveSubjects?.length > 0 &&
-        !data?.newStudent?.optionalElectiveSubject
+        !newStudentData?.optionalElectiveSubject
       ) {
         res.status(404).json({
           errorMessage: {
@@ -187,10 +187,10 @@ async function studentProgramme(req, res, next) {
         isDivisionProgram: true,
       };
       next();
-    } else if (data?.newStudent?.program) {
+    } else if (newStudentData?.program) {
       if (
         mainProgramFound?.optionalElectiveSubjects?.length > 1 &&
-        !data?.newStudent?.optionalElectiveSubject
+        !newStudentData?.optionalElectiveSubject
       ) {
         res.status(404).json({
           errorMessage: {
@@ -222,11 +222,11 @@ async function studentProgramme(req, res, next) {
   }
 }
 async function studentClass(req, res, next) {
-  const { data } = req.body;
+  const { newStudentData } = req.body;
   try {
     // find student's class level
     const studentClassLevel = await ClassLevel.findOne({
-      _id: data?.newStudent?.currentClassLevel,
+      _id: newStudentData?.currentClassLevel,
     });
     if (!studentClassLevel) {
       res.status(404).json({
@@ -237,20 +237,20 @@ async function studentClass(req, res, next) {
       return;
     }
     let classSectionFound;
-    if (data?.newStudent?.divisionProgram) {
+    if (newStudentData?.divisionProgram) {
       // find student's class level section✅
       classSectionFound = await ClassLevelSection.findOne({
-        classLevelId: data?.newStudent?.currentClassLevel,
-        // program:data?.newStudent?.program,
-        divisionProgram: data?.newStudent?.divisionProgram,
+        classLevelId: newStudentData?.currentClassLevel,
+        // program:newStudentData?.program,
+        divisionProgram: newStudentData?.divisionProgram,
       });
       req.studentClassInfo = { studentClassLevel, classSectionFound };
       next();
-    } else if (data?.newStudent?.program) {
+    } else if (newStudentData?.program) {
       // find student's class level section✅
       classSectionFound = await ClassLevelSection.findOne({
-        classLevelId: data?.newStudent?.currentClassLevel,
-        program: data?.newStudent?.program,
+        classLevelId: newStudentData?.currentClassLevel,
+        program: newStudentData?.program,
       });
       req.studentClassInfo = { studentClassLevel, classSectionFound };
       next();
