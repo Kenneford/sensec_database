@@ -113,6 +113,10 @@ const StudentsSchoolDataSchema = new Schema(
         ref: "ExamResult",
       },
     ],
+    enrollmentCode: {
+      type: String,
+      default: "",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
