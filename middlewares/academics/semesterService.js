@@ -59,7 +59,7 @@ module.exports.updateCurrentSemester = async (res = null) => {
   try {
     // Fetch all semesters
     const semesters = await AcademicTerm.find({});
-    if (!semesters.length) {
+    if (!semesters) {
       console.log("No semesters found in the database!");
       if (res)
         return res.status(404).json({
@@ -81,7 +81,7 @@ module.exports.updateCurrentSemester = async (res = null) => {
     // Update database: mark the active semester
     await AcademicTerm.updateMany({}, { $set: { isCurrent: false } }); // Reset all
     const updatedAcademicTerm = await AcademicTerm.findOneAndUpdate(
-      currentSemester._id,
+      currentSemester?._id,
       {
         $set: { isCurrent: true },
       },
@@ -89,25 +89,25 @@ module.exports.updateCurrentSemester = async (res = null) => {
     );
     // Find the next semester and mark it as next
     const nextSemester = await AcademicTerm.findOne({
-      from: { $gt: currentSemester.to },
+      from: { $gt: currentSemester?.to },
       isNext: true,
     }).sort({ from: 1 }); // Get the next semester by closest start date
 
     if (nextSemester) {
-      console.log(`Semester ${nextSemester.name} is already marked as next.`);
+      console.log(`Semester ${nextSemester?.name} is already marked as next.`);
       return; // Skip updating if the next semester is already correctly set
     }
     // Step 3: Find the actual next semester based on dates
     const upcomingSemester = await AcademicTerm.findOne({
-      from: { $gt: currentSemester.to },
+      from: { $gt: currentSemester?.to },
     }).sort({ from: 1 }); // Get the next semester by closest start date
     // Mark the upcoming semester as next
     upcomingSemester.isNext = true;
     await upcomingSemester.save();
 
-    console.log(`Semester ${upcomingSemester.name} is now marked as next.`);
+    console.log(`Semester ${upcomingSemester?.name} is now marked as next.`);
     console.log(
-      `Current semester updated to: ${currentSemester.name} ${currentSemester.year}`
+      `Current semester updated to: ${currentSemester?.name} ${currentSemester?.year}`
     );
     if (res)
       res.status(201).json({

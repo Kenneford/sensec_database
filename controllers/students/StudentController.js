@@ -10,7 +10,7 @@ const User = require("../../models/user/UserModel");
 
 // Student online enrollment ✅
 module.exports.studentOnlineEnrolment = async (req, res) => {
-  const { data } = req.body;
+  const { newStudentData } = req.body;
   const placementStudent = req.placementStudent;
   console.log(placementStudent);
 
@@ -32,7 +32,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
       return;
     }
     const selectedAcademicYear = await AcademicYear.findOne({
-      yearRange: data?.newStudent?.currentAcademicYear,
+      _id: newStudentData?.currentAcademicYear,
     });
     if (!selectedAcademicYear) {
       res.status(404).json({
@@ -43,7 +43,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
       return;
     }
     // Check for student image upload file
-    if (!data?.newStudent?.profilePicture) {
+    if (!newStudentData?.profilePicture) {
       res.status(400).json({
         errorMessage: {
           message: ["No image selected or image file not supported!"],
@@ -52,7 +52,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
       return;
     }
     await cloudinary.uploader.upload(
-      data?.newStudent?.profilePicture,
+      newStudentData?.profilePicture,
       {
         folder: "Students",
         transformation: [
@@ -70,50 +70,51 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           });
         }
         //Create new student enrolment data
-        const newStudentData = await User.create({
-          uniqueId: data?.studentId,
-          "personalInfo.firstName": data?.newStudent?.firstName,
-          "personalInfo.lastName": data?.newStudent?.lastName,
-          "personalInfo.otherName": data?.newStudent?.otherName,
-          "personalInfo.dateOfBirth": data?.newStudent?.dateOfBirth,
-          "personalInfo.placeOfBirth": data?.newStudent?.placeOfBirth,
-          "personalInfo.nationality": data?.newStudent?.nationality,
-          "personalInfo.gender": data?.newStudent?.gender,
-          "personalInfo.fullName": `${data?.newStudent?.firstName} ${data?.newStudent?.otherName} ${data?.newStudent?.lastName}`,
-          roles: ["student"],
+        const newEnrollmentData = await User.create({
+          uniqueId: newStudentData?.studentId,
+          "personalInfo.firstName": newStudentData?.firstName,
+          "personalInfo.lastName": newStudentData?.lastName,
+          "personalInfo.otherName": newStudentData?.otherName,
+          "personalInfo.dateOfBirth": newStudentData?.dateOfBirth,
+          "personalInfo.placeOfBirth": newStudentData?.placeOfBirth,
+          "personalInfo.nationality": newStudentData?.nationality,
+          "personalInfo.gender": newStudentData?.gender,
+          "personalInfo.fullName": newStudentData?.fullName,
+          roles: ["Student"],
           "personalInfo.profilePicture": {
             public_id: result.public_id,
             url: result.secure_url,
           },
-          "studentSchoolData.jhsAttended": data?.newStudent?.jhsAttended,
-          "studentSchoolData.completedJhs": data?.newStudent?.completedJhs,
-          "studentSchoolData.jhsIndexNo": data?.newStudent?.jhsIndexNo,
+          "studentSchoolData.enrollmentCode": newStudentData?.enrollmentCode,
+          "studentSchoolData.jhsAttended": newStudentData?.jhsAttended,
+          "studentSchoolData.completedJhs": newStudentData?.completedJhs,
+          "studentSchoolData.jhsIndexNo": newStudentData?.jhsIndexNo,
           "studentSchoolData.program": program?.mainProgramFound?._id,
           "studentSchoolData.divisionProgram":
             program?.studentDivisionProgramFound?._id,
           "studentSchoolData.currentClassLevel":
-            data?.newStudent?.currentClassLevel,
+            newStudentData?.currentClassLevel,
           "studentSchoolData.currentAcademicYear": selectedAcademicYear,
-          "studentSchoolData.batch": data?.newStudent?.batch,
+          "studentSchoolData.batch": newStudentData?.batch,
           "studentSchoolData.currentClassLevelSection":
             studentClassInfo?.classSectionFound?._id,
           "studentSchoolData.currentClassTeacher":
             studentClassInfo?.classSectionFound?.currentTeacher,
-          "status.height": data?.newStudent?.height,
-          "status.weight": data?.newStudent?.weight,
-          "status.complexion": data?.newStudent?.complexion,
-          "status.motherTongue": data?.newStudent?.motherTongue,
-          "status.otherTongue": data?.newStudent?.otherTongue,
-          "status.residentialStatus": data?.newStudent?.residentialStatus,
-          "contactAddress.homeTown": data?.newStudent?.homeTown,
-          "contactAddress.district": data?.newStudent?.district,
-          "contactAddress.region": data?.newStudent?.region,
-          "contactAddress.currentCity": data?.newStudent?.currentCity,
+          "status.height": newStudentData?.height,
+          "status.weight": newStudentData?.weight,
+          "status.complexion": newStudentData?.complexion,
+          "status.motherTongue": newStudentData?.motherTongue,
+          "status.otherTongue": newStudentData?.otherTongue,
+          "status.residentialStatus": newStudentData?.residentialStatus,
+          "contactAddress.homeTown": newStudentData?.homeTown,
+          "contactAddress.district": newStudentData?.district,
+          "contactAddress.region": newStudentData?.region,
+          "contactAddress.currentCity": newStudentData?.currentCity,
           "contactAddress.residentialAddress":
-            data?.newStudent?.residentialAddress,
-          "contactAddress.gpsAddress": data?.newStudent?.gpsAddress,
-          "contactAddress.mobile": data?.newStudent?.mobile,
-          "contactAddress.email": data?.newStudent?.email,
+            newStudentData?.residentialAddress,
+          "contactAddress.gpsAddress": newStudentData?.gpsAddress,
+          "contactAddress.mobile": newStudentData?.mobile,
+          "contactAddress.email": newStudentData?.email,
           "studentStatusExtend.enrollmentStatus": "in progress",
         });
         // Add student's elective subjects
@@ -122,12 +123,12 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
             async (subject) => {
               if (
                 subject &&
-                !newStudentData?.studentSchoolData?.electiveSubjects?.includes(
+                !newEnrollmentData?.studentSchoolData?.electiveSubjects?.includes(
                   subject?._id
                 )
               ) {
                 await User.findOneAndUpdate(
-                  newStudentData?._id,
+                  newEnrollmentData?._id,
                   {
                     $push: {
                       "studentSchoolData.electiveSubjects": subject?._id,
@@ -141,19 +142,19 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           //push student into division programme's students✅
           // if (
           //   !program?.studentDivisionProgramFound?.students?.includes(
-          //     newStudentData?._id
+          //     newEnrollmentData?._id
           //   )
           // ) {
           //   program?.studentDivisionProgramFound?.students?.push(
-          //     newStudentData?._id
+          //     newEnrollmentData?._id
           //   );
           //   await program.studentDivisionProgramFound.save();
           // }
           //push student into main programme's students✅
           // if (
-          //   !program?.mainProgramFound?.students?.includes(newStudentData?._id)
+          //   !program?.mainProgramFound?.students?.includes(newEnrollmentData?._id)
           // ) {
-          //   program?.mainProgramFound?.students?.push(newStudentData?._id);
+          //   program?.mainProgramFound?.students?.push(newEnrollmentData?._id);
           //   await program.mainProgramFound.save();
           // }
         }
@@ -163,12 +164,12 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
             async (subject) => {
               if (
                 subject &&
-                !newStudentData?.studentSchoolData?.electiveSubjects?.includes(
+                !newEnrollmentData?.studentSchoolData?.electiveSubjects?.includes(
                   subject?._id
                 )
               ) {
                 await User.findOneAndUpdate(
-                  newStudentData?._id,
+                  newEnrollmentData?._id,
                   {
                     $push: {
                       "studentSchoolData.electiveSubjects": subject?._id,
@@ -181,25 +182,25 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           );
           //push student into main programme's students✅
           // if (
-          //   !program?.mainProgramFound?.students?.includes(newStudentData?._id)
+          //   !program?.mainProgramFound?.students?.includes(newEnrollmentData?._id)
           // ) {
-          //   program?.mainProgramFound?.students?.push(newStudentData?._id);
+          //   program?.mainProgramFound?.students?.push(newEnrollmentData?._id);
           //   await program.mainProgramFound.save();
           // }
         }
         //Push optionalElectiveSubject into student's electiveSubjects array
         if (
-          data?.newStudent?.optionalElectiveSubject &&
-          !newStudentData?.studentSchoolData?.electiveSubjects?.includes(
-            data?.newStudent?.optionalElectiveSubject
+          newStudentData?.optionalElectiveSubject &&
+          !newEnrollmentData?.studentSchoolData?.electiveSubjects?.includes(
+            newStudentData?.optionalElectiveSubject
           )
         ) {
           await User.findOneAndUpdate(
-            newStudentData?._id,
+            newEnrollmentData?._id,
             {
               $push: {
                 "studentSchoolData.electiveSubjects":
-                  data?.newStudent?.optionalElectiveSubject,
+                  newStudentData?.optionalElectiveSubject,
               },
             },
             { upsert: true, new: true }
@@ -208,12 +209,12 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
         //Push student's current teacher into student's teachers array
         if (
           studentClassInfo?.classSectionFound?.currentTeacher &&
-          !newStudentData?.studentSchoolData?.classTeachers?.includes(
+          !newEnrollmentData?.studentSchoolData?.classTeachers?.includes(
             studentClassInfo?.classSectionFound?.currentTeacher
           )
         ) {
           await User.findOneAndUpdate(
-            newStudentData?._id,
+            newEnrollmentData?._id,
             {
               $push: {
                 "studentSchoolData.classTeachers":
@@ -224,13 +225,13 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           );
         }
         //Update student's placement enrollmentId✅
-        if (placementStudent) {
-          placementStudent.enrollmentId = data?.studentId;
-          await placementStudent.save();
-        }
+        // if (placementStudent) {
+        //   placementStudent.enrollmentId = data?.studentId;
+        //   await placementStudent.save();
+        // }
         res.status(201).json({
           successMessage: "Your enrollment info saved successfully!",
-          newStudentData,
+          newEnrollmentData,
         });
         console.log("Your enrollment info saved successfully!");
       }
@@ -570,14 +571,13 @@ module.exports.studentPersonalDataUpdate = async (req, res) => {
     const studentInfoUpdated = await User.findOneAndUpdate(
       foundStudent._id,
       {
-        "personalInfo.firstName": updateData?.firstName,
+        "personalInfo.fullName": updateData?.fullName,
         "personalInfo.lastName": updateData?.lastName,
         "personalInfo.otherName": updateData?.otherName,
         "personalInfo.dateOfBirth": updateData?.dateOfBirth,
         "personalInfo.placeOfBirth": updateData?.placeOfBirth,
         "personalInfo.gender": updateData?.gender,
         "personalInfo.nationality": updateData?.nationality,
-        "personalInfo.fullName": `${updateData?.firstName} ${updateData?.otherName} ${updateData?.lastName}`,
         "contactAddress.homeTown": updateData?.homeTown,
         "contactAddress.district": updateData?.district,
         "contactAddress.region": updateData?.region,

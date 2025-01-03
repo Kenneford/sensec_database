@@ -10,16 +10,16 @@ const placementStudentsModelSchema = new mongoose.Schema(
       default: "",
       // require: true,
     },
-    firstName: {
-      type: String,
-      default: "",
-      // require: true,
-    },
-    lastName: {
-      type: String,
-      default: "",
-      // require: true,
-    },
+    // firstName: {
+    //   type: String,
+    //   default: "",
+    //   // require: true,
+    // },
+    // lastName: {
+    //   type: String,
+    //   default: "",
+    //   // require: true,
+    // },
     fullName: {
       type: String,
       default: "",
@@ -82,25 +82,13 @@ const placementStudentsModelSchema = new mongoose.Schema(
     smsContact: {
       type: String,
     },
-    generatedIndexNumber: {
-      type: String,
-      default: function () {
-        return (
-          this?.jhsIndexNo +
-          this?.fullName
-            ?.split(" ")
-            ?.map((name) => name[0])
-            .join("")
-        );
-      },
-    },
     programme: {
       type: String,
     },
     aggregateOfBestSix: {
       type: Number,
     },
-    enrollmentId: {
+    enrollmentCode: {
       type: String,
       default: "",
     },

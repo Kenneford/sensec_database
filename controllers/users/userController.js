@@ -31,41 +31,79 @@ module.exports.userPersonalDataUpdate = async (req, res) => {
   const foundUser = req.foundUser;
 
   try {
+    let userInfoUpdated;
     //Update user Info
-    const userInfoUpdated = await User.findOneAndUpdate(
-      foundUser._id,
-      {
-        "personalInfo.firstName": updateData?.firstName,
-        "personalInfo.lastName": updateData?.lastName,
-        "personalInfo.otherName": updateData?.otherName,
-        "personalInfo.dateOfBirth": updateData?.dateOfBirth,
-        "personalInfo.placeOfBirth": updateData?.placeOfBirth,
-        "personalInfo.gender": updateData?.gender,
-        "personalInfo.nationality": updateData?.nationality,
-        "personalInfo.fullName": `${updateData?.firstName} ${updateData?.otherName} ${updateData?.lastName}`,
-        "contactAddress.homeTown": updateData?.homeTown,
-        "contactAddress.district": updateData?.district,
-        "contactAddress.region": updateData?.region,
-        "contactAddress.currentCity": updateData?.currentCity,
-        "contactAddress.gpsAddress": updateData?.gpsAddress,
-        "contactAddress.residentialAddress": updateData?.residentialAddress,
-        "contactAddress.mobile": updateData?.mobile,
-        "contactAddress.email": updateData?.email,
-        "status.height": updateData?.height,
-        "status.weight": updateData?.weight,
-        "status.complexion": updateData?.complexion,
-        "status.motherTongue": updateData?.motherTongue,
-        "status.otherTongue": updateData?.otherTongue,
-        lastUpdatedBy: updateData?.lastUpdatedBy,
-        previouslyUpdatedBy: foundUser?.lastUpdatedBy
-          ? foundUser?.lastUpdatedBy
-          : null,
-        updatedDate: new Date().toISOString(),
-      },
-      {
-        new: true,
-      }
-    );
+    if (foundUser?.roles?.includes("Student")) {
+      userInfoUpdated = await User.findOneAndUpdate(
+        foundUser._id,
+        {
+          "personalInfo.firstName": updateData?.firstName,
+          "personalInfo.lastName": updateData?.lastName,
+          "personalInfo.otherName": updateData?.otherName,
+          "personalInfo.fullName": updateData?.fullName,
+          "personalInfo.dateOfBirth": updateData?.dateOfBirth,
+          "personalInfo.placeOfBirth": updateData?.placeOfBirth,
+          "personalInfo.gender": updateData?.gender,
+          "personalInfo.nationality": updateData?.nationality,
+          "contactAddress.homeTown": updateData?.homeTown,
+          "contactAddress.district": updateData?.district,
+          "contactAddress.region": updateData?.region,
+          "contactAddress.currentCity": updateData?.currentCity,
+          "contactAddress.gpsAddress": updateData?.gpsAddress,
+          "contactAddress.residentialAddress": updateData?.residentialAddress,
+          "contactAddress.mobile": updateData?.mobile,
+          "contactAddress.email": updateData?.email,
+          "status.height": updateData?.height,
+          "status.weight": updateData?.weight,
+          "status.complexion": updateData?.complexion,
+          "status.motherTongue": updateData?.motherTongue,
+          "status.otherTongue": updateData?.otherTongue,
+          lastUpdatedBy: updateData?.lastUpdatedBy,
+          previouslyUpdatedBy: foundUser?.lastUpdatedBy
+            ? foundUser?.lastUpdatedBy
+            : null,
+          updatedDate: new Date().toISOString(),
+        },
+        {
+          new: true,
+        }
+      );
+    } else {
+      userInfoUpdated = await User.findOneAndUpdate(
+        foundUser._id,
+        {
+          "personalInfo.firstName": updateData?.firstName,
+          "personalInfo.lastName": updateData?.lastName,
+          "personalInfo.otherName": updateData?.otherName,
+          "personalInfo.fullName": updateData?.fullName,
+          "personalInfo.dateOfBirth": updateData?.dateOfBirth,
+          "personalInfo.placeOfBirth": updateData?.placeOfBirth,
+          "personalInfo.gender": updateData?.gender,
+          "personalInfo.nationality": updateData?.nationality,
+          "contactAddress.homeTown": updateData?.homeTown,
+          "contactAddress.district": updateData?.district,
+          "contactAddress.region": updateData?.region,
+          "contactAddress.currentCity": updateData?.currentCity,
+          "contactAddress.gpsAddress": updateData?.gpsAddress,
+          "contactAddress.residentialAddress": updateData?.residentialAddress,
+          "contactAddress.mobile": updateData?.mobile,
+          "contactAddress.email": updateData?.email,
+          "status.height": updateData?.height,
+          "status.weight": updateData?.weight,
+          "status.complexion": updateData?.complexion,
+          "status.motherTongue": updateData?.motherTongue,
+          "status.otherTongue": updateData?.otherTongue,
+          lastUpdatedBy: updateData?.lastUpdatedBy,
+          previouslyUpdatedBy: foundUser?.lastUpdatedBy
+            ? foundUser?.lastUpdatedBy
+            : null,
+          updatedDate: new Date().toISOString(),
+        },
+        {
+          new: true,
+        }
+      );
+    }
     res.status(201).json({
       successMessage: "User's data updated successfully!",
       updatedUser: userInfoUpdated,
@@ -145,77 +183,90 @@ module.exports.userVerification = async (req, res) => {
 
 module.exports.userLogin = async (req, res) => {
   const error = [];
-  const { uniqueId, password } = req.body;
-  const token = req?.token;
+  const { token, rememberMe, userFound } = req?.tokenData;
 
-  if (!uniqueId) {
-    error.push("Your unique-ID required!");
-  }
-  if (!password) {
-    error.push("Password required");
-  }
   // if (email && !validator.isEmail(email)) {
   //   error.push("Please provide your valid email!");
   // }
-  if (error.length > 0) {
-    res.status(404).json({
+  try {
+    if (userFound && userFound?.userSignUpDetails?.passwordResetRequest) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Please check your email to reset your password!"],
+        },
+      });
+      return;
+    }
+    if (userFound && userFound?.status?.isWithdrawned) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Login failed! A withdrawned user cannot login!"],
+        },
+      });
+      return;
+    }
+    if (userFound && !userFound?.isVerified) {
+      res.status(400).json({
+        errorMessage: {
+          message: [
+            "You're not yet verified! Please check your email to verify!",
+          ],
+        },
+      });
+      return;
+    } else {
+      res.status(200).json({
+        successMessage: "You logged in successfully!",
+        user: userFound,
+        token,
+      });
+      // if (rememberMe) {
+      //   res.cookie("userToken", token, {
+      //     httpOnly: true,
+      //     secure: process.env.NODE_ENV === "production", // Use only with HTTPS
+      //     sameSite: "None",
+      //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      //   });
+      // } else {
+      //   res.cookie("userToken", token, {
+      //     httpOnly: true,
+      //     secure: process.env.NODE_ENV === "production", // Use only with HTTPS
+      //     sameSite: "None",
+      //     maxAge: 3600000, // 1 day
+      //   });
+      // }
+      // res.status(200).json({
+      //   successMessage: "You logged in successfully!",
+      //   user: userFound,
+      //   token,
+      // });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
       errorMessage: {
-        message: error,
+        message: ["Internal Server Error"],
       },
     });
   }
-  const userFound = await User.findOne({
-    uniqueId,
-  });
-  if (!userFound) {
-    res.status(404).json({
-      errorMessage: {
-        message: ["User data not found!"],
+};
+module.exports.userLogout = async (req, res) => {
+  try {
+    res.clearCookie("userToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Use only with HTTPS
+      sameSite: "Strict",
+    });
+    res.status(200).json({
+      successMessage: "You logged out successfully!",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: {
+        errorMessage: ["Internal Server Error"],
       },
     });
-    return;
-  } else {
-    try {
-      if (userFound && userFound?.userSignUpDetails?.passwordResetRequest) {
-        res.status(404).json({
-          errorMessage: {
-            message: ["Please Check Your Email To Reset Your Password!"],
-          },
-        });
-        return;
-      }
-      if (userFound && userFound?.status?.isWithdrawned) {
-        res.status(404).json({
-          errorMessage: {
-            message: ["Login failed! A Withdrawned User Cannot Login!"],
-          },
-        });
-        return;
-      }
-      if (userFound && !userFound?.isVerified) {
-        res.status(400).json({
-          errorMessage: {
-            message: [
-              "You're not yet verified! Please check your email to verify!",
-            ],
-          },
-        });
-        return;
-      } else {
-        res.status(200).cookie("userToken", token).json({
-          successMessage: "You logged in successfully!",
-          user: userFound,
-          token,
-        });
-      }
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({
-        errorMessage: {
-          message: ["Internal Server Error"],
-        },
-      });
-    }
   }
 };
 
@@ -427,21 +478,6 @@ module.exports.removeUserRole = async (req, res) => {
   }
 };
 
-module.exports.userLogout = async (req, res) => {
-  try {
-    res.cookies("userToken", "", { maxAge: 0 });
-    res.status(200).json({
-      successMessage: "You logged out successfully...",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      error: {
-        errorMessage: ["Internal Server Error"],
-      },
-    });
-  }
-};
 module.exports.fetchAllUsers = async (req, res) => {
   try {
     const allUsers = await User.find({}).populate([

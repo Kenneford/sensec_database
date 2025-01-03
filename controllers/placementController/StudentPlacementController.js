@@ -286,9 +286,25 @@ module.exports.verifyPlacementStudent = async (req, res) => {
       });
       return;
     }
+    // Generating Enrollment Code Process
+    const generatedNum = Math.floor(100 + Math.random() * 900); // Generate random number
+    // Get the student's programme abbreviation
+    const programmeAbbreviation = foundStudent?.programme
+      .split(" ")
+      .map((word) => word[0].toUpperCase())
+      .join("");
+
+    // Get the last two digits of the current year
+    const currentYear = new Date().getFullYear();
+    const yearSuffix = currentYear.toString().slice(-2);
+
+    // Generate the enrolment Code
+    const enrollmentCode = `${programmeAbbreviation}${generatedNum}-${yearSuffix}`;
+
     // Update student's placement verification status
     if (foundStudent && foundStudent.placementVerified === false) {
       foundStudent.placementVerified = true;
+      foundStudent.enrollmentCode = enrollmentCode;
       await foundStudent.save();
     }
     res.status(200).json({

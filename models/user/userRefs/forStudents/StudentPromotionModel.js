@@ -52,7 +52,7 @@ const StudentPromotionSchema = new Schema(
     },
     enrollmentStatus: {
       type: String,
-      default: null,
+      enum: ["in progress", "pending", "approved", "graduated"],
     },
     enrolledOnline: {
       type: Boolean,
