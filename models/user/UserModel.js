@@ -15,6 +15,7 @@ const SensosaSchoolData = require("./userRefs/forStudents/SensosaSchoolDataModel
 const StudentParent = require("./userRefs/forStudents/ParentsModel");
 const StudentGuardian = require("./userRefs/forStudents/GuardianModel");
 const SignUpInfo = require("./userRefs/signUpModel/SignUpModel");
+const HeadmasterExtendedStatus = require("./userRefs/forHeadmasters/HeadmasterExtendedStatusModel");
 
 const UsersModelSchema = new mongoose.Schema(
   {
@@ -37,9 +38,9 @@ const UsersModelSchema = new mongoose.Schema(
     employment: {
       type: Employment.schema,
     },
-    // adminActionsData: {
-    //   type: AdminActionsData.schema,
-    // },
+    headStatusExtend: {
+      type: HeadmasterExtendedStatus.schema,
+    },
     adminStatusExtend: {
       type: AdminExtendedStatus.schema,
     },
@@ -117,7 +118,7 @@ const UsersModelSchema = new mongoose.Schema(
         "IT",
         "NT-Staff",
       ],
-      default: ["NT-Staff"],
+      // default: ["NT-Staff"],
     },
   },
   {

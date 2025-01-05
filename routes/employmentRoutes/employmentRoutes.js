@@ -17,6 +17,9 @@ const {
   authUserRole,
   updateUserProfileImage,
 } = require("../../middlewares/auth/authUser");
+const {
+  createEmploymentData,
+} = require("../../middlewares/employments/employmentMiddleware");
 const { uploadImageFile } = require("../../middlewares/multer/multer");
 const {
   updateStudentsProfileImage,
@@ -27,6 +30,7 @@ const router = require("express").Router();
 router.post(
   "/employment/new",
   uploadImageFile.single("profilePicture"),
+  createEmploymentData,
   addNewEmployee
 );
 router.put(
