@@ -120,16 +120,37 @@ module.exports.updatePlacementData = async (req, res) => {
       });
       return;
     }
+    // Generating Enrollment Code Process
+    const generatedNum = Math.floor(100 + Math.random() * 900); // Generate random number
+    // Get the student's programme abbreviation
+    const programmeAbbreviation = existingStudent?.programme
+      .split(" ")
+      .map((word) => word[0].toUpperCase())
+      .join("");
+
+    // Get the last two digits of the current year
+    const currentYear = new Date().getFullYear();
+    const yearSuffix = currentYear.toString().slice(-2);
+
+    // Generate the enrolment Code
+    const enrollmentCode = `${programmeAbbreviation}${generatedNum}-${yearSuffix}`;
+
+    // Update student's placement verification status
+    // if (existingStudent && existingStudent.placementVerified === false) {
+    //   existingStudent.placementVerified = true;
+    //   existingStudent.enrollmentCode = enrollmentCode;
+    //   await existingStudent.save();
+    // }
     const updatedPlacementStudent = await PlacementStudent.findOneAndUpdate(
       existingStudent?._id,
       {
-        firstName: data?.firstName,
-        lastName: data?.lastName,
-        otherName: data?.otherName,
+        fullName: data?.fullName,
+        // otherName: data?.otherName,
         dateOfBirth: data?.dateOfBirth,
         jhsAttended: data?.jhsAttended,
         yearGraduated: data?.yearGraduated,
         smsContact: data?.smsContact,
+        enrollmentCode,
       },
       { new: true }
     );
@@ -286,25 +307,9 @@ module.exports.verifyPlacementStudent = async (req, res) => {
       });
       return;
     }
-    // Generating Enrollment Code Process
-    const generatedNum = Math.floor(100 + Math.random() * 900); // Generate random number
-    // Get the student's programme abbreviation
-    const programmeAbbreviation = foundStudent?.programme
-      .split(" ")
-      .map((word) => word[0].toUpperCase())
-      .join("");
-
-    // Get the last two digits of the current year
-    const currentYear = new Date().getFullYear();
-    const yearSuffix = currentYear.toString().slice(-2);
-
-    // Generate the enrolment Code
-    const enrollmentCode = `${programmeAbbreviation}${generatedNum}-${yearSuffix}`;
-
     // Update student's placement verification status
     if (foundStudent && foundStudent.placementVerified === false) {
       foundStudent.placementVerified = true;
-      foundStudent.enrollmentCode = enrollmentCode;
       await foundStudent.save();
     }
     res.status(200).json({

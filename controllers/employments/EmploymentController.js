@@ -9,273 +9,310 @@ const User = require("../../models/user/UserModel");
 
 // Works ✅
 module.exports.addNewEmployee = async (req, res) => {
-  const { employeeData } = req.body;
+  // const { employeeData } = req.body;
+  const newEmployeeData = req.newEmployeeData;
+  // console.log(newEmployeeData);
+  const userRoles = () => {
+    if (newEmployeeData?.uniqueId?.includes("HDM")) return "Headmaster";
+    if (newEmployeeData?.uniqueId?.includes("ADM")) return "Admin";
+    if (newEmployeeData?.uniqueId?.includes("ACD")) return "Academic";
+    if (newEmployeeData?.uniqueId?.includes("DOM")) return "Domestic";
+    if (newEmployeeData?.uniqueId?.includes("SEC")) return "Secretary";
+    if (newEmployeeData?.uniqueId?.includes("HSM")) return "Housemaster";
+    if (newEmployeeData?.uniqueId?.includes("HSM")) return "Housemistress";
+    if (newEmployeeData?.uniqueId?.includes("LCT")) return "Lecturer";
+    if (newEmployeeData?.uniqueId?.includes("ITD")) return "IT";
+    if (newEmployeeData?.uniqueId?.includes("NTS")) return "NT-Staff";
+  };
   try {
-    const existingEmployee = await User.findOne({
-      uniqueId: employeeData?.uniqueId,
-    });
-    if (existingEmployee) {
-      res.status(208).json({
-        errorMessage: {
-          message: [`Employee ID already exist!`],
-        },
+    if (newEmployeeData) {
+      newEmployeeData.roles.push(userRoles());
+      await newEmployeeData.save();
+      // await User.findOneAndDelete(
+      //   newEmployeeData?._id,
+      //   {
+      //     $push: { roles: "Lecturer" },
+      //   },
+      //   { upsert: true, new: true }
+      // );
+      if (newEmployeeData && newEmployeeData?.contactAddress?.email !== "") {
+        sendEmploymentEmail({ foundUser: newEmployeeData });
+      }
+      // if (
+      //   newEmployeeData &&
+      //   newEmployeeData?.contactAddress?.mobile !== ""
+      // ) {
+      //   employmentSMS({ foundUser: newEmployeeData });
+      // }
+      res.status(201).json({
+        successMessage: "Your employment data saved successfully!",
+        newEmployeeData,
       });
-      return;
-    }
-    if (!employeeData?.profilePicture) {
-      // Check for student image upload file
-      return res.status(400).json({
-        errorMessage: {
-          message: ["No image selected or image file not supported!"],
-        },
-      });
-    }
-    // For Admins Employments
-    if (employeeData?.uniqueId?.includes("ADM")) {
-      await cloudinary.uploader.upload(
-        employeeData?.profilePicture,
-        {
-          folder: "Employees",
-          transformation: [
-            { width: 300, height: 400, crop: "fill", gravity: "center" },
-            { quality: "auto" },
-            { fetch_format: "auto" },
-          ],
-        },
-        async (err, result) => {
-          if (err) {
-            return res.status(400).json({
-              errorMessage: {
-                message: ["Something went wrong!"],
-              },
-            });
-          } else {
-            //Create new employee data
-            const newEmployeeData = await User?.create({
-              uniqueId: employeeData?.uniqueId,
-              "personalInfo.firstName": employeeData?.firstName,
-              "personalInfo.lastName": employeeData?.lastName,
-              "personalInfo.otherName": employeeData?.otherName,
-              "personalInfo.dateOfBirth": employeeData?.dateOfBirth,
-              "personalInfo.placeOfBirth": employeeData?.placeOfBirth,
-              "personalInfo.nationality": employeeData?.nationality,
-              "personalInfo.gender": employeeData?.gender,
-              "personalInfo.fullName": employeeData?.otherName
-                ? `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`
-                : `${employeeData?.firstName} ${employeeData?.lastName}`,
-              roles: ["admin"],
-              "personalInfo.profilePicture": {
-                public_id: result.public_id,
-                url: result.secure_url,
-              },
-              "status.height": employeeData?.height,
-              "status.weight": employeeData?.weight,
-              "status.complexion": employeeData?.complexion,
-              "status.motherTongue": employeeData?.motherTongue,
-              "status.otherTongue": employeeData?.otherTongue,
-              "status.residentialStatus": employeeData?.residentialStatus,
-              "contactAddress.homeTown": employeeData?.homeTown,
-              "contactAddress.district": employeeData?.district,
-              "contactAddress.region": employeeData?.region,
-              "contactAddress.currentCity": employeeData?.currentCity,
-              "contactAddress.residentialAddress":
-                employeeData?.residentialAddress,
-              "contactAddress.gpsAddress": employeeData?.gpsAddress,
-              "contactAddress.mobile": employeeData?.mobile,
-              "contactAddress.email": employeeData?.email,
-              "employment.employmentType": employeeData?.typeOfEmployment,
-              "adminStatusExtend.isAdmin": false, //===>>> isAdmin: will be updated during employment approval
-              "employment.employmentStatus": "pending",
-              // "adminActionsData.createdAt": new Date().toISOString(),
-            });
-            if (
-              newEmployeeData &&
-              newEmployeeData?.contactAddress?.email !== ""
-            ) {
-              sendEmploymentEmail({ foundUser: newEmployeeData });
-            }
-            // if (
-            //   newEmployeeData &&
-            //   newEmployeeData?.contactAddress?.mobile !== ""
-            // ) {
-            //   employmentSMS({ foundUser: newEmployeeData });
-            // }
-            res.status(201).json({
-              successMessage: "Your employment data saved successfully!",
-              newEmployeeData,
-            });
-            console.log("Your employment data saved successfully!");
-          }
-        }
-      );
-    }
-    // For Lecturers Employments
-    else if (employeeData?.uniqueId?.includes("LCT")) {
-      await cloudinary.uploader.upload(
-        employeeData?.profilePicture,
-        {
-          folder: "Employees",
-          transformation: [
-            { width: 300, height: 400, crop: "fill", gravity: "center" },
-            { quality: "auto" },
-            { fetch_format: "auto" },
-          ],
-        },
-        async (err, result) => {
-          if (err) {
-            return res.status(400).json({
-              errorMessage: {
-                message: ["Something went wrong!"],
-              },
-            });
-          } else {
-            //Create new employee data
-            const newEmployeeData = await User.create({
-              uniqueId: employeeData?.uniqueId,
-              "personalInfo.firstName": employeeData?.firstName,
-              "personalInfo.lastName": employeeData?.lastName,
-              "personalInfo.otherName": employeeData?.otherName,
-              "personalInfo.dateOfBirth": employeeData?.dateOfBirth,
-              "personalInfo.placeOfBirth": employeeData?.placeOfBirth,
-              "personalInfo.nationality": employeeData?.nationality,
-              "personalInfo.gender": employeeData?.gender,
-              "personalInfo.fullName": `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`,
-              roles: ["lecturer"],
-              "personalInfo.profilePicture": {
-                public_id: result.public_id,
-                url: result.secure_url,
-              },
-              "lecturerSchoolData.program": employeeData?.program,
-              "status.height": employeeData?.height,
-              "status.weight": employeeData?.weight,
-              "status.complexion": employeeData?.complexion,
-              "status.motherTongue": employeeData?.motherTongue,
-              "status.otherTongue": employeeData?.otherTongue,
-              "status.residentialStatus": employeeData?.residentialStatus,
-              "contactAddress.homeTown": employeeData?.homeTown,
-              "contactAddress.district": employeeData?.district,
-              "contactAddress.region": employeeData?.region,
-              "contactAddress.currentCity": employeeData?.currentCity,
-              "contactAddress.residentialAddress":
-                employeeData?.residentialAddress,
-              "contactAddress.gpsAddress": employeeData?.gpsAddress,
-              "contactAddress.mobile": employeeData?.mobile,
-              "contactAddress.email": employeeData?.email,
-              "employment.employmentType": employeeData?.typeOfEmployment,
-              "lecturerStatusExtend.isLecturer": false,
-              "employment.employmentStatus": "pending",
-            });
-            if (newEmployeeData?.contactAddress?.email !== "") {
-              sendEmploymentEmail({ foundUser: newEmployeeData });
-            }
-            // if (newEmployeeData?.contactAddress?.mobile !== "") {
-            //   employmentSMS({ foundUser: newEmployeeData });
-            // }
-            res.status(201).json({
-              successMessage: "Your employment data saved successfully!",
-              newEmployeeData,
-            });
-            console.log("Your employment data saved successfully!");
-          }
-        }
-      );
-    }
-    // For Non-Teaching Staffs Employments
-    else if (employeeData?.uniqueId?.includes("NTS")) {
-      await cloudinary.uploader.upload(
-        employeeData?.profilePicture,
-        {
-          folder: "Employees",
-          transformation: [
-            { width: 300, height: 400, crop: "fill", gravity: "center" },
-            { quality: "auto" },
-            { fetch_format: "auto" },
-          ],
-        },
-        async (err, result) => {
-          if (err) {
-            return res.status(400).json({
-              errorMessage: {
-                message: ["Something went wrong!"],
-              },
-            });
-          } else {
-            //Create new employee data
-            const newEmployeeData = await User.create({
-              uniqueId: employeeData?.uniqueId,
-              "personalInfo.firstName": employeeData?.firstName,
-              "personalInfo.lastName": employeeData?.lastName,
-              "personalInfo.otherName": employeeData?.otherName,
-              "personalInfo.dateOfBirth": employeeData?.dateOfBirth,
-              "personalInfo.placeOfBirth": employeeData?.placeOfBirth,
-              "personalInfo.nationality": employeeData?.nationality,
-              "personalInfo.gender": employeeData?.gender,
-              "personalInfo.fullName": `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`,
-              roles: ["nt-staff"],
-              "personalInfo.profilePicture": {
-                public_id: result.public_id,
-                url: result.secure_url,
-              },
-              "status.height": employeeData?.height,
-              "status.weight": employeeData?.weight,
-              "status.complexion": employeeData?.complexion,
-              "status.motherTongue": employeeData?.motherTongue,
-              "status.otherTongue": employeeData?.otherTongue,
-              "status.residentialStatus": employeeData?.residentialStatus,
-              "contactAddress.homeTown": employeeData?.homeTown,
-              "contactAddress.district": employeeData?.district,
-              "contactAddress.region": employeeData?.region,
-              "contactAddress.currentCity": employeeData?.currentCity,
-              "contactAddress.residentialAddress":
-                employeeData?.residentialAddress,
-              "contactAddress.gpsAddress": employeeData?.gpsAddress,
-              "contactAddress.mobile": employeeData?.mobile,
-              "contactAddress.email": employeeData?.email,
-              "employment.employmentType": employeeData?.typeOfEmployment,
-              "nTStaffStatusExtend.isNTStaff": false,
-              "employment.employmentStatus": "pending",
-            });
-            if (newEmployeeData?.contactAddress?.email !== "") {
-              sendEmploymentEmail({ foundUser: newEmployeeData });
-            }
-            // if (newEmployeeData?.contactAddress?.mobile !== "") {
-            //   employmentSMS({ foundUser: newEmployeeData });
-            // }
-            res.status(201).json({
-              successMessage: "Your employment data saved successfully!",
-              newEmployeeData,
-            });
-            console.log("Your employment data saved successfully!");
-          }
-        }
-      );
+      console.log("Your employment data saved successfully!");
     } else {
-      return res.status(404).json({
+      return res.status(500).json({
         errorMessage: {
-          message: ["Employment type not found!"],
+          message: ["Internal Server Error!"],
         },
       });
     }
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(500).json({
-        errorMessage: {
-          message: [
-            "Duplicate key error: A user with this email already exists!",
-          ],
-        },
-      });
-      // Handle the error, e.g., return a custom message or perform other actions
-    } else {
-      console.log(error);
-      return res.status(500).json({
-        errorMessage: {
-          message: [error?.message],
-        },
-      });
-      // Handle other potential errors
-    }
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: [error?.message],
+      },
+    });
   }
+  // try {
+  //   const existingEmployee = await User.findOne({
+  //     uniqueId: employeeData?.uniqueId,
+  //   });
+  //   if (existingEmployee) {
+  //     res.status(208).json({
+  //       errorMessage: {
+  //         message: [`Employee ID already exist!`],
+  //       },
+  //     });
+  //     return;
+  //   }
+  //   if (!employeeData?.profilePicture) {
+  //     // Check for student image upload file
+  //     return res.status(400).json({
+  //       errorMessage: {
+  //         message: ["No image selected or image file not supported!"],
+  //       },
+  //     });
+  //   }
+  //   // For Admins Employments
+  //   if (employeeData?.uniqueId?.includes("ADM")) {
+  //     await cloudinary.uploader.upload(
+  //       employeeData?.profilePicture,
+  //       {
+  //         folder: "Employees",
+  //         transformation: [
+  //           { width: 300, height: 400, crop: "fill", gravity: "center" },
+  //           { quality: "auto" },
+  //           { fetch_format: "auto" },
+  //         ],
+  //       },
+  //       async (err, result) => {
+  //         if (err) {
+  //           return res.status(400).json({
+  //             errorMessage: {
+  //               message: ["Something went wrong!"],
+  //             },
+  //           });
+  //         } else {
+  //           //Create new employee data
+  //           const newEmployeeData = await User?.create({
+  //             uniqueId: employeeData?.uniqueId,
+  //             "personalInfo.firstName": employeeData?.firstName,
+  //             "personalInfo.lastName": employeeData?.lastName,
+  //             "personalInfo.otherName": employeeData?.otherName,
+  //             "personalInfo.dateOfBirth": employeeData?.dateOfBirth,
+  //             "personalInfo.placeOfBirth": employeeData?.placeOfBirth,
+  //             "personalInfo.nationality": employeeData?.nationality,
+  //             "personalInfo.gender": employeeData?.gender,
+  //             "personalInfo.fullName": employeeData?.otherName
+  //               ? `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`
+  //               : `${employeeData?.firstName} ${employeeData?.lastName}`,
+  //             roles: ["admin"],
+  //             "personalInfo.profilePicture": {
+  //               public_id: result.public_id,
+  //               url: result.secure_url,
+  //             },
+  //             "status.height": employeeData?.height,
+  //             "status.weight": employeeData?.weight,
+  //             "status.complexion": employeeData?.complexion,
+  //             "status.motherTongue": employeeData?.motherTongue,
+  //             "status.otherTongue": employeeData?.otherTongue,
+  //             "status.residentialStatus": employeeData?.residentialStatus,
+  //             "contactAddress.homeTown": employeeData?.homeTown,
+  //             "contactAddress.district": employeeData?.district,
+  //             "contactAddress.region": employeeData?.region,
+  //             "contactAddress.currentCity": employeeData?.currentCity,
+  //             "contactAddress.residentialAddress":
+  //               employeeData?.residentialAddress,
+  //             "contactAddress.gpsAddress": employeeData?.gpsAddress,
+  //             "contactAddress.mobile": employeeData?.mobile,
+  //             "contactAddress.email": employeeData?.email,
+  //             "employment.employmentType": employeeData?.typeOfEmployment,
+  //             "adminStatusExtend.isAdmin": false, //===>>> isAdmin: will be updated during employment approval
+  //             "employment.employmentStatus": "pending",
+  //             // "adminActionsData.createdAt": new Date().toISOString(),
+  //           });
+  //         }
+  //       }
+  //     );
+  //   }
+  //   // For Lecturers Employments
+  //   else if (employeeData?.uniqueId?.includes("LCT")) {
+  //     await cloudinary.uploader.upload(
+  //       employeeData?.profilePicture,
+  //       {
+  //         folder: "Employees",
+  //         transformation: [
+  //           { width: 300, height: 400, crop: "fill", gravity: "center" },
+  //           { quality: "auto" },
+  //           { fetch_format: "auto" },
+  //         ],
+  //       },
+  //       async (err, result) => {
+  //         if (err) {
+  //           return res.status(400).json({
+  //             errorMessage: {
+  //               message: ["Something went wrong!"],
+  //             },
+  //           });
+  //         } else {
+  //           //Create new employee data
+  //           const newEmployeeData = await User.create({
+  //             uniqueId: employeeData?.uniqueId,
+  //             "personalInfo.firstName": employeeData?.firstName,
+  //             "personalInfo.lastName": employeeData?.lastName,
+  //             "personalInfo.otherName": employeeData?.otherName,
+  //             "personalInfo.dateOfBirth": employeeData?.dateOfBirth,
+  //             "personalInfo.placeOfBirth": employeeData?.placeOfBirth,
+  //             "personalInfo.nationality": employeeData?.nationality,
+  //             "personalInfo.gender": employeeData?.gender,
+  //             "personalInfo.fullName": `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`,
+  //             roles: ["lecturer"],
+  //             "personalInfo.profilePicture": {
+  //               public_id: result.public_id,
+  //               url: result.secure_url,
+  //             },
+  //             "lecturerSchoolData.program": employeeData?.program,
+  //             "status.height": employeeData?.height,
+  //             "status.weight": employeeData?.weight,
+  //             "status.complexion": employeeData?.complexion,
+  //             "status.motherTongue": employeeData?.motherTongue,
+  //             "status.otherTongue": employeeData?.otherTongue,
+  //             "status.residentialStatus": employeeData?.residentialStatus,
+  //             "contactAddress.homeTown": employeeData?.homeTown,
+  //             "contactAddress.district": employeeData?.district,
+  //             "contactAddress.region": employeeData?.region,
+  //             "contactAddress.currentCity": employeeData?.currentCity,
+  //             "contactAddress.residentialAddress":
+  //               employeeData?.residentialAddress,
+  //             "contactAddress.gpsAddress": employeeData?.gpsAddress,
+  //             "contactAddress.mobile": employeeData?.mobile,
+  //             "contactAddress.email": employeeData?.email,
+  //             "employment.employmentType": employeeData?.typeOfEmployment,
+  //             "lecturerStatusExtend.isLecturer": false,
+  //             "employment.employmentStatus": "pending",
+  //           });
+  //           if (newEmployeeData?.contactAddress?.email !== "") {
+  //             sendEmploymentEmail({ foundUser: newEmployeeData });
+  //           }
+  //           // if (newEmployeeData?.contactAddress?.mobile !== "") {
+  //           //   employmentSMS({ foundUser: newEmployeeData });
+  //           // }
+  //           res.status(201).json({
+  //             successMessage: "Your employment data saved successfully!",
+  //             newEmployeeData,
+  //           });
+  //           console.log("Your employment data saved successfully!");
+  //         }
+  //       }
+  //     );
+  //   }
+  //   // For Non-Teaching Staffs Employments
+  //   else if (employeeData?.uniqueId?.includes("NTS")) {
+  //     await cloudinary.uploader.upload(
+  //       employeeData?.profilePicture,
+  //       {
+  //         folder: "Employees",
+  //         transformation: [
+  //           { width: 300, height: 400, crop: "fill", gravity: "center" },
+  //           { quality: "auto" },
+  //           { fetch_format: "auto" },
+  //         ],
+  //       },
+  //       async (err, result) => {
+  //         if (err) {
+  //           return res.status(400).json({
+  //             errorMessage: {
+  //               message: ["Something went wrong!"],
+  //             },
+  //           });
+  //         } else {
+  //           //Create new employee data
+  //           const newEmployeeData = await User.create({
+  //             uniqueId: employeeData?.uniqueId,
+  //             "personalInfo.firstName": employeeData?.firstName,
+  //             "personalInfo.lastName": employeeData?.lastName,
+  //             "personalInfo.otherName": employeeData?.otherName,
+  //             "personalInfo.dateOfBirth": employeeData?.dateOfBirth,
+  //             "personalInfo.placeOfBirth": employeeData?.placeOfBirth,
+  //             "personalInfo.nationality": employeeData?.nationality,
+  //             "personalInfo.gender": employeeData?.gender,
+  //             "personalInfo.fullName": `${employeeData?.firstName} ${employeeData?.otherName} ${employeeData?.lastName}`,
+  //             roles: ["nt-staff"],
+  //             "personalInfo.profilePicture": {
+  //               public_id: result.public_id,
+  //               url: result.secure_url,
+  //             },
+  //             "status.height": employeeData?.height,
+  //             "status.weight": employeeData?.weight,
+  //             "status.complexion": employeeData?.complexion,
+  //             "status.motherTongue": employeeData?.motherTongue,
+  //             "status.otherTongue": employeeData?.otherTongue,
+  //             "status.residentialStatus": employeeData?.residentialStatus,
+  //             "contactAddress.homeTown": employeeData?.homeTown,
+  //             "contactAddress.district": employeeData?.district,
+  //             "contactAddress.region": employeeData?.region,
+  //             "contactAddress.currentCity": employeeData?.currentCity,
+  //             "contactAddress.residentialAddress":
+  //               employeeData?.residentialAddress,
+  //             "contactAddress.gpsAddress": employeeData?.gpsAddress,
+  //             "contactAddress.mobile": employeeData?.mobile,
+  //             "contactAddress.email": employeeData?.email,
+  //             "employment.employmentType": employeeData?.typeOfEmployment,
+  //             "nTStaffStatusExtend.isNTStaff": false,
+  //             "employment.employmentStatus": "pending",
+  //           });
+  //           if (newEmployeeData?.contactAddress?.email !== "") {
+  //             sendEmploymentEmail({ foundUser: newEmployeeData });
+  //           }
+  //           // if (newEmployeeData?.contactAddress?.mobile !== "") {
+  //           //   employmentSMS({ foundUser: newEmployeeData });
+  //           // }
+  //           res.status(201).json({
+  //             successMessage: "Your employment data saved successfully!",
+  //             newEmployeeData,
+  //           });
+  //           console.log("Your employment data saved successfully!");
+  //         }
+  //       }
+  //     );
+  //   } else {
+  //     return res.status(404).json({
+  //       errorMessage: {
+  //         message: ["Employment type not found!"],
+  //       },
+  //     });
+  //   }
+  // } catch (error) {
+  //   if (error.code === 11000) {
+  //     return res.status(500).json({
+  //       errorMessage: {
+  //         message: [
+  //           "Duplicate key error: A user with this email already exists!",
+  //         ],
+  //       },
+  //     });
+  //     // Handle the error, e.g., return a custom message or perform other actions
+  //   } else {
+  //     console.log(error);
+  //     return res.status(500).json({
+  //       errorMessage: {
+  //         message: [error?.message],
+  //       },
+  //     });
+  //     // Handle other potential errors
+  //   }
+  // }
 };
 module.exports.employeeSchoolDataUpdate = async (req, res) => {
   const { employeeId } = req.params;
@@ -405,7 +442,7 @@ module.exports.approveEmployment = async (req, res, next) => {
     let userEmploymentApproved;
     //Find user to update
     //Update Admin
-    if (employeeFound.roles?.includes("admin")) {
+    if (employeeFound.roles?.includes("Admin")) {
       userEmploymentApproved = await User.findOneAndUpdate(
         employeeFound._id,
         {
@@ -419,7 +456,7 @@ module.exports.approveEmployment = async (req, res, next) => {
       );
     }
     //Update Lecturer
-    if (employeeFound.roles?.includes("lecturer")) {
+    if (employeeFound.roles?.includes("Lecturer")) {
       userEmploymentApproved = await User.findOneAndUpdate(
         employeeFound._id,
         {
@@ -433,7 +470,7 @@ module.exports.approveEmployment = async (req, res, next) => {
       );
     }
     //Update Non-Teaching Staff
-    if (employeeFound.roles?.includes("nt-staff")) {
+    if (employeeFound.roles?.includes("NT-Staff")) {
       userEmploymentApproved = await User.findOneAndUpdate(
         employeeFound._id,
         {
@@ -444,24 +481,6 @@ module.exports.approveEmployment = async (req, res, next) => {
           "nTStaffStatusExtend.isStaff": true,
         },
         { new: true }
-      );
-    }
-    //Push approved employee into adminFound's actionsData employmentsApproved array✅
-    if (
-      userEmploymentApproved &&
-      adminFound &&
-      !adminFound?.adminActionsData?.employmentsApproved?.includes(
-        userEmploymentApproved?._id
-      )
-    ) {
-      await User.findOneAndUpdate(
-        adminFound?._id,
-        {
-          $push: {
-            "adminActionsData.employmentsApproved": userEmploymentApproved?._id,
-          },
-        },
-        { upsert: true, new: true }
       );
     }
     sendEmploymentApprovalEmail({ employeeFound });

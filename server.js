@@ -33,6 +33,7 @@ const {
   notifyNextSemester,
   createNextAcademicYear,
 } = require("./middlewares/academics/semesterService");
+const { sendEnrollmentCodeSMS } = require("./emails/sendSms");
 
 const start = async (req, res) => {
   try {
@@ -129,6 +130,10 @@ const start = async (req, res) => {
     );
 
     // Run the update function immediately on server start
+    // (async () => {
+    //   console.log("Running enrollment code...");
+    //   await sendEnrollmentCodeSMS();
+    // })();
     // (async () => {
     //   console.log("Running initial semester update...");
     //   await updateCurrentSemester();
