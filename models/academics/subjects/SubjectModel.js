@@ -16,6 +16,10 @@ const subjectSchema = new Schema(
         ref: "User",
       },
     ],
+    currentTeacher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     electiveSubInfo: {
       type: ElectiveSubject.schema,
     },

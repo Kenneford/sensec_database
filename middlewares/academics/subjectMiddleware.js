@@ -9,7 +9,7 @@ async function validateSubjectData(req, res, next) {
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: data?.createdBy });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation denied! You're not an admin!"],
@@ -281,10 +281,222 @@ async function divisionProgrammeElectiveSubject(req, res, next) {
     });
   }
 }
-
+async function assignElectiveSubject(req, res, next) {
+  const currentUser = req.user;
+  const data = req.body;
+  const { subjectId } = req.params;
+  try {
+    //Find Admin
+    const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not an admin!"],
+        },
+      });
+      return;
+    }
+    //Find Lecturer
+    const lecturerFound = await User.findOne({ _id: data?.currentTeacher });
+    if (!lecturerFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Lecturer data not found!"],
+        },
+      });
+      return;
+    }
+    //Find subject by ID
+    const subjectFound = await Subject.findOne({ _id: subjectId });
+    if (!subjectFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Subject data not found!"],
+        },
+      });
+      return;
+    }
+    if (
+      subjectFound?.currentTeacher?.toString() ===
+      lecturerFound?._id?.toString()
+    ) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Lecturer is subject's current teacher!"],
+        },
+      });
+      return;
+    }
+    if (subjectFound?.electiveSubInfo) {
+      const allUsers = await User.find({});
+      //Find Students
+      const electiveStudentsFound = allUsers.filter((std) =>
+        std?.studentSchoolData?.electiveSubjects?.includes(subjectFound?._id)
+      );
+      const updatedSubject = await Subject.findOneAndUpdate(
+        subjectFound?._id,
+        {
+          currentTeacher: data?.currentTeacher,
+          lastUpdatedBy: data?.lastUpdatedBy,
+        },
+        {
+          new: true,
+        }
+      );
+      if (
+        updatedSubject &&
+        !updatedSubject?.teachers?.includes(lecturerFound?._id)
+      ) {
+        updatedSubject.teachers.push(lecturerFound?._id);
+        await updatedSubject.save();
+      }
+      if (
+        lecturerFound &&
+        !lecturerFound?.lecturerSchoolData?.teachingSubjects?.includes(
+          updatedSubject?._id
+        )
+      ) {
+        lecturerFound.lecturerSchoolData.teachingSubjects.push(
+          updatedSubject?._id
+        );
+        await lecturerFound.save();
+      }
+      if (electiveStudentsFound) {
+        electiveStudentsFound?.forEach(async (std) => {
+          if (
+            std &&
+            lecturerFound &&
+            !lecturerFound?.lecturerSchoolData?.students?.includes(std?._id)
+          ) {
+            await User?.findOneAndUpdate(
+              lecturerFound?._id,
+              {
+                $push: { "lecturerSchoolData.students": std?._id },
+              },
+              { upsert: true }
+            );
+            // lecturerFound.lecturerSchoolData.students.push(std?._id);
+            // await lecturerFound.save();
+          }
+        });
+      }
+      req.assignSubjectLecturerData = {
+        subjectFound,
+        lecturerFound,
+        updatedSubject,
+      };
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
+      },
+    });
+  }
+}
+async function assignCoreSubject(req, res, next) {
+  const data = req.body;
+  const { subjectFound, lecturerFound, updatedSubject } =
+    req.assignSubjectLecturerData;
+  try {
+    if (
+      lecturerFound &&
+      subjectFound &&
+      subjectFound?.currentTeacher === lecturerFound?._id
+    ) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Lecturer is subject's current teacher!"],
+        },
+      });
+      return;
+    }
+    if (subjectFound?.coreSubInfo) {
+      const allUsers = await User.find({});
+      //Find Students
+      const electiveStudentsFound = allUsers.filter((std) =>
+        std?.studentSchoolData?.coreSubjects?.includes(subjectFound?._id)
+      );
+      const updatedSubject = await Subject.findOneAndUpdate(
+        subjectFound?._id,
+        {
+          currentTeacher: data?.currentTeacher,
+          lastUpdatedBy: data?.lastUpdatedBy,
+        },
+        {
+          new: true,
+        }
+      );
+      // Push lecturer into subjects teachers arrays
+      if (
+        updatedSubject &&
+        !updatedSubject?.teachers?.includes(lecturerFound?._id)
+      ) {
+        updatedSubject.teachers.push(lecturerFound?._id);
+        await updatedSubject.save();
+      }
+      // Push subject into teachers teaching subjects arrays
+      if (
+        lecturerFound &&
+        !lecturerFound?.lecturerSchoolData?.teachingSubjects?.includes(
+          updatedSubject?._id
+        )
+      ) {
+        lecturerFound.lecturerSchoolData.teachingSubjects.push(
+          updatedSubject?._id
+        );
+        await lecturerFound.save();
+      }
+      // Push found students into teacher's students arrays
+      if (electiveStudentsFound) {
+        electiveStudentsFound?.forEach(async (std) => {
+          if (
+            std &&
+            lecturerFound &&
+            !lecturerFound?.lecturerSchoolData?.students?.includes(std?._id)
+          ) {
+            await User?.findOneAndUpdate(
+              lecturerFound?._id,
+              {
+                $push: { "lecturerSchoolData.students": std?._id },
+              },
+              { upsert: true }
+            );
+            // lecturerFound.lecturerSchoolData.students.push(std?._id);
+            // await lecturerFound.save();
+          }
+        });
+      }
+      req.assignSubjectLecturerData = {
+        subjectFound,
+        lecturerFound,
+        updatedSubject,
+      };
+      next();
+    } else {
+      req.assignSubjectLecturerData = {
+        subjectFound,
+        lecturerFound,
+        updatedSubject,
+      };
+      next();
+    }
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
+      },
+    });
+  }
+}
 module.exports = {
   validateSubjectData,
   coreSubject,
   programmeElectiveSubject,
   divisionProgrammeElectiveSubject,
+  assignElectiveSubject,
+  assignCoreSubject,
 };

@@ -10,12 +10,12 @@ const LecturerSchoolDataSchema = new Schema(
         ref: "ClassLevel",
       },
     ],
-    // students: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "User",
-    //   },
-    // ],
+    students: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     teachingSubjects: [
       {
         type: mongoose.Schema.Types.ObjectId,

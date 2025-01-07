@@ -399,7 +399,7 @@ function authUserRole({ userRoles }) {
     // console.log(req.user, "L-160");
     if (
       !req?.user?.roles?.includes(userRoles?.admin) &&
-      !req?.user?.roles?.includes(userRoles?.teacher) &&
+      !req?.user?.roles?.includes(userRoles?.lecturer) &&
       !req?.user?.roles?.includes(userRoles?.nTStaff) &&
       !req?.user?.roles?.includes(userRoles?.sensosa) &&
       !req?.user?.roles?.includes(userRoles?.student)
