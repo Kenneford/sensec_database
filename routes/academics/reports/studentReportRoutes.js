@@ -73,7 +73,7 @@ router.post(
     userRoles: {
       admin: "Admin",
       lecturer: "Lecturer",
-      student: "Student",
+      student: "Headmaster",
     },
   }),
   fetchAllReports

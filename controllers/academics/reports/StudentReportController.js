@@ -11,6 +11,30 @@ module.exports.createStudentReport = async (req, res) => {
   // console.log(data);
 
   try {
+    if (!data?.classScore && !data?.examScore) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Both class and exam scores cannot be empty!"],
+        },
+      });
+      return;
+    }
+    if (data?.classScore > 30) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Class score should not exceed 30 marks"],
+        },
+      });
+      return;
+    }
+    if (data?.examScore > 70) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Exam scores should not exceed 70 marks!"],
+        },
+      });
+      return;
+    }
     //Find Lecturer
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
     if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
@@ -21,7 +45,7 @@ module.exports.createStudentReport = async (req, res) => {
       });
       return;
     }
-    if (currentUser?.id !== data?.createdBy) {
+    if (currentUser?.id !== data?.lecturer) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're not a lecturer!"],
@@ -31,11 +55,34 @@ module.exports.createStudentReport = async (req, res) => {
     }
     //Find student
     const studentFound = await User.findOne({ uniqueId: studentId });
-    // console.log(studentFound, "L-240");
     if (!studentFound) {
       res.status(404).json({
         errorMessage: {
           message: ["Student data not found!"],
+        },
+      });
+      return;
+    }
+    // Find existing multiStudentsReport data
+    const existingMultiStudentsReport = await Report.findOne({
+      classLevel: data?.classLevel,
+      semester: data?.semester,
+      subject: data?.subject,
+      lecturer: data?.lecturer,
+      year: data?.year,
+    });
+    console.log(existingMultiStudentsReport);
+
+    if (existingMultiStudentsReport) {
+      await DraftReport.findOneAndDelete({
+        classLevel: data?.classLevel,
+        semester: data?.semester,
+        subject: data?.subject,
+        lecturer: data?.lecturer,
+      });
+      res.status(404).json({
+        errorMessage: {
+          message: ["Student report data already exist!"],
         },
       });
       return;
@@ -53,38 +100,62 @@ module.exports.createStudentReport = async (req, res) => {
       });
       return;
     }
-    const reportFound = await StudentReport.findOne({
-      studentId: data?.studentId,
-      classLevel: data?.classLevel,
-      semester: data?.semester,
-      subject: data?.subject,
-      year: data?.year,
-    });
-    if (reportFound) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Student report data already exist!"],
-        },
-      });
-      return;
-    }
-    const newReport = await StudentReport.create({
-      studentId: data?.studentId,
-      classLevel: data?.classLevel,
-      semester: data?.semester,
-      subject: data?.subject,
-      classScore: data?.classScore,
-      examScore: data?.examScore,
-      totalScore: data?.totalScore,
-      grade: gradeFound?.grade,
-      remark: gradeFound?.remark,
-      createdBy: data?.createdBy,
-      year: new Date().getFullYear(),
-    });
-    res.status(201).json({
-      successMessage: "Student's report created successfully!",
-      studentReport: newReport,
-    });
+    // if (data?.isDraftSave) {
+    //   // Find existing report
+    //   const reportFound = await StudentReport.findOne({
+    //     studentId: data?.studentId,
+    //     classLevel: data?.classLevel,
+    //     semester: data?.semester,
+    //     subject: data?.subject,
+    //     year: data?.year,
+    //   });
+    //   if (reportFound) {
+    //     const updatedReport = await StudentReport.findOneAndUpdate(
+    //       reportFound?._id,
+    //       {
+    //         studentId: data?.studentId,
+    //         classLevel: data?.classLevel,
+    //         semester: data?.semester,
+    //         subject: data?.subject,
+    //         classScore: data?.classScore,
+    //         examScore: data?.examScore,
+    //         totalScore: data?.totalScore,
+    //         grade: gradeFound?.grade,
+    //         remark: gradeFound?.remark,
+    //         lecturer: data?.lecturer,
+    //       },
+    //       { new: true }
+    //     );
+    //     res.status(201).json({
+    //       successMessage: "Student's report created successfully!",
+    //       studentReport: updatedReport,
+    //     });
+    //   } else {
+    //     const newReport = await StudentReport.create({
+    //       studentId: data?.studentId,
+    //       classLevel: data?.classLevel,
+    //       semester: data?.semester,
+    //       subject: data?.subject,
+    //       classScore: data?.classScore,
+    //       examScore: data?.examScore,
+    //       totalScore: data?.totalScore,
+    //       grade: gradeFound?.grade,
+    //       remark: gradeFound?.remark,
+    //       lecturer: data?.lecturer,
+    //       year: new Date().getFullYear(),
+    //     });
+    //     res.status(201).json({
+    //       successMessage: "Student's report created successfully!",
+    //       studentReport: newReport,
+    //     });
+    //     // res.status(403).json({
+    //     //   errorMessage: {
+    //     //     message: ["Student report data already exist!"],
+    //     //   },
+    //     // });
+    //     // return;
+    //   }
+    // }
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -169,8 +240,7 @@ module.exports.saveDraftReports = async (req, res) => {
 };
 module.exports.fetchDraftReport = async (req, res) => {
   const { data } = req.body;
-  console.log(data);
-
+  // console.log(data);
   try {
     if (!data) {
       return;
@@ -185,12 +255,23 @@ module.exports.fetchDraftReport = async (req, res) => {
     console.log(existingDraftData);
 
     if (existingDraftData) {
-      res.status(201).json({
+      res.status(200).json({
         successMessage: "Draft report data fetched successfully!",
         foundDraftReport: existingDraftData,
       });
     } else {
-      return;
+      // If no draft, fetch students matching the classLevel and subject
+      const students = await User.find({
+        "studentSchoolData.currentClassLevel": data?.classLevel,
+        $or: [
+          { "studentSchoolData.electiveSubjects": data?.subject },
+          { "studentSchoolData.coreSubjects": data?.subject },
+        ],
+      });
+      res.status(200).json({
+        successMessage: "Students data fetched successfully!",
+        foundDraftReport: students,
+      });
     }
   } catch (error) {
     console.log(error);
@@ -209,11 +290,18 @@ module.exports.createMultiStudentsReports = async (req, res) => {
     if (!data?.students?.length > 0) {
       res.status(403).json({
         errorMessage: {
-          message: ["No report data selected!"],
+          message: ["No student data selected!"],
         },
       });
       return;
     }
+    // Find existing draft data
+    const existingDraftData = await DraftReport.findOne({
+      classLevel: data?.classLevel,
+      semester: data?.semester,
+      subject: data?.subject,
+      lecturer: data?.lecturer,
+    });
     // Find existing multiStudentsReport data
     const existingMultiStudentsReport = await Report.findOne({
       classLevel: data?.classLevel,
@@ -230,14 +318,6 @@ module.exports.createMultiStudentsReports = async (req, res) => {
       });
       return;
     }
-    // Find existing draft data
-    const existingDraftData = await DraftReport.findOne({
-      classLevel: data?.classLevel,
-      semester: data?.semester,
-      subject: data?.subject,
-      lecturer: data?.lecturer,
-    });
-    console.log(existingDraftData);
     // Create Multi Students Report
     const multiStudentsReport = await Report.create({
       classLevel: data?.classLevel,
@@ -260,7 +340,7 @@ module.exports.createMultiStudentsReports = async (req, res) => {
           });
           // Find existing student report
           const existingReport = await StudentReport.findOne({
-            studentId: data?.studentId,
+            studentId: std?.studentId,
             classLevel: data?.classLevel,
             semester: data?.semester,
             subject: data?.subject,
@@ -296,6 +376,39 @@ module.exports.createMultiStudentsReports = async (req, res) => {
                 { upsert: true }
               );
             }
+          } else {
+            const updatedReport = await StudentReport.findOneAndUpdate(
+              existingReport?._id,
+              {
+                studentId: std?.studentId,
+                classLevel: data?.classLevel,
+                semester: data?.semester,
+                subject: data?.subject,
+                classScore: std?.classScore,
+                examScore: std?.examScore,
+                totalScore: std?.totalScore,
+                grade: gradeFound?.grade,
+                remark: gradeFound?.remark,
+                lecturer: data?.lecturer,
+                year: data?.year,
+              },
+              { new: true }
+            );
+            if (
+              updatedReport &&
+              multiStudentsReport &&
+              !multiStudentsReport?.students?.includes(updatedReport?._id)
+            ) {
+              await Report.findOneAndUpdate(
+                multiStudentsReport?._id,
+                {
+                  $push: {
+                    students: updatedReport?._id,
+                  },
+                },
+                { upsert: true }
+              );
+            }
           }
         }
       });
@@ -325,7 +438,7 @@ module.exports.fetchAllReports = async (req, res) => {
       !userFound ||
       (!currentUser?.roles?.includes("Admin") &&
         !currentUser?.roles?.includes("Lecturer") &&
-        !currentUser?.roles?.includes("Student"))
+        !currentUser?.roles?.includes("Headmaster"))
     ) {
       res.status(403).json({
         errorMessage: {
@@ -335,11 +448,53 @@ module.exports.fetchAllReports = async (req, res) => {
       return;
     }
     // Find reports
-    const allReports = await Report.find({});
+    const allReports = await Report.find({}).populate([
+      {
+        path: "students",
+      },
+    ]);
+    //Find all students
+    const allStudents = await User.find({
+      "studentStatusExtend.enrollmentStatus": "approved",
+      "studentStatusExtend.isStudent": true,
+    });
+    // console.log(allStudents?.length);
+    // Create a lookup map for students array
+    const studentMap = new Map(
+      allStudents.map((student) => [student?.uniqueId, student])
+    );
+    console.log("Students MAP: ", studentMap);
+
+    // Process the data
+    const studentReports = [];
+
+    allReports.forEach((report) => {
+      report.students.forEach((studentReport) => {
+        // Get the corresponding student details from the map
+        const studentDetails = studentMap.get(studentReport?.studentId);
+        console.log("Student Info: ", studentDetails);
+
+        if (studentDetails) {
+          // Combine report and student data
+          studentReports.push({
+            uniqueId: studentReport?.studentId, // Student ID
+            fullName: studentDetails?.personalInfo?.fullName, // Student name (from `students` array)
+            profilePicture: studentDetails?.personalInfo?.profilePicture?.url, // Student image (from `students` array)
+            classScore: studentReport.classScore, // Example report-specific data
+            examScore: studentReport.examScore, // Example report-specific data
+            totalScore: studentReport.totalScore, // Example report-specific data
+            lecturer: studentReport.lecturer, // Example report-specific data
+            year: report?.year,
+          });
+        }
+      });
+    });
+    console.log("All Report Students: ", studentReports);
+
     if (allReports) {
       res.status(201).json({
         successMessage: "Reports data fetched successfully!",
-        allReports,
+        allReports: studentReports,
       });
     }
   } catch (error) {
