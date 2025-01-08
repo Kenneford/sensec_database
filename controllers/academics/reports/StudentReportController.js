@@ -483,6 +483,7 @@ module.exports.fetchAllReports = async (req, res) => {
             classScore: studentReport.classScore, // Example report-specific data
             examScore: studentReport.examScore, // Example report-specific data
             totalScore: studentReport.totalScore, // Example report-specific data
+            grade: studentReport.grade, // Example report-specific data
             lecturer: studentReport.lecturer, // Example report-specific data
             year: report?.year,
           });
