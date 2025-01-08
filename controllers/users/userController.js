@@ -294,7 +294,7 @@ module.exports.refreshUserToken = async (req, res) => {
       process.env.TOKEN_SECRET,
       {
         // expiresIn: Date.now() + 60000, // Expires in just a minute
-        expiresIn: process.env.TOKEN_EXP,
+        expiresIn: process.env.SHORT_LIFE_TOKEN_EXP,
       }
     );
     res.status(200).json({
@@ -487,6 +487,7 @@ module.exports.fetchAllUsers = async (req, res) => {
       {
         path: "lecturerSchoolData.program",
       },
+      { path: "lecturerSchoolData.students" },
       { path: "lecturerSchoolData.classLevelHandling" },
       { path: "lecturerSchoolData.teachingSubjects" },
       { path: "studentSchoolData.batch" },
@@ -528,6 +529,7 @@ module.exports.fetchSingleUser = async (req, res) => {
         path: "lecturerSchoolData.program",
       },
       { path: "lecturerSchoolData.classLevelHandling" },
+      { path: "lecturerSchoolData.students" },
       { path: "lecturerSchoolData.teachingSubjects" },
       { path: "studentSchoolData.batch" },
       { path: "studentSchoolData.program" },

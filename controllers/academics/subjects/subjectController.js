@@ -236,6 +236,23 @@ exports.updateSubject = async (req, res) => {
     });
   }
 };
+// Assign subject lecturer ✅
+exports.assignSubjectLecturer = async (req, res) => {
+  const { updatedSubject } = req.assignSubjectLecturerData;
+
+  try {
+    res.status(201).json({
+      successMessage: "Subject lecturer assigned successfully!",
+      updatedSubject,
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
+      },
+    });
+  }
+};
 // Delete  subject ✅
 exports.deleteSubject = async (req, res) => {
   const currentUser = req.user;

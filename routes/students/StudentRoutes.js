@@ -79,7 +79,7 @@ router.put("/students/:studentId/school_data/update", studentSchoolDataUpdate);
 router.put(
   "/students/:studentId/enrolment/approve",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   updateApprovedStudentData,
   // sendEnrollmentEmail,
   // studentEnrollmentApprovalSMS,
@@ -88,13 +88,13 @@ router.put(
 router.put(
   "/students/:studentId/enrolment/reject",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   rejectStudentEnrollment
 );
 router.put(
   "/students/enrolment/multi_data/approve/all",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   updateMultiApprovedStudentData,
   // sendEnrollmentEmail,
   // studentEnrollmentApprovalSMS,
@@ -103,7 +103,7 @@ router.put(
 router.put(
   "/students/enrolment/multi_data/reject/all",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   rejectMultiStudents
 );
 
@@ -111,7 +111,7 @@ router.put(
 router.put(
   "/students/:studentId/promote",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   validatePromotionData,
   level100Promotion,
   level200Promotion,
@@ -121,7 +121,7 @@ router.put(
 router.put(
   "/students/multi_data/promote/all",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   validateMultiStudentsPromotionData,
   level100MultiStudentsPromotion,
   level200MultiStudentsPromotion,

@@ -27,6 +27,7 @@ const StudentPlacementRoute = require("./routes/studentPlacementRoutes/StudentPl
 const PlacementBatchRoute = require("./routes/studentPlacementRoutes/placementBatchRoutes/placementBatchRoutes");
 const HouseRoute = require("./routes/academics/house/HouseRoutes");
 const BlogRoute = require("./routes/blogRoutes/blogRoute");
+const StudentReportRoute = require("./routes/academics/reports/studentReportRoutes");
 const {
   updateCurrentSemester,
   updateAcademicYear,
@@ -126,7 +127,8 @@ const start = async (req, res) => {
       StudentPlacementRoute,
       PlacementBatchRoute,
       HouseRoute,
-      BlogRoute
+      BlogRoute,
+      StudentReportRoute
     );
 
     // Run the update function immediately on server start

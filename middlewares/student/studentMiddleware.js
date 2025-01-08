@@ -317,10 +317,10 @@ async function updateApprovedStudentData(req, res, next) {
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation Denied! You're not an admin!"],
         },
       });
       return;
@@ -328,7 +328,7 @@ async function updateApprovedStudentData(req, res, next) {
     if (currentUser?.id !== enrollmentApprovedBy) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation Denied! You're not an admin!"],
         },
       });
       return;
