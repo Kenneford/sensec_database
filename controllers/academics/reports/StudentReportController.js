@@ -100,62 +100,56 @@ module.exports.createStudentReport = async (req, res) => {
       });
       return;
     }
-    // if (data?.isDraftSave) {
-    //   // Find existing report
-    //   const reportFound = await StudentReport.findOne({
-    //     studentId: data?.studentId,
-    //     classLevel: data?.classLevel,
-    //     semester: data?.semester,
-    //     subject: data?.subject,
-    //     year: data?.year,
-    //   });
-    //   if (reportFound) {
-    //     const updatedReport = await StudentReport.findOneAndUpdate(
-    //       reportFound?._id,
-    //       {
-    //         studentId: data?.studentId,
-    //         classLevel: data?.classLevel,
-    //         semester: data?.semester,
-    //         subject: data?.subject,
-    //         classScore: data?.classScore,
-    //         examScore: data?.examScore,
-    //         totalScore: data?.totalScore,
-    //         grade: gradeFound?.grade,
-    //         remark: gradeFound?.remark,
-    //         lecturer: data?.lecturer,
-    //       },
-    //       { new: true }
-    //     );
-    //     res.status(201).json({
-    //       successMessage: "Student's report created successfully!",
-    //       studentReport: updatedReport,
-    //     });
-    //   } else {
-    //     const newReport = await StudentReport.create({
-    //       studentId: data?.studentId,
-    //       classLevel: data?.classLevel,
-    //       semester: data?.semester,
-    //       subject: data?.subject,
-    //       classScore: data?.classScore,
-    //       examScore: data?.examScore,
-    //       totalScore: data?.totalScore,
-    //       grade: gradeFound?.grade,
-    //       remark: gradeFound?.remark,
-    //       lecturer: data?.lecturer,
-    //       year: new Date().getFullYear(),
-    //     });
-    //     res.status(201).json({
-    //       successMessage: "Student's report created successfully!",
-    //       studentReport: newReport,
-    //     });
-    //     // res.status(403).json({
-    //     //   errorMessage: {
-    //     //     message: ["Student report data already exist!"],
-    //     //   },
-    //     // });
-    //     // return;
-    //   }
-    // }
+    if (data?.isDraftSave) {
+      // Find existing report
+      const reportFound = await StudentReport.findOne({
+        studentId: data?.studentId,
+        classLevel: data?.classLevel,
+        semester: data?.semester,
+        subject: data?.subject,
+        year: data?.year,
+      });
+      if (reportFound) {
+        const updatedReport = await StudentReport.findOneAndUpdate(
+          reportFound?._id,
+          {
+            studentId: data?.studentId,
+            classLevel: data?.classLevel,
+            semester: data?.semester,
+            subject: data?.subject,
+            classScore: data?.classScore,
+            examScore: data?.examScore,
+            totalScore: data?.totalScore,
+            grade: gradeFound?.grade,
+            remark: gradeFound?.remark,
+            lecturer: data?.lecturer,
+          },
+          { new: true }
+        );
+        res.status(201).json({
+          successMessage: "Student's report created successfully!",
+          studentReport: updatedReport,
+        });
+      } else {
+        const newReport = await StudentReport.create({
+          studentId: data?.studentId,
+          classLevel: data?.classLevel,
+          semester: data?.semester,
+          subject: data?.subject,
+          classScore: data?.classScore,
+          examScore: data?.examScore,
+          totalScore: data?.totalScore,
+          grade: gradeFound?.grade,
+          remark: gradeFound?.remark,
+          lecturer: data?.lecturer,
+          year: new Date().getFullYear(),
+        });
+        res.status(201).json({
+          successMessage: "Student's report created successfully!",
+          studentReport: newReport,
+        });
+      }
+    }
   } catch (error) {
     console.log(error);
     return res.status(500).json({
