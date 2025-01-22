@@ -313,7 +313,8 @@ module.exports.assignClassSectionLecturer = async (req, res) => {
 };
 // Remove class section teacher ✅
 module.exports.removeClassSectionLecturer = async (req, res) => {
-  const { data } = req.body;
+  const data = req.body;
+  console.log(data);
 
   const currentUser = req.user;
   try {

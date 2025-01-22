@@ -52,7 +52,7 @@ router.put(
   authUser,
   authUserRole({
     userRoles: {
-      admin: "admin",
+      admin: "Admin",
     },
   }),
   removeClassSectionLecturer
