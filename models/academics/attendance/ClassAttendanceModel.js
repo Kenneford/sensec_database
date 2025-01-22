@@ -14,7 +14,13 @@ const classAttendanceSchema = new Schema(
     date: {
       type: String,
       default: function () {
-        return new Date().toLocaleDateString();
+        const date = new Date();
+        // Specify the format you want
+        const options = { year: "numeric", month: "2-digit", day: "2-digit" };
+        const formatter = new Intl.DateTimeFormat("en-GB", options); // en-GB for day/month/year
+
+        // console.log(formatter.format(date)); // Output: 22/01/2025
+        return formatter.format(date);
       },
       // required: true
     },
