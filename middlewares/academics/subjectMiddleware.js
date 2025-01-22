@@ -427,6 +427,7 @@ async function assignElectiveSubject(req, res, next) {
   const data = req.body;
   const { subjectId } = req.params;
   console.log(data);
+  console.log(subjectId);
   try {
     if (
       !mongoose.Types.ObjectId.isValid(subjectId) ||
