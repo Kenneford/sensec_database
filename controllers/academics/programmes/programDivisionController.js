@@ -10,7 +10,7 @@ module.exports.createDivisionProgram = async (req, res) => {
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: data?.createdBy });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation denied! You're not an admin!"],

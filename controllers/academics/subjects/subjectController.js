@@ -11,8 +11,6 @@ module.exports.createSubject = async (req, res) => {
       successMessage: "Subject created successfully!",
       subject: subjectCreated,
     });
-    console.log("Subject created successfully");
-    console.log(subjectCreated);
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -28,6 +26,7 @@ exports.getAllSubjects = async (req, res) => {
     const subjects = await Subject.find({}).populate([
       // { path: "teachers" },
       { path: "electiveSubInfo.programId" },
+      { path: "electiveSubInfo.divisionProgramId" },
       { path: "createdBy" },
       { path: "lastUpdatedBy" },
     ]);
@@ -47,6 +46,24 @@ exports.getAllSubjects = async (req, res) => {
     res.status(500).json({
       errorMessage: {
         message: ["Something went wrong!"],
+      },
+    });
+  }
+};
+// Assign subject lecturer ✅
+exports.getAllSubjectLecturers = async (req, res) => {
+  const { lecturersFound } = req.lecturersData;
+  console.log("L-56: ", lecturersFound);
+
+  try {
+    res.status(201).json({
+      successMessage: "Subject lecturers fetched successfully!",
+      lecturersFound,
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
       },
     });
   }
@@ -238,12 +255,28 @@ exports.updateSubject = async (req, res) => {
 };
 // Assign subject lecturer ✅
 exports.assignSubjectLecturer = async (req, res) => {
-  const { updatedSubject } = req.assignSubjectLecturerData;
+  const { lecturerFound } = req.assignSubjectLecturerData;
 
   try {
     res.status(201).json({
       successMessage: "Subject lecturer assigned successfully!",
-      updatedSubject,
+      lecturerFound,
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
+      },
+    });
+  }
+};
+// Remove subject lecturer ✅
+exports.removeSubjectLecturer = async (req, res) => {
+  const { lecturerRemoved } = req.removedSubjectLecturerData;
+  try {
+    res.status(201).json({
+      successMessage: "Subject lecturer removed successfully!",
+      lecturerRemoved,
     });
   } catch (error) {
     res.status(500).json({

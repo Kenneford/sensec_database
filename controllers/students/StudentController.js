@@ -12,7 +12,6 @@ const User = require("../../models/user/UserModel");
 module.exports.studentOnlineEnrolment = async (req, res) => {
   const { newStudentData } = req.body;
   const placementStudent = req.placementStudent;
-  console.log(placementStudent);
 
   const program = req.program;
   const studentClassInfo = req.studentClassInfo;
@@ -117,81 +116,102 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           "contactAddress.email": newStudentData?.email,
           "studentStatusExtend.enrollmentStatus": "in progress",
         });
-        // Add student's elective subjects
         if (program?.isDivisionProgram) {
-          program?.studentDivisionProgramFound?.electiveSubjects?.forEach(
-            async (subject) => {
-              if (
-                subject &&
-                !newEnrollmentData?.studentSchoolData?.electiveSubjects?.includes(
-                  subject?._id
-                )
-              ) {
-                await User.findOneAndUpdate(
-                  newEnrollmentData?._id,
-                  {
-                    $push: {
-                      "studentSchoolData.electiveSubjects": subject?._id,
-                    },
-                  },
-                  { upsert: true }
-                );
-              }
-            }
+          const electiveSubjects =
+            program?.studentDivisionProgramFound?.electiveSubjects;
+
+          // Filter non-optional subjects
+          const mandatorySubjects = electiveSubjects?.filter(
+            (subject) => !subject?.subjectInfo?.isOptional && subject
           );
-          //push student into division programme's students✅
-          // if (
-          //   !program?.studentDivisionProgramFound?.students?.includes(
-          //     newEnrollmentData?._id
-          //   )
-          // ) {
-          //   program?.studentDivisionProgramFound?.students?.push(
-          //     newEnrollmentData?._id
-          //   );
-          //   await program.studentDivisionProgramFound.save();
-          // }
-          //push student into main programme's students✅
-          // if (
-          //   !program?.mainProgramFound?.students?.includes(newEnrollmentData?._id)
-          // ) {
-          //   program?.mainProgramFound?.students?.push(newEnrollmentData?._id);
-          //   await program.mainProgramFound.save();
-          // }
+
+          // Process each subject
+          for (const subject of mandatorySubjects) {
+            if (
+              subject &&
+              !newEnrollmentData?.studentSchoolData?.subjects?.includes(
+                subject?._id
+              )
+            ) {
+              // Add subject to student's subjects array
+              await User.findOneAndUpdate(
+                { _id: newEnrollmentData?._id },
+                {
+                  $push: {
+                    "studentSchoolData.subjects": subject?._id,
+                  },
+                },
+                { upsert: true }
+              );
+            }
+          }
         }
         if (!program?.isDivisionProgram) {
-          // Add student's elective subjects
-          program?.mainProgramFound?.electiveSubjects?.forEach(
-            async (subject) => {
-              if (
-                subject &&
-                !newEnrollmentData?.studentSchoolData?.electiveSubjects?.includes(
-                  subject?._id
-                )
-              ) {
-                await User.findOneAndUpdate(
-                  newEnrollmentData?._id,
-                  {
-                    $push: {
-                      "studentSchoolData.electiveSubjects": subject?._id,
-                    },
-                  },
-                  { upsert: true }
-                );
-              }
-            }
+          const electiveSubjects = program?.mainProgramFound?.electiveSubjects;
+
+          // Filter non-optional subjects
+          const mandatorySubjects = electiveSubjects?.filter(
+            (subject) => !subject?.subjectInfo?.isOptional && subject
           );
-          //push student into main programme's students✅
-          // if (
-          //   !program?.mainProgramFound?.students?.includes(newEnrollmentData?._id)
-          // ) {
-          //   program?.mainProgramFound?.students?.push(newEnrollmentData?._id);
-          //   await program.mainProgramFound.save();
-          // }
+
+          // Process each subject
+          for (const subject of mandatorySubjects) {
+            if (
+              subject &&
+              !newEnrollmentData?.studentSchoolData?.subjects?.includes(
+                subject?._id
+              )
+            ) {
+              // Add subject to student's subjects array
+              await User.findOneAndUpdate(
+                { _id: newEnrollmentData?._id },
+                {
+                  $push: {
+                    "studentSchoolData.subjects": subject?._id,
+                  },
+                },
+                { upsert: true }
+              );
+            }
+            const lecturer = await User.findOne({
+              "lecturerSchoolData.teachingSubjects.electives": {
+                $elemMatch: {
+                  subject: subject._id, // Lecturer's subject
+                  classLevel: newStudentData?.currentClassLevel, // Lecturer's classLevel
+                  program: program?.mainProgramFound?._id, // Lecturer's programDivision
+                },
+              },
+            });
+            // console.log(lecturer);
+
+            const lecturerElectiveSubjData =
+              lecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+                (electiveData) =>
+                  electiveData?.subject.toString() ===
+                    subject?._id.toString() &&
+                  electiveData?.classLevel.toString() ===
+                    newStudentData?.currentClassLevel.toString() &&
+                  electiveData?.program.toString() ===
+                    program?.mainProgramFound?._id.toString()
+              );
+            console.log(lecturerElectiveSubjData);
+            if (
+              lecturerElectiveSubjData &&
+              !lecturerElectiveSubjData?.students?.includes(
+                newEnrollmentData?._id
+              )
+            ) {
+              lecturerElectiveSubjData.students.push(newEnrollmentData?._id);
+              lecturer.lecturerSchoolData.name = "lecturerSchoolData";
+              await lecturer.save();
+            }
+          }
         }
+
         //Push optionalElectiveSubject into student's electiveSubjects array
         if (
           newStudentData?.optionalElectiveSubject &&
-          !newEnrollmentData?.studentSchoolData?.electiveSubjects?.includes(
+          !newEnrollmentData?.studentSchoolData?.subjects?.includes(
             newStudentData?.optionalElectiveSubject
           )
         ) {
@@ -199,7 +219,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
             newEnrollmentData?._id,
             {
               $push: {
-                "studentSchoolData.electiveSubjects":
+                "studentSchoolData.subjects":
                   newStudentData?.optionalElectiveSubject,
               },
             },
@@ -233,11 +253,9 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           successMessage: "Your enrollment info saved successfully!",
           newEnrollmentData,
         });
-        console.log("Your enrollment info saved successfully!");
       }
     );
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       errorMessage: {
         message: ["Internal Server Error!"],
@@ -257,7 +275,7 @@ module.exports.approveStudentEnrollment = async (req, res) => {
     // //Find admin
     const admin = await User.findOne({ _id: enrollmentApprovedBy });
     if (!admin) {
-      return res.status(404).json({
+      return res.status(403).json({
         errorMessage: {
           message: [`Operation Failed! You're Not An Admin!`],
         },

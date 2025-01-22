@@ -31,6 +31,12 @@ const StudentsSchoolDataSchema = new Schema(
       ref: "Program",
       // required: true,
     },
+    subjects: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subject",
+      },
+    ],
     electiveSubjects: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -7,6 +7,8 @@ const {
   getAllProgramElectiveSubjects,
   getAllProgramOptionalElectiveSubjects,
   assignSubjectLecturer,
+  removeSubjectLecturer,
+  getAllSubjectLecturers,
 } = require("../../../controllers/academics/subjects/subjectController");
 const {
   validateSubjectData,
@@ -15,6 +17,8 @@ const {
   divisionProgrammeElectiveSubject,
   assignElectiveSubject,
   assignCoreSubject,
+  removeElectiveSubject,
+  subjectLecturers,
 } = require("../../../middlewares/academics/subjectMiddleware");
 const {
   authUser,
@@ -79,6 +83,17 @@ router.get(
   }),
   getAllProgramOptionalElectiveSubjects
 );
+router.get(
+  "/academics/subjects/:subjectId/lecturers/fetch_all",
+  authUser,
+  authUserRole({
+    userRoles: {
+      admin: "Admin",
+    },
+  }),
+  subjectLecturers,
+  getAllSubjectLecturers
+);
 router.put(
   "/academics/subjects/:subjectId/update",
   authUser,
@@ -100,6 +115,17 @@ router.put(
   assignElectiveSubject,
   assignCoreSubject,
   assignSubjectLecturer
+);
+router.put(
+  "/academics/subjects/:subjectId/remove_lecturer",
+  authUser,
+  authUserRole({
+    userRoles: {
+      admin: "Admin",
+    },
+  }),
+  removeElectiveSubject,
+  removeSubjectLecturer
 );
 router.delete(
   "/academics/subjects/:subjectId/delete",

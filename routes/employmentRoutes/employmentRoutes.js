@@ -36,7 +36,7 @@ router.post(
 router.put(
   "/employment/:employeeId/:employmentApprovedBy/approve",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   approveEmployment
 );
 router.put(

@@ -82,30 +82,73 @@ module.exports.createProgram = async (req, res) => {
 
 // Get all Programs ✅
 exports.getAllPrograms = async (req, res) => {
-  const programs = await Program.find({}).populate([
-    {
-      path: "electiveSubjects",
-    },
-    {
-      path: "optionalElectiveSubjects",
-    },
-    {
-      path: "programDivisions",
-    },
-    {
-      path: "createdBy",
-    },
-    {
-      path: "lastUpdatedBy",
-    },
-  ]);
-  if (programs) {
+  try {
+    const programs = await Program.find({}).populate([
+      {
+        path: "electiveSubjects",
+      },
+      {
+        path: "optionalElectiveSubjects",
+      },
+      {
+        path: "programDivisions",
+      },
+      {
+        path: "createdBy",
+      },
+      {
+        path: "lastUpdatedBy",
+      },
+    ]);
     res.status(201).json({
       successMessage: "Programs fetched successfully...",
       programs,
     });
-  } else {
-    res.status(400).json({
+  } catch (error) {
+    return res.status(400).json({
+      errorMessage: {
+        message: ["Programs fetching failed!"],
+      },
+    });
+  }
+};
+// Get all Programs ✅
+exports.getAllFlattenedProgrammes = async (req, res) => {
+  try {
+    const programs = await Program.find({}).populate([
+      {
+        path: "electiveSubjects",
+      },
+      {
+        path: "optionalElectiveSubjects",
+      },
+      {
+        path: "programDivisions",
+      },
+      {
+        path: "createdBy",
+      },
+      {
+        path: "lastUpdatedBy",
+      },
+    ]);
+    const flattenedProgrammes = programs.flatMap((programme) => {
+      if (!programme?.hasDivisions) {
+        // If no subdivisions, include the standalone programme
+        return programme;
+      } else {
+        // If subdivisions exist, include only the subdivisions
+        return programme.programDivisions.map((sub) => sub);
+      }
+    });
+    // Result: Flattened list of programmes
+    // console.log(flattenedProgrammes);
+    res.status(201).json({
+      successMessage: "Programs fetched successfully...",
+      flattenedProgrammes,
+    });
+  } catch (error) {
+    return res.status(400).json({
       errorMessage: {
         message: ["Programs fetching failed!"],
       },

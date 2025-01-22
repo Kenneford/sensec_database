@@ -4,11 +4,17 @@ const {
 const {
   createStudentReport,
   saveDraftReports,
-  fetchDraftReport,
+  fetchElectiveDraftReport,
   fetchAllReports,
   fetchAllStudentReports,
   createMultiStudentsReports,
+  fetchReportStudents,
+  fetchCoreDraftReport,
 } = require("../../../controllers/academics/reports/StudentReportController");
+const {
+  multiElectiveReport,
+  multiCoreReport,
+} = require("../../../middlewares/academics/reportMiddleware");
 const {
   authUser,
   authUserRole,
@@ -44,6 +50,8 @@ router.post(
       lecturer: "Lecturer",
     },
   }),
+  multiElectiveReport,
+  multiCoreReport,
   createMultiStudentsReports
 );
 router.post(
@@ -57,16 +65,26 @@ router.post(
   saveDraftReports
 );
 router.post(
-  "/academics/student_report/draft/fetch",
+  "/academics/student_report/draft/elective/fetch",
   authUser,
   authUserRole({
     userRoles: {
       lecturer: "Lecturer",
     },
   }),
-  fetchDraftReport
+  fetchElectiveDraftReport
 );
 router.post(
+  "/academics/student_report/draft/core/fetch",
+  authUser,
+  authUserRole({
+    userRoles: {
+      lecturer: "Lecturer",
+    },
+  }),
+  fetchCoreDraftReport
+);
+router.get(
   "/academics/student_report/fetch_all",
   authUser,
   authUserRole({
@@ -89,6 +107,16 @@ router.post(
     },
   }),
   fetchAllStudentReports
+);
+router.get(
+  "/academics/report/students/fetch_all",
+  authUser,
+  authUserRole({
+    userRoles: {
+      lecturer: "Lecturer",
+    },
+  }),
+  fetchReportStudents
 );
 
 module.exports = router;

@@ -48,7 +48,7 @@ const programSchema = new Schema(
       default: true,
     },
     hasDivisions: {
-      type: String,
+      type: Boolean,
       default: false,
     },
     aboutProgram: {
