@@ -321,7 +321,7 @@ module.exports.removeClassSectionLecturer = async (req, res) => {
     const adminFound = await User.findOne({
       _id: data?.previousLecturerRemovedBy,
     });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation denied! You're not an admin!"],
