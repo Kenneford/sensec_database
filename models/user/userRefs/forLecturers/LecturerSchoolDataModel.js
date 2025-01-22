@@ -16,12 +16,53 @@ const LecturerSchoolDataSchema = new Schema(
         ref: "User",
       },
     ],
-    teachingSubjects: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Subject",
-      },
-    ],
+    teachingSubjects: {
+      electives: [
+        {
+          subject: { type: mongoose.Schema.Types.ObjectId, ref: "Subject" },
+          classLevel: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "ClassLevel",
+          },
+          program: { type: mongoose.Schema.Types.ObjectId, ref: "Program" },
+          programDivision: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "ProgramDivision",
+          },
+          students: [
+            {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "User",
+            },
+          ],
+        },
+      ],
+      cores: [
+        {
+          subject: { type: mongoose.Schema.Types.ObjectId, ref: "Subject" },
+          classLevel: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "ClassLevel",
+          },
+          programmes: [
+            {
+              program: { type: mongoose.Schema.Types.ObjectId, required: true },
+              type: {
+                type: String,
+                enum: ["Program", "ProgramDivision"],
+                required: true,
+              },
+            },
+          ],
+          students: [
+            {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "User",
+            },
+          ],
+        },
+      ],
+    },
     isClassLevelTeacher: {
       type: Boolean,
       default: false,

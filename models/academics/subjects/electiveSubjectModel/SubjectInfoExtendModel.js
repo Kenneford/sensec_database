@@ -2,16 +2,11 @@ const mongoose = require("mongoose");
 
 const { Schema } = mongoose;
 
-const electiveSubjectSchema = new Schema(
+const SubjectInfoExtendSchema = new Schema(
   {
-    // nameOfProgram: {
-    //   type: String,
-    //   required: true,
-    // },
     programId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Program",
-      // required: true,
     },
     divisionProgramId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -19,7 +14,11 @@ const electiveSubjectSchema = new Schema(
     },
     isElectiveSubject: {
       type: Boolean,
-      default: true,
+      default: false,
+    },
+    isCoreSubject: {
+      type: Boolean,
+      default: false,
     },
     isOptional: {
       type: Boolean,
@@ -29,9 +28,9 @@ const electiveSubjectSchema = new Schema(
   { timestamps: true }
 );
 
-const ElectiveSubject = mongoose.model(
-  "ElectiveSubject",
-  electiveSubjectSchema
+const SubjectInfoExtend = mongoose.model(
+  "SubjectInfoExtend",
+  SubjectInfoExtendSchema
 );
 
-module.exports = ElectiveSubject;
+module.exports = SubjectInfoExtend;

@@ -6,6 +6,7 @@ const {
   updateClassLevel,
   deleteClassLevel,
   getClassLevelApprovedStudents,
+  getLecturerClassLevels,
 } = require("../../../controllers/academics/class/classLevelController");
 const {
   authUser,
@@ -25,6 +26,10 @@ router.post(
   createClassLevel
 );
 router.get("/academics/class_levels/fetch_all", getAllClassLevels);
+router.get(
+  "/academics/lecturer/:lecturerId/class_levels/fetch_all",
+  getLecturerClassLevels
+);
 router.get("/academics/single_class_level/:name", getSingleClassLevel);
 router.get(
   "/academics/approved_students/class_level/:name",

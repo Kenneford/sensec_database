@@ -477,7 +477,6 @@ module.exports.removeUserRole = async (req, res) => {
     });
   }
 };
-
 module.exports.fetchAllUsers = async (req, res) => {
   try {
     const allUsers = await User.find({}).populate([
@@ -489,7 +488,29 @@ module.exports.fetchAllUsers = async (req, res) => {
       },
       { path: "lecturerSchoolData.students" },
       { path: "lecturerSchoolData.classLevelHandling" },
-      { path: "lecturerSchoolData.teachingSubjects" },
+      {
+        path: "lecturerSchoolData.teachingSubjects.electives.students", // Path to populate
+        // model: "User", // Model to reference
+        // match: { active: true }, // (Optional) Filter students if needed
+        select:
+          "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
+      },
+      {
+        path: "lecturerSchoolData.teachingSubjects.electives.subject", // Path to populate
+        select: "subjectName subjectInfo",
+      },
+      {
+        path: "lecturerSchoolData.teachingSubjects.cores.students", // Path to populate
+        // model: "User", // Model to reference
+        // match: { active: true }, // (Optional) Filter students if needed
+        select:
+          "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
+      },
+      {
+        path: "lecturerSchoolData.teachingSubjects.cores.subject", // Path to populate
+        select: "subjectName subjectInfo",
+      },
+      // { path: "lecturerSchoolData.teachingSubjects" },
       { path: "studentSchoolData.batch" },
       { path: "studentSchoolData.program" },
       { path: "studentSchoolData.divisionProgram" },

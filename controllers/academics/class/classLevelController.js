@@ -115,6 +115,79 @@ exports.getAllClassLevels = async (req, res) => {
     });
   }
 };
+// Get all Lecturer's Class Levels ✅
+exports.getLecturerClassLevels = async (req, res) => {
+  const { lecturerId } = req.params;
+  try {
+    const lecturerFound = await User.findOne({ _id: lecturerId });
+    if (!lecturerFound) {
+      return res.status(404).json({
+        errorMessage: {
+          message: ["Lecturer not found"],
+        },
+      });
+    }
+    const classLevels = await ClassLevel.find({});
+    if (classLevels) {
+      // const lectureClassLevels = classLevels.map((cLevel) => {
+      //   const cLevelObj = {
+      //     _id: cLevel?._id,
+      //     name: cLevel?.name,
+      //   };
+      //   if (
+      //     cLevelObj &&
+      //     lecturerFound?.lecturerSchoolData?.classLevels?.includes(
+      //       cLevelObj?._id
+      //     )
+      //   ) {
+      //     return cLevelObj ? cLevelObj : "";
+      //   }
+      // });
+      // const lectureClassLevels = classLevels.filter((cLevel) => {
+      //   if (
+      //     cLevel &&
+      //     lecturerFound?.lecturerSchoolData?.classLevels?.includes(cLevel?._id)
+      //   ) {
+      //     const cLevelObj = {
+      //       _id: cLevel?._id,
+      //       name: cLevel?.name,
+      //     };
+      //     return cLevelObj;
+      //   }
+      // });
+      const lectureClassLevels = classLevels
+        .filter(
+          (cLevel) =>
+            lecturerFound?.lecturerSchoolData?.classLevels?.includes(
+              cLevel?._id
+            )
+          // && cLevel
+        )
+        .map((cLevel) => ({
+          _id: cLevel?._id,
+          name: cLevel?.name,
+        }));
+      res.status(201).json({
+        successMessage: "Lecturer class levels fetched successfully!",
+        lectureClassLevels,
+      });
+    } else {
+      return res.status(404).json({
+        errorMessage: {
+          message: ["No class level data found!"],
+        },
+      });
+    }
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!"],
+      },
+    });
+  }
+};
 // Get single Class Level Students ✅
 exports.getSingleClassLevel = async (req, res) => {
   const { classLevelId } = req.params;

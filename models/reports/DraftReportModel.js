@@ -16,6 +16,16 @@ const DraftReportSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subject",
     },
+    programmes: [
+      {
+        program: { type: mongoose.Schema.Types.ObjectId, required: true },
+        type: {
+          type: String,
+          enum: ["Program", "ProgramDivision"],
+          required: true,
+        },
+      },
+    ],
     lecturer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

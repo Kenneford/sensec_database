@@ -395,23 +395,32 @@ async function createUserVerificationData(req, res, next) {
 
 // Logged in user role middelware
 function authUserRole({ userRoles }) {
-  return async (req, res, next) => {
-    // console.log(req.user, "L-160");
-    if (
-      !req?.user?.roles?.includes(userRoles?.admin) &&
-      !req?.user?.roles?.includes(userRoles?.lecturer) &&
-      !req?.user?.roles?.includes(userRoles?.nTStaff) &&
-      !req?.user?.roles?.includes(userRoles?.sensosa) &&
-      !req?.user?.roles?.includes(userRoles?.student)
-    ) {
-      return res.status(401).json({
-        errorMessage: {
-          message: [`You're not an authorized user!`],
-        },
-      });
-    }
-    next();
-  };
+  try {
+    return async (req, res, next) => {
+      // console.log(req.user, "L-160");
+      if (
+        !req?.user?.roles?.includes(userRoles?.admin) &&
+        !req?.user?.roles?.includes(userRoles?.lecturer) &&
+        !req?.user?.roles?.includes(userRoles?.nTStaff) &&
+        !req?.user?.roles?.includes(userRoles?.sensosa) &&
+        !req?.user?.roles?.includes(userRoles?.student)
+      ) {
+        return res.status(401).json({
+          errorMessage: {
+            message: [`You're not an authorized user!`],
+          },
+        });
+      }
+      next();
+    };
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
 }
 
 // Logged in user isVerifiedSensosa middelware

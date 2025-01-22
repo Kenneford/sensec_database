@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const ElectiveSubject = require("./electiveSubjectModel/ElectiveSubjectModel");
 const CoreSubject = require("./coreSubjectModel/CoreSubjectModel");
+const SubjectInfoExtend = require("./electiveSubjectModel/SubjectInfoExtendModel");
 
 const { Schema } = mongoose;
 
@@ -19,6 +20,9 @@ const subjectSchema = new Schema(
     currentTeacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+    subjectInfo: {
+      type: SubjectInfoExtend.schema,
     },
     electiveSubInfo: {
       type: ElectiveSubject.schema,
