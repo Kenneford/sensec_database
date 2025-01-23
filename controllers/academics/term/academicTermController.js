@@ -10,7 +10,7 @@ module.exports.createAcademicTerm = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
@@ -48,8 +48,8 @@ module.exports.createAcademicTerm = async (req, res) => {
     //create
     const academicTermCreated = await AcademicTerm.create({
       name: academicTermData?.name,
-      from: academicTermData?.from,
-      to: academicTermData?.to,
+      from: new Date(academicTermData?.from),
+      to: new Date(academicTermData?.to),
       duration: academicTermData?.duration,
       createdBy: academicTermData?.createdBy,
     });
@@ -203,7 +203,7 @@ module.exports.updateAcademicTerm = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
@@ -270,7 +270,7 @@ module.exports.deleteAcademicTerm = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
