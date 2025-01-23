@@ -1,3 +1,7 @@
+const {
+  formatDate,
+} = require("../../../../../middlewares/dateFormatter/dateFormatter");
+
 //Function to calculate the start of the week(MONDAY)
 const startOfWeek = (date) => {
   // Clone the date to avoid modifying the original
@@ -11,6 +15,6 @@ const startOfWeek = (date) => {
   monday.setDate(currentDate.getDate() - ((dayOfWeek + 6) % 7)); // Adjust for Monday
   monday.setHours(0, 0, 0, 0); // Set to midnight
 
-  return monday;
+  return formatDate(monday);
 };
 module.exports = { startOfWeek };
