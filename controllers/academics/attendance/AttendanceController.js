@@ -10,7 +10,14 @@ module.exports.createClassAttendance = async (req, res) => {
   try {
     let savedClassAttendance;
 
-    const date = new Date().toLocaleDateString();
+    // const date = new Date().toLocaleDateString();
+    const date = new Date();
+    // Specify the format you want
+    const options = { year: "numeric", month: "2-digit", day: "2-digit" };
+    const formatter = new Intl.DateTimeFormat("en-GB", options); // en-GB for day/month/year
+
+    // console.log(formatter.format(date)); // Output: 22/01/2025
+    const formattedDate = formatter.format(date);
     // console.log(date);
 
     if (!data?.students?.length > 0) {
@@ -42,7 +49,7 @@ module.exports.createClassAttendance = async (req, res) => {
 
     //Find existing class attendance
     const classAttendanceFound = await ClassAttendance.findOne({
-      date,
+      date: formattedDate,
       lecturer: lecturerFound?._id,
     });
     if (classAttendanceFound) {
@@ -85,7 +92,7 @@ module.exports.createClassAttendance = async (req, res) => {
               classLevelSection: studentClassLevelSectionFound?._id,
               student: foundStudent?._id,
               lecturer: lecturerFound?._id,
-              date,
+              date: formattedDate,
               year: new Date().getFullYear(),
             });
             if (!existingStudentAttendance) {
