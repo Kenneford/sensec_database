@@ -477,8 +477,8 @@ module.exports.getWeeklyClassAttendance = async (req, res) => {
     const date = new Date();
     const weekStart = startOfWeek(date);
     const weekEnd = endOfWeek(date);
-    console.log("Start of Week:", weekStart);
-    console.log("End of Week:", weekEnd);
+    // console.log("Start of Week:", weekStart);
+    // console.log("End of Week:", weekEnd);
 
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
     if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
@@ -517,7 +517,6 @@ module.exports.getWeeklyClassAttendance = async (req, res) => {
       weeklyClassAttendance: attendance,
     });
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       errorMessage: {
         message: ["Internal Server Error!", error?.message],
