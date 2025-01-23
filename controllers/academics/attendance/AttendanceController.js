@@ -357,7 +357,15 @@ module.exports.getCurrentClassAttendance = async (req, res) => {
   const currentUser = req.user;
 
   try {
-    let todaysDate = new Date().toLocaleDateString();
+    // const date = new Date().toLocaleDateString();
+    const date = new Date();
+    // Specify the format you want
+    const options = { year: "numeric", month: "2-digit", day: "2-digit" };
+    const formatter = new Intl.DateTimeFormat("en-GB", options); // en-GB for day/month/year
+
+    // console.log(formatter.format(date)); // Output: 22/01/2025
+    const formattedDate = formatter.format(date);
+
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
     if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
       res.status(403).json({
@@ -370,7 +378,7 @@ module.exports.getCurrentClassAttendance = async (req, res) => {
     const attendance = await ClassAttendance.findOne({
       lecturer: lecturerFound?._id,
       classLevelSection: lecturerFound?.lecturerSchoolData?.classLevelHandling,
-      date: todaysDate,
+      date: formattedDate,
     }).populate([
       {
         path: "lecturer",
