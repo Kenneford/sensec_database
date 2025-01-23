@@ -17,7 +17,7 @@ const router = require("express").Router();
 router.post(
   "/academics/terms/create",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   createAcademicTerm
 );
 router.get("/academics/terms/current/fetch", getCurrentAcademicTerm);
@@ -27,13 +27,13 @@ router.get("/academics/terms/:termId/fetch", getSingleAcademicTerm);
 router.put(
   "/academics/terms/:termId/update",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   updateAcademicTerm
 );
 router.delete(
   "/academics/terms/:termId/delete",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   deleteAcademicTerm
 );
 

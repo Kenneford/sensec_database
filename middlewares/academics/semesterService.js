@@ -84,6 +84,7 @@ module.exports.updateCurrentSemester = async (res = null) => {
       currentSemester?._id,
       {
         $set: { isCurrent: true },
+        $set: { isNext: false },
       },
       { new: true }
     );
