@@ -192,20 +192,6 @@ async function multiCoreReport(req, res, next) {
   const { data } = req.body;
   console.log(data);
   try {
-    if (!data) {
-      return res.status(500).json({
-        errorMessage: {
-          message: ["No data to search for!"],
-        },
-      });
-    }
-    if (!data?.programmes?.length > 0) {
-      return res.status(403).json({
-        errorMessage: {
-          message: ["No program data selected!"],
-        },
-      });
-    }
     //Find Lecturer
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
     if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
@@ -228,6 +214,20 @@ async function multiCoreReport(req, res, next) {
     const subjectFound = await Subject.findOne({ _id: data?.subject });
     // If Elective Subject
     if (subjectFound?.subjectInfo?.isCoreSubject) {
+      if (!data) {
+        return res.status(500).json({
+          errorMessage: {
+            message: ["No data to search for!"],
+          },
+        });
+      }
+      if (!data?.programmes?.length > 0) {
+        return res.status(403).json({
+          errorMessage: {
+            message: ["No program data selected!"],
+          },
+        });
+      }
       // Extract program IDs and their types
       const programIds = data?.programmes?.map((p) => p?.program);
       // Find existing draft data
