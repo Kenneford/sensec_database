@@ -1,3 +1,7 @@
+const {
+  formatDate,
+} = require("../../../../../middlewares/dateFormatter/dateFormatter");
+
 //Function to calculate the end of the week(MONDAY)
 const endOfWeek = (date) => {
   // Clone the date to avoid modifying the original
@@ -16,6 +20,6 @@ const endOfWeek = (date) => {
   friday.setDate(monday.getDate() + 4); // Add 4 days to get Friday
   friday.setHours(23, 59, 59, 999); // Set to end of the day
 
-  return friday;
+  return formatDate(friday);
 };
 module.exports = { endOfWeek };

@@ -475,10 +475,10 @@ module.exports.getWeeklyClassAttendance = async (req, res) => {
 
   try {
     const date = new Date();
-    const weekStart = startOfWeek(date).toLocaleDateString();
-    const weekEnd = endOfWeek(date).toLocaleDateString();
-    // console.log("Start of Week:", weekStart);
-    // console.log("End of Week:", weekEnd);
+    const weekStart = startOfWeek(date);
+    const weekEnd = endOfWeek(date);
+    console.log("Start of Week:", weekStart);
+    console.log("End of Week:", weekEnd);
 
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
     if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
