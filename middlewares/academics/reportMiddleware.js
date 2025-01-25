@@ -109,6 +109,7 @@ async function multiElectiveReport(req, res, next) {
                 totalScore: std?.totalScore,
                 grade: gradeFound?.grade,
                 remark: gradeFound?.remark,
+                lecturerRemark: data?.remark,
                 lecturer: lecturerFound?._id,
                 year: data?.year,
               });
@@ -140,6 +141,7 @@ async function multiElectiveReport(req, res, next) {
                   totalScore: std?.totalScore,
                   grade: gradeFound?.grade,
                   remark: gradeFound?.remark,
+                  lecturerRemark: data?.remark,
                   lecturer: data?.lecturer,
                   year: data?.year,
                 },
@@ -317,6 +319,7 @@ async function multiCoreReport(req, res, next) {
                 totalScore: std?.totalScore,
                 grade: gradeFound?.grade,
                 remark: gradeFound?.remark,
+                lecturerRemark: data?.remark,
                 lecturer: lecturerFound?._id,
                 year: data?.year,
               });
@@ -348,6 +351,7 @@ async function multiCoreReport(req, res, next) {
                   totalScore: std?.totalScore,
                   grade: gradeFound?.grade,
                   remark: gradeFound?.remark,
+                  lecturerRemark: data?.remark,
                   lecturer: data?.lecturer,
                   programmes: data?.programmes,
                   year: data?.year,

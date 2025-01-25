@@ -10,7 +10,7 @@ const { cloudinary } = require("../cloudinary/cloudinary");
 
 // For New Students Enrollment
 async function validateStudentPlacementData(req, res, next) {
-  const { newStudentData } = req.body;
+  const newStudentData = req.body;
 
   try {
     // Find placement student✅
@@ -132,45 +132,46 @@ async function validateStudentPlacementData(req, res, next) {
   }
 }
 async function studentProgramme(req, res, next) {
-  const { newStudentData } = req.body;
+  const newStudentData = req.body;
+  const placementStudentFound = req.placementStudent;
 
   try {
-    // Find placement student✅
-    const placementStudentFound = await PlacementStudent.findOne({
-      jhsIndexNo: newStudentData?.jhsIndexNo,
-    });
     //Find student's Program✅
     const mainProgramFound = await Program.findOne({
       _id: newStudentData?.program,
-    });
-    if (!mainProgramFound) {
-      res.status(404).json({
-        errorMessage: {
-          message: [`Student's Program Not Found!`],
-        },
+    }).populate([{ path: "electiveSubjects" }]);
+    //Find student's Division Program✅
+    const studentDivisionProgramFound = await ProgramDivision.findOne({
+      _id: newStudentData?.program,
+    }).populate([{ path: "electiveSubjects" }]);
+
+    if (studentDivisionProgramFound) {
+      // Find linked program
+      const linkedProgramFound = await Program.findOne({
+        _id: studentDivisionProgramFound?.programId,
       });
-      return;
-    }
-    // Validate student's selected program✅
-    if (
-      placementStudentFound &&
-      placementStudentFound?.programme !== mainProgramFound?.name
-    ) {
-      res.status(400).json({
-        errorMessage: {
-          message: [
-            `Programme selected does not match your placement programme!`,
-          ],
-        },
-      });
-      return;
-    }
-    if (newStudentData?.divisionProgram) {
-      const studentDivisionProgramFound = await ProgramDivision.findOne({
-        _id: newStudentData?.divisionProgram,
-      });
+      // Validate student's selected program✅
       if (
-        studentDivisionProgramFound?.optionalElectiveSubjects?.length > 0 &&
+        placementStudentFound &&
+        placementStudentFound?.programme !== linkedProgramFound?.name
+      ) {
+        res.status(400).json({
+          errorMessage: {
+            message: [
+              `Programme selected does not match your placement programme!`,
+            ],
+          },
+        });
+        return;
+      }
+      const filteredOptionalSubjects =
+        studentDivisionProgramFound?.electiveSubjects?.filter(
+          (subj) =>
+            subj?.subjectInfo?.isElectiveSubject &&
+            subj?.subjectInfo?.isOptional
+        );
+      if (
+        filteredOptionalSubjects?.length > 0 &&
         !newStudentData?.optionalElectiveSubject
       ) {
         res.status(404).json({
@@ -181,20 +182,39 @@ async function studentProgramme(req, res, next) {
         return;
       }
       req.program = {
-        mainProgramFound,
         studentDivisionProgramFound,
         // coreSubjects,
         isDivisionProgram: true,
       };
       next();
-    } else if (newStudentData?.program) {
+    } else if (mainProgramFound) {
+      // Validate student's selected program✅
       if (
-        mainProgramFound?.optionalElectiveSubjects?.length > 1 &&
+        placementStudentFound &&
+        placementStudentFound?.programme !== mainProgramFound?.name
+      ) {
+        res.status(400).json({
+          errorMessage: {
+            message: [
+              `Programme selected does not match your placement programme!`,
+            ],
+          },
+        });
+        return;
+      }
+      const filteredOptionalSubjects =
+        mainProgramFound?.electiveSubjects?.filter(
+          (subj) =>
+            subj?.subjectInfo?.isElectiveSubject &&
+            subj?.subjectInfo?.isOptional
+        );
+      if (
+        filteredOptionalSubjects?.length > 0 &&
         !newStudentData?.optionalElectiveSubject
       ) {
         res.status(404).json({
           errorMessage: {
-            message: [`Selection Of One Optional Elective Subject Required!`],
+            message: [`Selection of one optional elective subject required!`],
           },
         });
         return;
@@ -222,7 +242,8 @@ async function studentProgramme(req, res, next) {
   }
 }
 async function studentClass(req, res, next) {
-  const { newStudentData } = req.body;
+  const newStudentData = req.body;
+  const program = req.program;
   try {
     // find student's class level
     const studentClassLevel = await ClassLevel.findOne({
@@ -237,20 +258,20 @@ async function studentClass(req, res, next) {
       return;
     }
     let classSectionFound;
-    if (newStudentData?.divisionProgram) {
+    if (program?.isDivisionProgram) {
       // find student's class level section✅
       classSectionFound = await ClassLevelSection.findOne({
         classLevelId: newStudentData?.currentClassLevel,
         // program:newStudentData?.program,
-        divisionProgram: newStudentData?.divisionProgram,
+        divisionProgram: program?.studentDivisionProgramFound?._id,
       });
       req.studentClassInfo = { studentClassLevel, classSectionFound };
       next();
-    } else if (newStudentData?.program) {
+    } else if (!program?.isDivisionProgram) {
       // find student's class level section✅
       classSectionFound = await ClassLevelSection.findOne({
         classLevelId: newStudentData?.currentClassLevel,
-        program: newStudentData?.program,
+        program: program?.mainProgramFound?._id,
       });
       req.studentClassInfo = { studentClassLevel, classSectionFound };
       next();
@@ -393,7 +414,7 @@ async function updateMultiApprovedStudentData(req, res, next) {
     }
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admin!"],

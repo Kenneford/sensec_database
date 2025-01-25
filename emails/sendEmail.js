@@ -177,8 +177,7 @@ const sendEnrollmentEmail = async ({ foundStudent }) => {
     context: {
       userImage: foundStudent?.personalInfo?.profilePicture.url,
       uniqueId: foundStudent?.uniqueId,
-      firstName: foundStudent?.personalInfo?.firstName,
-      lastName: foundStudent?.personalInfo?.lastName,
+      fullName: foundStudent?.personalInfo?.fullName,
       company: "Senya Senior High School",
       urlLink: `${url}/sensec/homepage`,
       linkText: "Visit Our Website",

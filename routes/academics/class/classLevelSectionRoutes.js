@@ -26,7 +26,7 @@ router.post(
   authUser,
   authUserRole({
     userRoles: {
-      admin: "admin",
+      admin: "Admin",
     },
   }),
   findSectionProgramme,
@@ -70,7 +70,7 @@ router.put(
   authUser,
   authUserRole({
     userRoles: {
-      admin: "admin",
+      admin: "Admin",
     },
   }),
   updateClassLevelSection
@@ -81,7 +81,7 @@ router.delete(
   authUser,
   authUserRole({
     userRoles: {
-      admin: "admin",
+      admin: "Admin",
     },
   }),
   deleteClassLevelSection
