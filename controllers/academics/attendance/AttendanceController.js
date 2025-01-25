@@ -592,6 +592,63 @@ module.exports.searchClassAttendance = async (req, res) => {
       ]);
     }
     // Search By Date
+    if (data?.monthRange) {
+      const parseDate = (dateString) => {
+        const [day, month, year] = dateString.split("/").map(Number); // Extract day, month, year
+        return new Date(year, month - 1, day); // Create a JavaScript Date object
+      };
+      const allAttendance = await ClassAttendance.find({
+        // date: {
+        //   $gte: parseDate(data?.monthRange?.start),
+        //   $lte: parseDate(data?.monthRange?.end),
+        // },
+        lecturer: data?.lecturer,
+        classLevelSection: data?.classSection,
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          select: "_id status",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      const updatedAttendance = allAttendance?.map((att) => {
+        const attObj = {
+          _id: att?._id,
+          classLevelSection: att?.classLevelSection,
+          students: att?.students,
+          lecturer: att?.lecturer,
+          semester: att?.semester,
+          year: att?.year,
+          dayOfTheWeek: att?.dayOfTheWeek,
+          time: att?.time,
+          createdAt: att?.createdAt,
+          updatedAt: att?.updatedAt,
+          date: parseDate(att?.date),
+        };
+        return attObj;
+      });
+      console.log("updatedAttendance: ", updatedAttendance);
+
+      const filteredAttendance = updatedAttendance?.filter(
+        (att) =>
+          att?.date >= parseDate(data?.monthRange?.start) &&
+          att?.date <= parseDate(data?.monthRange?.end)
+      );
+      foundClassAttendance = filteredAttendance;
+    }
+    // Search By Date
     if (data?.date) {
       foundClassAttendance = await ClassAttendance.find({
         date: data?.date,

@@ -124,6 +124,14 @@ exports.getAllFlattenedProgrammes = async (req, res) => {
       },
       {
         path: "programDivisions",
+        populate: [
+          {
+            path: "electiveSubjects", // Nested populate for programDivisions
+          },
+          {
+            path: "optionalElectiveSubjects", // Another nested populate
+          },
+        ],
       },
       {
         path: "createdBy",

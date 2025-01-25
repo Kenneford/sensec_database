@@ -479,47 +479,50 @@ module.exports.removeUserRole = async (req, res) => {
 };
 module.exports.fetchAllUsers = async (req, res) => {
   try {
-    const allUsers = await User.find({}).populate([
-      // { path: "employment.employmentProcessedBy" },
-      // { path: "employment.employmentApprovedBy" },
-      // { path: "adminActionsData.admins" },
-      {
-        path: "lecturerSchoolData.program",
-      },
-      { path: "lecturerSchoolData.students" },
-      { path: "lecturerSchoolData.classLevelHandling" },
-      {
-        path: "lecturerSchoolData.teachingSubjects.electives.students", // Path to populate
-        // model: "User", // Model to reference
-        // match: { active: true }, // (Optional) Filter students if needed
-        select:
-          "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
-      },
-      {
-        path: "lecturerSchoolData.teachingSubjects.electives.subject", // Path to populate
-        select: "subjectName subjectInfo",
-      },
-      {
-        path: "lecturerSchoolData.teachingSubjects.cores.students", // Path to populate
-        // model: "User", // Model to reference
-        // match: { active: true }, // (Optional) Filter students if needed
-        select:
-          "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
-      },
-      {
-        path: "lecturerSchoolData.teachingSubjects.cores.subject", // Path to populate
-        select: "subjectName subjectInfo",
-      },
-      // { path: "lecturerSchoolData.teachingSubjects" },
-      { path: "studentSchoolData.batch" },
-      { path: "studentSchoolData.program" },
-      { path: "studentSchoolData.divisionProgram" },
-      { path: "studentSchoolData.currentClassLevel" },
-      { path: "studentSchoolData.currentClassTeacher" },
-      { path: "studentSchoolData.currentClassLevelSection" },
-      { path: "studentSchoolData.house" },
-      { path: "studentStatusExtend.enrollmentApprovedBy" },
-    ]);
+    const allUsers = await User.find({})
+      .populate([
+        // { path: "employment.employmentProcessedBy" },
+        // { path: "employment.employmentApprovedBy" },
+        // { path: "adminActionsData.admins" },
+        {
+          path: "lecturerSchoolData.program",
+        },
+        { path: "lecturerSchoolData.students" },
+        { path: "lecturerSchoolData.classLevelHandling" },
+        {
+          path: "lecturerSchoolData.teachingSubjects.electives.students", // Path to populate
+          // model: "User", // Model to reference
+          // match: { active: true }, // (Optional) Filter students if needed
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
+        },
+        {
+          path: "lecturerSchoolData.teachingSubjects.electives.subject", // Path to populate
+          select: "subjectName subjectInfo",
+        },
+        {
+          path: "lecturerSchoolData.teachingSubjects.cores.students", // Path to populate
+          // model: "User", // Model to reference
+          // match: { active: true }, // (Optional) Filter students if needed
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
+        },
+        {
+          path: "lecturerSchoolData.teachingSubjects.cores.subject", // Path to populate
+          select: "subjectName subjectInfo",
+        },
+        // { path: "lecturerSchoolData.teachingSubjects" },
+        { path: "studentSchoolData.subjects" },
+        { path: "studentSchoolData.batch" },
+        // { path: "studentSchoolData.program.programId" },
+        { path: "studentSchoolData.divisionProgram" },
+        { path: "studentSchoolData.currentClassLevel" },
+        { path: "studentSchoolData.currentClassTeacher" },
+        { path: "studentSchoolData.currentClassLevelSection" },
+        { path: "studentSchoolData.house" },
+        { path: "studentStatusExtend.enrollmentApprovedBy" },
+      ])
+      .populate("studentSchoolData.program.programId");
     if (allUsers) {
       const sortedUsers = [...allUsers]?.sort(
         (oldUser, newUser) => newUser?.updatedAt - oldUser?.updatedAt

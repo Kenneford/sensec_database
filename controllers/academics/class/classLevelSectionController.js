@@ -10,7 +10,7 @@ module.exports.createClassLevelSection = async (req, res) => {
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admin!"],
@@ -48,7 +48,7 @@ module.exports.createClassLevelSection = async (req, res) => {
     if (programData?.isDivisionProgram) {
       //Find all students who qualifies to be in this class section
       const allStudents = await User.find({
-        "studentSchoolData.divisionProgram": programData?.programFound?._id,
+        "studentSchoolData.program.programId": programData?.programFound?._id,
         "studentSchoolData.currentClassLevel": classLevelFound?._id,
       });
       if (programData?.programFound?.divisionName !== data?.sectionName) {
@@ -125,7 +125,7 @@ module.exports.createClassLevelSection = async (req, res) => {
     } else if (!programData?.isDivisionProgram) {
       //Find all students who qualifies to be in this class section
       const allStudents = await User.find({
-        "studentSchoolData.program": programData?.programFound?._id,
+        "studentSchoolData.program.programId": programData?.programFound?._id,
         "studentSchoolData.currentClassLevel": classLevelFound?._id,
       });
       //create
@@ -495,7 +495,7 @@ exports.updateClassLevelSection = async (req, res) => {
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admin!"],
@@ -554,7 +554,7 @@ exports.deleteClassLevelSection = async (req, res) => {
   try {
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admin!"],

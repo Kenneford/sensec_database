@@ -23,13 +23,16 @@ module.exports.createSubject = async (req, res) => {
 // Get all subjects ✅
 exports.getAllSubjects = async (req, res) => {
   try {
-    const subjects = await Subject.find({}).populate([
-      // { path: "teachers" },
-      { path: "electiveSubInfo.programId" },
-      { path: "electiveSubInfo.divisionProgramId" },
-      { path: "createdBy" },
-      { path: "lastUpdatedBy" },
-    ]);
+    const subjects = await Subject.find({})
+      // .populate({
+      //   path: "subjectInfo.program.programId", // Populate programId
+      // })
+      .populate([
+        { path: "electiveSubInfo.programId" },
+        { path: "electiveSubInfo.divisionProgramId" },
+        { path: "createdBy" },
+        { path: "lastUpdatedBy" },
+      ]);
     if (subjects) {
       res.status(201).json({
         successMessage: "Subjects fetched successfully...",
@@ -263,6 +266,8 @@ exports.assignSubjectLecturer = async (req, res) => {
       lecturerFound,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       errorMessage: {
         message: ["Something went wrong!", error?.message],

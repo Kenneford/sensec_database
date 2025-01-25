@@ -16,15 +16,27 @@ const StudentsSchoolDataSchema = new Schema(
       type: String,
       // required: true,
     },
-    program: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Program",
-      // required: true,
-    },
+    // program: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Program",
+    //   // required: true,
+    // },
     divisionProgram: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ProgramDivision",
       // required: true,
+    },
+    program: {
+      programId: {
+        type: mongoose.Schema.Types.ObjectId,
+        refPath: "program.type",
+        required: true,
+      },
+      type: {
+        type: String,
+        enum: ["Program", "ProgramDivision"],
+        required: true,
+      },
     },
     programOfOS: {
       type: mongoose.Schema.Types.ObjectId,

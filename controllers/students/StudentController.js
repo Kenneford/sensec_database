@@ -4,16 +4,19 @@ const {
   selectStudentHouse,
 } = require("../../middlewares/student/studentMiddleware");
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
+const ProgramDivision = require("../../models/academics/programmes/divisions/ProgramDivisionModel");
 const Program = require("../../models/academics/programmes/ProgramsModel");
 const AcademicYear = require("../../models/academics/year/AcademicYearModel");
 const User = require("../../models/user/UserModel");
 
 // Student online enrollment ✅
 module.exports.studentOnlineEnrolment = async (req, res) => {
-  const { newStudentData } = req.body;
+  const newStudentData = req.body;
   const placementStudent = req.placementStudent;
 
   const program = req.program;
+  // console.log(program);
+
   const studentClassInfo = req.studentClassInfo;
   try {
     // Find existing student data
@@ -68,6 +71,14 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
             },
           });
         }
+        const programData = {
+          programId:
+            program?.isDivisionProgram === true
+              ? program?.studentDivisionProgramFound?._id
+              : program?.mainProgramFound?._id,
+          type:
+            program?.isDivisionProgram === true ? "ProgramDivision" : "Program",
+        };
         //Create new student enrolment data
         const newEnrollmentData = await User.create({
           uniqueId: newStudentData?.studentId,
@@ -88,9 +99,9 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           "studentSchoolData.jhsAttended": newStudentData?.jhsAttended,
           "studentSchoolData.completedJhs": newStudentData?.completedJhs,
           "studentSchoolData.jhsIndexNo": newStudentData?.jhsIndexNo,
-          "studentSchoolData.program": program?.mainProgramFound?._id,
-          "studentSchoolData.divisionProgram":
-            program?.studentDivisionProgramFound?._id,
+          "studentSchoolData.program": programData,
+          // "studentSchoolData.divisionProgram":
+          //   program?.studentDivisionProgramFound?._id,
           "studentSchoolData.currentClassLevel":
             newStudentData?.currentClassLevel,
           "studentSchoolData.currentAcademicYear": selectedAcademicYear,
@@ -122,8 +133,9 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
 
           // Filter non-optional subjects
           const mandatorySubjects = electiveSubjects?.filter(
-            (subject) => !subject?.subjectInfo?.isOptional && subject
+            (subject) => !subject?.subjectInfo?.isOptional
           );
+          console.log("L-127: ", mandatorySubjects);
 
           // Process each subject
           for (const subject of mandatorySubjects) {
@@ -153,6 +165,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
           const mandatorySubjects = electiveSubjects?.filter(
             (subject) => !subject?.subjectInfo?.isOptional && subject
           );
+          console.log(mandatorySubjects);
 
           // Process each subject
           for (const subject of mandatorySubjects) {
@@ -650,10 +663,13 @@ module.exports.studentSchoolDataUpdate = async (req, res) => {
       });
       return;
     }
-    const foundProgram = await Program.findOne({
+    const mainProgramFound = await Program.findOne({
       _id: updateData?.program,
     });
-    if (!foundProgram) {
+    const divisionProgramFound = await ProgramDivision.findOne({
+      _id: updateData?.program,
+    });
+    if (!mainProgramFound && !divisionProgramFound) {
       res.status(404).json({
         errorMessage: {
           message: ["Programme Not Found!"],
@@ -663,13 +679,19 @@ module.exports.studentSchoolDataUpdate = async (req, res) => {
     }
     //Update student school data
     if (foundStudent) {
+      const programData = {
+        programId: divisionProgramFound
+          ? divisionProgramFound?._id
+          : mainProgramFound?._id,
+        type: divisionProgramFound ? "ProgramDivision" : "Program",
+      };
       const studentInfoUpdated = await User.findOneAndUpdate(
         foundStudent._id,
         {
           "studentSchoolData.jhsAttended": updateData?.jhsAttended,
           "studentSchoolData.completedJhs": updateData?.completedJhs,
-          "studentSchoolData.program": updateData?.program,
-          "studentSchoolData.divisionProgram": updateData?.programDivision,
+          "studentSchoolData.program": programData,
+          // "studentSchoolData.divisionProgram": updateData?.programDivision,
           "studentSchoolData.currentClassLevel": updateData?.currentClassLevel,
           "studentSchoolData.batch": updateData?.batch,
           "status.residentialStatus": updateData?.residentialStatus,

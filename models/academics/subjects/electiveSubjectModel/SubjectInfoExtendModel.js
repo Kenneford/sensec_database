@@ -4,14 +4,21 @@ const { Schema } = mongoose;
 
 const SubjectInfoExtendSchema = new Schema(
   {
-    programId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Program",
+    program: {
+      programId: {
+        type: mongoose.Schema.Types.ObjectId,
+        // required: true
+      },
+      type: {
+        type: String,
+        enum: ["Program", "ProgramDivision"],
+        // required: true,
+      },
     },
-    divisionProgramId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ProgramDivision",
-    },
+    // divisionProgramId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "ProgramDivision",
+    // },
     isElectiveSubject: {
       type: Boolean,
       default: false,

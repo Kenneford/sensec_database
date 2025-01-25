@@ -232,19 +232,28 @@ async function coreSubject(req, res, next) {
 }
 async function programmeElectiveSubject(req, res, next) {
   const { data, adminFound } = req.data;
+  // console.log(data);
+
   try {
-    if (data?.divisionProgramId === "") {
-      const programFound = await Program.findOne({
-        _id: data?.programId,
+    // Find division programme
+    const divisionProgramFound = await ProgramDivision.findOne({
+      _id: data?.program,
+    });
+    console.log(divisionProgramFound);
+    const programFound = await Program.findOne({
+      _id: data?.program,
+    });
+    console.log(programFound);
+    // Find main programme
+    if (!programFound && !divisionProgramFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Subject's programme not found!`],
+        },
       });
-      if (!programFound) {
-        res.status(404).json({
-          errorMessage: {
-            message: [`Elective subject's programme not found!`],
-          },
-        });
-        return;
-      }
+      return;
+    }
+    if (programFound) {
       //Find all students this programme
       const allStudents = await User.find({
         "studentSchoolData.program": programFound?._id,
@@ -252,7 +261,7 @@ async function programmeElectiveSubject(req, res, next) {
       //check if subject exist
       const subject = await Subject.findOne({
         subjectName: data?.subjectName,
-        "subjectInfo.programId": data?.programId,
+        "subjectInfo.program.programId": data?.programId,
         "subjectInfo.isOptional": data?.isOptional,
       });
       if (subject) {
@@ -263,10 +272,14 @@ async function programmeElectiveSubject(req, res, next) {
         });
         return;
       }
+      const program = {
+        programId: programFound?._id,
+        type: "Program",
+      };
       //create new subject
       const subjectCreated = await Subject.create({
         subjectName: data?.subjectName,
-        "subjectInfo.programId": data?.programId,
+        "subjectInfo.program": program,
         "subjectInfo.isOptional":
           data?.isOptional === null ? false : data?.isOptional,
         "subjectInfo.isElectiveSubject": true,
@@ -293,15 +306,13 @@ async function programmeElectiveSubject(req, res, next) {
       if (!subjectCreated?.subjectInfo?.isOptional) {
         allStudents?.forEach(async (student) => {
           if (
-            !student?.studentSchoolData?.electiveSubjects?.includes(
-              subjectCreated?._id
-            )
+            !student?.studentSchoolData?.subjects?.includes(subjectCreated?._id)
           ) {
             await User.findOneAndUpdate(
               student?._id,
               {
                 $push: {
-                  "studentSchoolData.electiveSubjects": subjectCreated?._id,
+                  "studentSchoolData.subjects": subjectCreated?._id,
                 },
               },
               { upsert: true }
@@ -312,6 +323,7 @@ async function programmeElectiveSubject(req, res, next) {
       req.subjectCreated = subjectCreated;
       next();
     } else {
+      req.divisionProgramFound = divisionProgramFound;
       next();
     }
   } catch (error) {
@@ -325,28 +337,31 @@ async function programmeElectiveSubject(req, res, next) {
 }
 async function divisionProgrammeElectiveSubject(req, res, next) {
   const { data, adminFound } = req.data;
+  const divisionProgramFound = req.divisionProgramFound;
+
   try {
-    if (data?.divisionProgramId !== "") {
-      const divisionProgramFound = await ProgramDivision.findOne({
-        _id: data?.divisionProgramId,
-      });
-      if (!divisionProgramFound) {
-        res.status(404).json({
-          errorMessage: {
-            message: [`Elective subject's programme not found!`],
-          },
-        });
-        return;
-      }
+    // Find division programme
+    // const divisionProgramFound = await ProgramDivision.findOne({
+    //   _id: data?.program,
+    // });
+    // if (!divisionProgramFound) {
+    //   res.status(404).json({
+    //     errorMessage: {
+    //       message: [`Elective subject's programme not found!`],
+    //     },
+    //   });
+    //   return;
+    // }
+    if (divisionProgramFound) {
       //Find all students in this programme
       const allStudents = await User.find({
-        "studentSchoolData.divisionProgram": divisionProgramFound?._id,
+        "studentSchoolData.program": divisionProgramFound?._id,
       });
       //check if subject exist
       const subject = await Subject.findOne({
         subjectName: data?.subjectName,
         // "electiveSubInfo.programId": data?.programId,
-        "subjectInfo.divisionProgramId": data?.divisionProgramId,
+        "subjectInfo.program.programId": divisionProgramFound?._id,
         "subjectInfo.isOptional": data?.isOptional,
       });
       if (subject) {
@@ -357,11 +372,15 @@ async function divisionProgrammeElectiveSubject(req, res, next) {
         });
         return;
       }
+      const program = {
+        programId: divisionProgramFound?._id,
+        type: "ProgramDivision",
+      };
       //create new subject
       const subjectCreated = await Subject.create({
         subjectName: data?.subjectName,
         // "electiveSubInfo.programId": data?.programId,
-        "subjectInfo.divisionProgramId": data?.divisionProgramId,
+        "subjectInfo.program": program,
         "subjectInfo.isOptional":
           data?.isOptional === "" ? false : data?.isOptional,
         "subjectInfo.isElectiveSubject": true,
@@ -392,15 +411,13 @@ async function divisionProgrammeElectiveSubject(req, res, next) {
       if (!subjectCreated?.subjectInfo?.isOptional) {
         allStudents?.forEach(async (student) => {
           if (
-            !student?.studentSchoolData?.electiveSubjects?.includes(
-              subjectCreated?._id
-            )
+            !student?.studentSchoolData?.subjects?.includes(subjectCreated?._id)
           ) {
             await User.findOneAndUpdate(
               student?._id,
               {
                 $push: {
-                  "studentSchoolData.electiveSubjects": subjectCreated?._id,
+                  "studentSchoolData.subjects": subjectCreated?._id,
                 },
               },
               { upsert: true }
@@ -506,20 +523,20 @@ async function assignElectiveSubject(req, res, next) {
         _id: data?.program,
       });
       //Filter Students
-      const electiveStudentsFound = allUsers.filter(
-        (std) =>
-          (std?.studentSchoolData?.electiveSubjects?.includes(
-            subjectFound?._id
-          ) &&
-            std?.studentSchoolData?.currentClassLevel === data?.classLevel &&
-            std?.studentSchoolData?.divisionProgram === data?.programId) ||
-          std?.studentSchoolData?.program === data?.programId
-      );
+      // const electiveStudentsFound = allUsers.filter(
+      //   (std) =>
+      //     (std?.studentSchoolData?.electiveSubjects?.includes(
+      //       subjectFound?._id
+      //     ) &&
+      //       std?.studentSchoolData?.currentClassLevel === data?.classLevel &&
+      //       std?.studentSchoolData?.divisionProgram === data?.programId) ||
+      //     std?.studentSchoolData?.program === data?.programId
+      // );
 
       if (divisionProgram) {
         // Now, find all students whose subject matches this lecturer's elective
         const students = await User.find({
-          "studentSchoolData.divisionProgram": data?.program,
+          "studentSchoolData.program.programId": data?.program,
           "studentSchoolData.currentClassLevel": data?.classLevel,
           "studentSchoolData.subjects": {
             $in: [subjectFound?._id],
@@ -555,7 +572,7 @@ async function assignElectiveSubject(req, res, next) {
       } else if (mainProgram) {
         // Now, find all students whose subject matches this lecturer's elective
         const students = await User.find({
-          "studentSchoolData.program": data?.program,
+          "studentSchoolData.program.programId": data?.program,
           "studentSchoolData.currentClassLevel": data?.classLevel,
           "studentSchoolData.subjects": {
             $in: [subjectFound?._id],
@@ -617,6 +634,7 @@ async function assignElectiveSubject(req, res, next) {
       next();
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       errorMessage: {
         message: ["Something went wrong!", error?.message],
@@ -848,31 +866,31 @@ async function assignCoreSubject(req, res, next) {
       });
       return;
     }
-    // Extract program IDs and their types
-    const programIds = data?.programmes.map((p) => p.program);
-    //Find existing subject lecturer Lecturer
-    const existingSubjectLecturer = await User.findOne({
-      "lecturerSchoolData.teachingSubjects.cores": {
-        $elemMatch: {
-          subject: subjectFound?._id,
-          classLevel: classLevel?._id,
-          programmes: {
-            $elemMatch: {
-              program: { $in: programIds }, // Match any programId
+    if (subjectFound?.subjectInfo?.isCoreSubject) {
+      // Extract program IDs and their types
+      const programIds = data?.programmes?.map((p) => p?.program);
+      //Find existing subject lecturer Lecturer
+      const existingSubjectLecturer = await User.findOne({
+        "lecturerSchoolData.teachingSubjects.cores": {
+          $elemMatch: {
+            subject: subjectFound?._id,
+            classLevel: classLevel?._id,
+            programmes: {
+              $elemMatch: {
+                program: { $in: programIds }, // Match any programId
+              },
             },
           },
         },
-      },
-    });
-    if (existingSubjectLecturer) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Lecturer already assigned for this subject!"],
-        },
       });
-      return;
-    }
-    if (subjectFound?.subjectInfo?.isCoreSubject) {
+      if (existingSubjectLecturer) {
+        res.status(403).json({
+          errorMessage: {
+            message: ["Lecturer already assigned for this subject!"],
+          },
+        });
+        return;
+      }
       // Find General Science Program
       const generalScienceProgram = await Program.findOne({
         name: "General Science",
@@ -937,14 +955,10 @@ async function assignCoreSubject(req, res, next) {
       };
       next();
     } else {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Failed to assign lecturer!"],
-        },
-      });
-      return;
+      next();
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       errorMessage: {
         message: ["Something went wrong!", error?.message],

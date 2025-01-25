@@ -145,6 +145,7 @@ module.exports.createStudentReport = async (req, res) => {
             totalScore: data?.totalScore,
             grade: gradeFound?.grade,
             remark: gradeFound?.remark,
+            lecturerRemark: data?.remark,
             lecturer: data?.lecturer,
           },
           { new: true }
@@ -164,6 +165,7 @@ module.exports.createStudentReport = async (req, res) => {
           totalScore: data?.totalScore,
           grade: gradeFound?.grade,
           remark: gradeFound?.remark,
+          lecturerRemark: data?.remark,
           lecturer: data?.lecturer,
           year: new Date().getFullYear(),
         });
@@ -227,6 +229,7 @@ module.exports.saveDraftReports = async (req, res) => {
               examScore: std?.examScore,
               totalScore: std?.totalScore,
               grade: std?.grade,
+              remark: std?.remark,
             };
           }
           return null; // Optional: Return null for undefined/invalid students
@@ -277,6 +280,7 @@ module.exports.saveDraftReports = async (req, res) => {
               examScore: std?.examScore,
               totalScore: std?.totalScore,
               grade: std?.grade,
+              remark: std?.remark,
             };
           }
           return null; // Optional: Return null for undefined/invalid students
