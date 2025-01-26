@@ -10,10 +10,13 @@ const {
   createMultiStudentsReports,
   fetchReportStudents,
   fetchCoreDraftReport,
+  fetchSubjectMultiStudentsReport,
 } = require("../../../controllers/academics/reports/StudentReportController");
 const {
   multiElectiveReport,
   multiCoreReport,
+  fetchMultiElectiveReport,
+  fetchMultiCoreReport,
 } = require("../../../middlewares/academics/reportMiddleware");
 const {
   authUser,
@@ -117,6 +120,18 @@ router.get(
     },
   }),
   fetchReportStudents
+);
+router.put(
+  "/academics/report/subject/fetch_all",
+  authUser,
+  authUserRole({
+    userRoles: {
+      lecturer: "Lecturer",
+    },
+  }),
+  fetchMultiElectiveReport,
+  fetchMultiCoreReport,
+  fetchSubjectMultiStudentsReport
 );
 
 module.exports = router;
