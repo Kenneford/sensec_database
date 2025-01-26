@@ -650,8 +650,6 @@ async function removeElectiveSubject(req, res, next) {
   try {
     if (
       !mongoose.Types.ObjectId.isValid(subjectId) ||
-      !mongoose.Types.ObjectId.isValid(data?.currentTeacher) ||
-      !mongoose.Types.ObjectId.isValid(data.classLevel) ||
       (data.program && !mongoose.Types.ObjectId.isValid(data.program))
     ) {
       return res.status(403).json({
@@ -671,7 +669,7 @@ async function removeElectiveSubject(req, res, next) {
       return;
     }
     //Check if class level exists
-    const classLevel = await ClassLevel.findOne({ _id: data?.classLevel });
+    const classLevel = await ClassLevel.findOne({ name: data?.classLevel });
     if (!classLevel) {
       res.status(404).json({
         errorMessage: {
@@ -691,7 +689,9 @@ async function removeElectiveSubject(req, res, next) {
       return;
     }
     //Find Lecturer
-    const lecturerFound = await User.findOne({ _id: data?.currentTeacher });
+    const lecturerFound = await User.findOne({
+      uniqueId: data?.currentTeacher,
+    });
     if (!lecturerFound) {
       res.status(404).json({
         errorMessage: {
@@ -700,14 +700,15 @@ async function removeElectiveSubject(req, res, next) {
       });
       return;
     }
-    //Find existing subject lecturer Lecturer
+    //Find existing subject lecturer
     const existingSubjectLecturer = await User.findOne({
       _id: lecturerFound?._id,
       "lecturerSchoolData.teachingSubjects.electives": {
         $elemMatch: {
           subject: subjectFound?._id,
           classLevel: classLevel?._id,
-          programId: data.program,
+          $or: [{ program: data.program }, { programDivision: data.program }],
+          // programId: data.program,
         },
       },
     });
@@ -725,6 +726,17 @@ async function removeElectiveSubject(req, res, next) {
         _id: data?.program,
       });
       if (divisionProgram) {
+        const lecturerMultiElectiveSubjectsData =
+          lecturerFound?.lecturerSchoolData?.teachingSubjects?.electives?.filter(
+            (electiveData) =>
+              electiveData?.subject?.toString() ===
+              subjectFound?._id?.toString()
+          );
+        console.log(
+          "lecturerMultiElectiveSubjectsData: ",
+          lecturerMultiElectiveSubjectsData
+        );
+
         const lecturerElectiveSubjData =
           lecturerFound?.lecturerSchoolData?.teachingSubjects?.electives?.find(
             (electiveData) =>
@@ -747,20 +759,30 @@ async function removeElectiveSubject(req, res, next) {
             },
           }
         );
-        if (!updatedLecturer) {
-          return res.status(404).json({
-            errorMessage: {
-              message: [
-                `Operation failed! Subject data not found or already deleted.`,
-              ],
+        // Remove lecturer from subject teachers array
+        if (
+          subjectFound?.teachers?.includes(lecturerFound?._id) &&
+          lecturerMultiElectiveSubjectsData?.length <= 1
+        ) {
+          await Subject.findOneAndUpdate(
+            { _id: subjectFound?._id }, // Correct filter for the lecturer
+            {
+              $pull: { teachers: lecturerFound?._id },
             },
-          });
+            { new: true }
+          );
         }
         req.removedSubjectLecturerData = {
           lecturerRemoved: updatedLecturer,
         };
         next();
       } else if (mainProgram) {
+        const lecturerMultiElectiveSubjectsData =
+          lecturerFound?.lecturerSchoolData?.teachingSubjects?.electives?.filter(
+            (electiveData) =>
+              electiveData?.subject?.toString() ===
+              subjectFound?._id?.toString()
+          );
         const lecturerElectiveSubjData =
           lecturerFound?.lecturerSchoolData?.teachingSubjects?.electives?.find(
             (electiveData) =>
@@ -772,7 +794,7 @@ async function removeElectiveSubject(req, res, next) {
           );
         console.log(lecturerElectiveSubjData);
         // Update current Teacher's teachingSubjects data
-        const updatedLecturer = await User.findOneAndUpdate(
+        await User.findOneAndUpdate(
           { _id: lecturerFound?._id }, // Correct filter for the lecturer
           {
             $pull: {
@@ -780,16 +802,21 @@ async function removeElectiveSubject(req, res, next) {
                 _id: lecturerElectiveSubjData?._id,
               },
             },
-          }
+          },
+          { new: true }
         );
-        if (!updatedLecturer) {
-          return res.status(404).json({
-            errorMessage: {
-              message: [
-                `Operation failed! Subject data not found or already deleted.`,
-              ],
+        // Remove lecturer from subject teachers array
+        if (
+          subjectFound?.teachers?.includes(lecturerFound?._id) &&
+          !lecturerMultiElectiveSubjectsData?.length > 1
+        ) {
+          await Subject.findOneAndUpdate(
+            { _id: subjectFound?._id }, // Correct filter for the lecturer
+            {
+              $pull: { teachers: lecturerFound?._id },
             },
-          });
+            { new: true }
+          );
         }
         req.removedSubjectLecturerData = {
           lecturerRemoved: updatedLecturer,
