@@ -44,6 +44,18 @@ module.exports.addNewEmployee = async (req, res) => {
       // ) {
       //   employmentSMS({ foundUser: newEmployeeData });
       // }
+      if (newEmployeeData?.uniqueId?.includes("LCT")) {
+        await User.findOneAndUpdate(
+          newEmployeeData?._id,
+          {
+            "lecturerSchoolData.teachingSubjects": {
+              electives: [],
+              cores: [],
+            },
+          },
+          { new: true }
+        );
+      }
       res.status(201).json({
         successMessage: "Your employment data saved successfully!",
         newEmployeeData,
