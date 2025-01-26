@@ -4,17 +4,16 @@ const User = require("../../../models/user/UserModel");
 // Create program ✅
 module.exports.createProgram = async (req, res) => {
   const data = req.body;
-  // const user = req.user;
-  const user = { roles: ["admin"] }; //❓Will Be Deleted After Users Can Login❓
-  console.log(data);
+  const user = req.user;
+  // console.log(data);
   try {
     //Find Admin
     const foundAdmin = await User.findOne({ _id: data?.createdBy });
 
-    if (!foundAdmin || !user?.roles?.includes("admin")) {
+    if (!foundAdmin || !user?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation Denied! You're not an admin!"],
         },
       });
       return;
