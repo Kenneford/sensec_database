@@ -41,7 +41,7 @@ async function validateSubjectData(req, res, next) {
 async function subjectLecturers(req, res, next) {
   const currentUser = req.user;
   const { subjectId } = req.params;
-  console.log(subjectId);
+  console.log("subjectId: ", subjectId);
 
   try {
     if (!mongoose.Types.ObjectId.isValid(subjectId)) {
@@ -707,7 +707,7 @@ async function removeElectiveSubject(req, res, next) {
         $elemMatch: {
           subject: subjectFound?._id,
           classLevel: classLevel?._id,
-          $or: [{ program: data.program }, { programDivision: data.program }],
+          programId: data.program,
         },
       },
     });
