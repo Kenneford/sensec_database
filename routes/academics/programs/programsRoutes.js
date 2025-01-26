@@ -26,7 +26,7 @@ router.post(
   "/academics/programme/create",
   authUser,
   authUserRole({
-    userRole: {
+    userRoles: {
       admin: "Admin",
     },
   }),
@@ -42,7 +42,7 @@ router.put(
   "/academics/programs/:programId/update",
   authUser,
   authUserRole({
-    userRole: {
+    userRoles: {
       admin: "Admin",
     },
   }),
@@ -52,7 +52,7 @@ router.delete(
   "/academics/programs/:programId/delete",
   authUser,
   authUserRole({
-    userRole: {
+    userRoles: {
       admin: "Admin",
     },
   }),
@@ -86,7 +86,7 @@ router.put(
   "/academics/programs/:programId/divisions/update",
   authUser,
   authUserRole({
-    userRole: {
+    userRoles: {
       admin: "Admin",
     },
   }),
@@ -96,7 +96,7 @@ router.delete(
   "/academics/programs/:programId/divisions/delete",
   authUser,
   authUserRole({
-    userRole: {
+    userRoles: {
       admin: "Admin",
     },
   }),
