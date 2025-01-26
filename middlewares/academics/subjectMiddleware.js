@@ -794,7 +794,7 @@ async function removeElectiveSubject(req, res, next) {
           );
         console.log(lecturerElectiveSubjData);
         // Update current Teacher's teachingSubjects data
-        await User.findOneAndUpdate(
+        const updatedLecturer = await User.findOneAndUpdate(
           { _id: lecturerFound?._id }, // Correct filter for the lecturer
           {
             $pull: {
