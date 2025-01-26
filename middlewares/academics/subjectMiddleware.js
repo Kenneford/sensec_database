@@ -749,7 +749,7 @@ async function removeElectiveSubject(req, res, next) {
           );
         console.log("L-582: ", lecturerElectiveSubjData);
         // Update current Teacher's teachingSubjects data
-        const updatedLecturer = await User.findOneAndUpdate(
+        await User.findOneAndUpdate(
           { _id: lecturerFound?._id }, // Correct filter for the lecturer
           {
             $pull: {
@@ -759,12 +759,13 @@ async function removeElectiveSubject(req, res, next) {
             },
           }
         );
+        let updatedLecturer;
         // Remove lecturer from subject teachers array
         if (
           subjectFound?.teachers?.includes(lecturerFound?._id) &&
           lecturerMultiElectiveSubjectsData?.length <= 1
         ) {
-          await Subject.findOneAndUpdate(
+          updatedLecturer = await Subject.findOneAndUpdate(
             { _id: subjectFound?._id }, // Correct filter for the lecturer
             {
               $pull: { teachers: lecturerFound?._id },
@@ -794,7 +795,7 @@ async function removeElectiveSubject(req, res, next) {
           );
         console.log(lecturerElectiveSubjData);
         // Update current Teacher's teachingSubjects data
-        const updatedLecturer = await User.findOneAndUpdate(
+        await User.findOneAndUpdate(
           { _id: lecturerFound?._id }, // Correct filter for the lecturer
           {
             $pull: {
@@ -805,12 +806,13 @@ async function removeElectiveSubject(req, res, next) {
           },
           { new: true }
         );
+        let updatedLecturer;
         // Remove lecturer from subject teachers array
         if (
           subjectFound?.teachers?.includes(lecturerFound?._id) &&
           !lecturerMultiElectiveSubjectsData?.length > 1
         ) {
-          await Subject.findOneAndUpdate(
+          updatedLecturer = await Subject.findOneAndUpdate(
             { _id: subjectFound?._id }, // Correct filter for the lecturer
             {
               $pull: { teachers: lecturerFound?._id },
