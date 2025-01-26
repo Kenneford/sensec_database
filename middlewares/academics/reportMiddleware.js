@@ -400,5 +400,210 @@ async function multiCoreReport(req, res, next) {
     });
   }
 }
+async function fetchMultiElectiveReport(req, res, next) {
+  const currentUser = req.user;
+  const data = req.body;
+  console.log(data);
+  try {
+    if (!data) {
+      return res.status(500).json({
+        errorMessage: {
+          message: ["No data to search for!"],
+        },
+      });
+    }
+    //Find Lecturer
+    const lecturerFound = await User.findOne({ _id: currentUser?.id });
+    if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not a lecturer!"],
+        },
+      });
+      return;
+    }
+    if (currentUser?.id !== data?.lecturer) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not a lecturer!"],
+        },
+      });
+      return;
+    }
+    //Find Subject
+    const subjectFound = await Subject.findOne({ _id: data?.subject });
 
-module.exports = { multiElectiveReport, multiCoreReport };
+    // If Elective Subject
+    if (subjectFound?.subjectInfo?.isElectiveSubject) {
+      // Find existing multiStudentsReport data
+      const existingMultiStudentsReport = await Report.findOne({
+        classLevel: data?.classLevel,
+        semester: data?.semester,
+        subject: data?.subject,
+        lecturer: data?.lecturer,
+        year: data?.year,
+      })
+        .populate([{ path: "students" }])
+        .lean();
+      console.log("existingMultiStudentsReport: ", existingMultiStudentsReport);
+
+      if (existingMultiStudentsReport) {
+        const allUsers = await User.find({});
+        // Map over students to extract the needed fields
+        const newStudentsData = existingMultiStudentsReport?.students?.map(
+          (std) => {
+            const studentData = allUsers?.find(
+              (user) => user?.uniqueId === std?.studentId
+            );
+            const studentObj = {
+              studentId: std?.studentId,
+              classScore: std?.classScore,
+              examScore: std?.examScore,
+              totalScore: std?.totalScore,
+              grade: std?.grade,
+              lecturerRemark: std?.lecturerRemark,
+              personalInfo: studentData?.personalInfo,
+            };
+            return studentObj;
+          }
+        );
+
+        // Create a new report object with updated students
+        const newReportObj = {
+          ...existingMultiStudentsReport,
+          isExistingReport: true,
+          students: newStudentsData, // Override the students field
+        };
+
+        // Attach the cleaned object to the request
+        req.reportFound = newReportObj;
+        next();
+      }
+    } else {
+      next();
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
+}
+async function fetchMultiCoreReport(req, res, next) {
+  const currentUser = req.user;
+  const data = req.body;
+  // console.log(data);
+  try {
+    //Find Lecturer
+    const lecturerFound = await User.findOne({ _id: currentUser?.id });
+    if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not a lecturer!"],
+        },
+      });
+      return;
+    }
+    if (currentUser?.id !== data?.lecturer) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not a lecturer!"],
+        },
+      });
+      return;
+    }
+    //Find Subject
+    const subjectFound = await Subject.findOne({ _id: data?.subject });
+    if (!subjectFound) {
+      return res.status(404).json({
+        errorMessage: {
+          message: ["Subject data not found!"],
+        },
+      });
+    }
+    // If Elective Subject
+    if (subjectFound?.subjectInfo?.isCoreSubject) {
+      if (!data) {
+        return res.status(500).json({
+          errorMessage: {
+            message: ["No data to search for!"],
+          },
+        });
+      }
+      if (!data?.programmes?.length > 0) {
+        return res.status(403).json({
+          errorMessage: {
+            message: ["No program data selected!"],
+          },
+        });
+      }
+      // Extract program IDs and their types
+      const programIds = data?.programmes?.map((p) => p?.program);
+      // Find existing multiStudentsReport data
+      const existingMultiStudentsReport = await Report.findOne({
+        classLevel: data?.classLevel,
+        semester: data?.semester,
+        subject: data?.subject,
+        lecturer: data?.lecturer,
+        programmes: {
+          $all: programIds?.map((programId) => ({
+            $elemMatch: { program: programId }, // Ensure all programIds exist
+          })),
+        },
+        year: data?.year,
+      })
+        .populate([{ path: "students" }])
+        .lean();
+      if (existingMultiStudentsReport) {
+        const allUsers = await User.find({});
+        // Map over students to extract the needed fields
+        const newStudentsData = existingMultiStudentsReport.students?.map(
+          (std) => {
+            const studentData = allUsers?.find(
+              (user) => user?.uniqueId === std?.studentId
+            );
+            const studentObj = {
+              studentId: std?.studentId,
+              classScore: std?.classScore,
+              examScore: std?.examScore,
+              totalScore: std?.totalScore,
+              grade: std?.grade,
+              lecturerRemark: std?.lecturerRemark,
+              personalInfo: studentData?.personalInfo,
+            };
+            return studentObj;
+          }
+        );
+
+        // Create a new report object with updated students
+        const newReportObj = {
+          ...existingMultiStudentsReport,
+          isExistingReport: true,
+          students: newStudentsData, // Override the students field
+        };
+
+        // Attach the cleaned object to the request
+        req.reportFound = newReportObj;
+        next();
+      }
+    } else {
+      next();
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
+}
+
+module.exports = {
+  multiElectiveReport,
+  multiCoreReport,
+  fetchMultiElectiveReport,
+  fetchMultiCoreReport,
+};

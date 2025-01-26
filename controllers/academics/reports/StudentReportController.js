@@ -343,7 +343,7 @@ module.exports.saveDraftReports = async (req, res) => {
 };
 module.exports.fetchElectiveDraftReport = async (req, res) => {
   const currentUser = req.user;
-  const { data } = req.body;
+  const data = req.body;
   // console.log("L-321: ", data);
   try {
     if (!data) {
@@ -451,7 +451,7 @@ module.exports.fetchElectiveDraftReport = async (req, res) => {
 };
 module.exports.fetchCoreDraftReport = async (req, res) => {
   const currentUser = req.user;
-  const { data } = req.body;
+  const data = req.body;
   console.log(data);
 
   try {
@@ -689,6 +689,26 @@ module.exports.fetchAllReports = async (req, res) => {
       res.status(201).json({
         successMessage: "Reports data fetched successfully!",
         allReports: studentReports,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
+};
+module.exports.fetchSubjectMultiStudentsReport = async (req, res) => {
+  const reportFound = req.reportFound;
+  console.log(reportFound);
+
+  try {
+    if (reportFound) {
+      res.status(201).json({
+        successMessage: "Reports data fetched successfully!",
+        foundReports: reportFound,
       });
     }
   } catch (error) {

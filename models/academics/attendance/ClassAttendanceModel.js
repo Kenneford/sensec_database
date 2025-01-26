@@ -21,6 +21,7 @@ const classAttendanceSchema = new Schema(
 
         // console.log(formatter.format(date)); // Output: 22/01/2025
         return formatter.format(date);
+        // return new Date().toLocaleDateString();
       },
       // required: true
     },
