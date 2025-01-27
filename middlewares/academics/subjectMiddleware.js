@@ -44,13 +44,13 @@ async function subjectLecturers(req, res, next) {
   console.log("subjectId: ", subjectId);
 
   try {
-    if (!mongoose.Types.ObjectId.isValid(subjectId)) {
-      return res.status(403).json({
-        errorMessage: {
-          message: ["Invalid object ID detected!"],
-        },
-      });
-    }
+    // if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+    //   return res.status(403).json({
+    //     errorMessage: {
+    //       message: ["Invalid object ID detected!"],
+    //     },
+    //   });
+    // }
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
     if (!adminFound || !currentUser?.roles?.includes("Admin")) {
@@ -85,7 +85,7 @@ async function subjectLecturers(req, res, next) {
         // name: 1,
         uniqueId: 1,
         personalInfo: 1,
-        "lecturerSchoolData.teachingSubjects.electives": 1,
+        "lecturerSchoolData.teachingSubjects.electives": 2,
       }
     ).populate([
       {
@@ -125,14 +125,14 @@ async function subjectLecturers(req, res, next) {
     ]);
     // console.log("L-92: ", existingSubjectLecturers);
 
-    if (existingSubjectLecturers?.length === 0) {
-      res.status(404).json({
-        errorMessage: {
-          message: ["No lecturers found teaching the specified subject!"],
-        },
-      });
-      return;
-    }
+    // if (existingSubjectLecturers?.length === 0) {
+    //   res.status(404).json({
+    //     errorMessage: {
+    //       message: ["No lecturers found teaching the specified subject!"],
+    //     },
+    //   });
+    //   return;
+    // }
 
     // Filter and format response to only include electives matching the subjectId
     const formattedLecturers = existingSubjectLecturers?.map((lecturer) => {
@@ -765,13 +765,15 @@ async function removeElectiveSubject(req, res, next) {
           subjectFound?.teachers?.includes(lecturerFound?._id) &&
           lecturerMultiElectiveSubjectsData?.length <= 1
         ) {
-          updatedLecturer = await Subject.findOneAndUpdate(
-            { _id: subjectFound?._id }, // Correct filter for the lecturer
-            {
-              $pull: { teachers: lecturerFound?._id },
-            },
-            { new: true }
-          );
+          subjectFound?.teachers?.pull(lecturerFound?._id);
+          await subjectFound.save();
+          // updatedLecturer = await Subject.findOneAndUpdate(
+          //   { _id: subjectFound?._id }, // Correct filter for the lecturer
+          //   {
+          //     $pull: { teachers: lecturerFound?._id },
+          //   },
+          //   { new: true }
+          // );
         }
         req.removedSubjectLecturerData = {
           lecturerRemoved: updatedLecturer,
@@ -810,15 +812,17 @@ async function removeElectiveSubject(req, res, next) {
         // Remove lecturer from subject teachers array
         if (
           subjectFound?.teachers?.includes(lecturerFound?._id) &&
-          !lecturerMultiElectiveSubjectsData?.length > 1
+          lecturerMultiElectiveSubjectsData?.length <= 1
         ) {
-          updatedLecturer = await Subject.findOneAndUpdate(
-            { _id: subjectFound?._id },
-            {
-              $pull: { teachers: lecturerFound?._id },
-            },
-            { new: true }
-          );
+          subjectFound?.teachers?.pull(lecturerFound?._id);
+          await subjectFound.save();
+          // updatedLecturer = await Subject.findOneAndUpdate(
+          //   { _id: subjectFound?._id },
+          //   {
+          //     $pull: { teachers: lecturerFound?._id },
+          //   },
+          //   { new: true }
+          // );
         }
         req.removedSubjectLecturerData = {
           lecturerRemoved: updatedLecturer,
