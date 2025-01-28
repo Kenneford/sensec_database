@@ -1,3 +1,4 @@
+const ProgramDivision = require("../../../models/academics/programmes/divisions/ProgramDivisionModel");
 const Program = require("../../../models/academics/programmes/ProgramsModel");
 const User = require("../../../models/user/UserModel");
 
@@ -40,30 +41,6 @@ module.exports.createProgram = async (req, res) => {
       name: data?.name,
       createdBy: data?.createdBy,
     });
-    try {
-      //   push program into admin's programs array✅
-      if (
-        foundAdmin &&
-        !foundAdmin?.adminActionsData?.programs?.includes(programmeCreated?._id)
-      ) {
-        await User.findOneAndUpdate(
-          foundAdmin?._id,
-          {
-            $push: {
-              "adminActionsData.programs": programmeCreated?._id,
-            },
-          },
-          { upsert: true }
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({
-        errorMessage: {
-          message: ["Internal Server Error!"],
-        },
-      });
-    }
     res.status(201).json({
       successMessage: "Program Created Successfully",
       programme: programmeCreated,
@@ -102,6 +79,53 @@ exports.getAllPrograms = async (req, res) => {
     res.status(201).json({
       successMessage: "Programs fetched successfully...",
       programs,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      errorMessage: {
+        message: ["Programs fetching failed!"],
+      },
+    });
+  }
+};
+// Get all Program Students ✅
+exports.getAllProgramStudents = async (req, res) => {
+  const { programId } = req.params;
+  console.log(programId);
+
+  try {
+    const programFound = await Program.findOne({ _id: programId });
+    if (!programFound) {
+      return res.status(404).json({
+        errorMessage: {
+          message: ["Program data not found!"],
+        },
+      });
+    }
+    let students;
+
+    if (!programFound?.programDivisions?.length > 0) {
+      // Query students directly linked to the standalone programme
+      students = await User.find({
+        "studentSchoolData.program.programId": programId,
+      });
+    } else {
+      // Query subdivisions linked to the main programme
+      const subdivisions = await ProgramDivision.find({ programId });
+      console.log("subdivisions: ", subdivisions);
+
+      // Extract all subdivision IDs
+      const subdivisionIds = subdivisions?.map((sub) => sub?._id);
+
+      // Query students linked to subdivisions
+      students = await User.find({
+        "studentSchoolData.program.programId": { $in: subdivisionIds },
+      });
+    }
+
+    res.status(201).json({
+      successMessage: "Programs fetched successfully...",
+      programStudentFound: students,
     });
   } catch (error) {
     return res.status(400).json({
@@ -211,7 +235,7 @@ exports.getSingleProgram = async (req, res) => {
 // Update Program ✅
 exports.updateProgram = async (req, res) => {
   const { programId } = req.params;
-  const { name, lastUpdatedBy } = req.body;
+  const data = req.body;
   try {
     //Find Program To Update
     const programFound = await Program.findOne({ _id: programId });
@@ -226,7 +250,7 @@ exports.updateProgram = async (req, res) => {
     //Find Existing Program
     const existingProgramFound = await Program.findOne({
       _id: programId,
-      name,
+      name: data?.updatedProgramName,
     });
     if (existingProgramFound) {
       res.status(404).json({
@@ -236,13 +260,16 @@ exports.updateProgram = async (req, res) => {
       });
       return;
     }
-    const adminFound = await User.findOne({ _id: lastUpdatedBy });
+    const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
     if (adminFound) {
       const updatedProgram = await Program.findOneAndUpdate(
         programFound?._id,
         {
-          name,
-          lastUpdatedBy,
+          name: data?.updatedProgramName,
+          lastUpdatedBy: data?.lastUpdatedBy,
+          previouslyUpdatedBy: programFound?.lastUpdatedBy,
+          previousUpdateDate: programFound?.updatedAt,
+          description: `This is ${data?.updatedProgramName} programme`,
         },
         {
           new: true,
@@ -271,11 +298,14 @@ exports.updateProgram = async (req, res) => {
 
 // Delete  Program ✅
 exports.deleteProgram = async (req, res) => {
+  const currentUser = req.user;
   const { programId } = req.params;
   const { deletedBy } = req.body;
   try {
     const programToDelete = await Program.findOne({ _id: programId });
-    if (!programToDelete) {
+    const mainProgram = await Program.findOne({ _id: programId });
+    const divisionProgram = await ProgramDivision.findOne({ _id: programId });
+    if (!mainProgram && !divisionProgram) {
       return res.status(404).json({
         errorMessage: {
           message: ["Program data not found!"],
@@ -287,33 +317,30 @@ exports.deleteProgram = async (req, res) => {
     //   "studentSchoolData.program": programId,
     // });
     //Find Admin
-    const foundAdmin = await User.findOne({ _id: deletedBy });
-    if (!foundAdmin) {
-      return res.status(403).json({
+    const adminFound = await User.findOne({ _id: currentUser?.id });
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
+      res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation denied! You're not an admin!"],
         },
       });
-    } else {
-      const deletedProgram = await Program.findByIdAndDelete({
+      return;
+    }
+    let deletedProgram;
+    if (mainProgram) {
+      deletedProgram = await Program.findByIdAndDelete({
         _id: programId,
       });
-      if (
-        deletedProgram &&
-        foundAdmin &&
-        foundAdmin?.adminActionsData?.programs?.includes(deletedProgram?._id)
-      ) {
-        await User.findOneAndUpdate(
-          foundAdmin?._id,
-          { $pull: { "adminActionsData.programs": deletedProgram?._id } },
-          { new: true }
-        );
-      }
-      res.status(201).json({
-        successMessage: "Academic Programme Deleted Successfully",
-        deletedProgram,
+    }
+    if (divisionProgram) {
+      deletedProgram = await ProgramDivision.findByIdAndDelete({
+        _id: programId,
       });
     }
+    res.status(201).json({
+      successMessage: "Programme deleted successfully!",
+      deletedProgram,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({

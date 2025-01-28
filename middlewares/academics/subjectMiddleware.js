@@ -245,7 +245,7 @@ async function programmeElectiveSubject(req, res, next) {
     if (programFound) {
       //Find all students this programme
       const allStudents = await User.find({
-        "studentSchoolData.program": programFound?._id,
+        "studentSchoolData.program.programId": programFound?._id,
       });
       //check if subject exist
       const subject = await Subject.findOne({
@@ -292,11 +292,12 @@ async function programmeElectiveSubject(req, res, next) {
       //   await programFound.save();
       // }
       // Push non-optional elective subject into each student's elective subjects✅
-      if (!subjectCreated?.subjectInfo?.isOptional) {
+      if (subjectCreated && !subjectCreated?.subjectInfo?.isOptional) {
         allStudents?.forEach(async (student) => {
           if (
             !student?.studentSchoolData?.subjects?.includes(subjectCreated?._id)
           ) {
+            student?.studentSchoolData?.subjects?.push(subjectCreated?._id);
             await User.findOneAndUpdate(
               student?._id,
               {
@@ -344,7 +345,7 @@ async function divisionProgrammeElectiveSubject(req, res, next) {
     if (divisionProgramFound) {
       //Find all students in this programme
       const allStudents = await User.find({
-        "studentSchoolData.program": divisionProgramFound?._id,
+        "studentSchoolData.program.programId": divisionProgramFound?._id,
       });
       //check if subject exist
       const subject = await Subject.findOne({

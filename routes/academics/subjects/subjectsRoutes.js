@@ -132,7 +132,7 @@ router.delete(
   authUser,
   authUserRole({
     userRoles: {
-      admin: "admin",
+      admin: "Admin",
     },
   }),
   deleteSubject
