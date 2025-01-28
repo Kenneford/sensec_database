@@ -44,13 +44,13 @@ async function subjectLecturers(req, res, next) {
   console.log("subjectId: ", subjectId);
 
   try {
-    // if (!mongoose.Types.ObjectId.isValid(subjectId)) {
-    //   return res.status(403).json({
-    //     errorMessage: {
-    //       message: ["Invalid object ID detected!"],
-    //     },
-    //   });
-    // }
+    if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["Invalid object ID detected!"],
+        },
+      });
+    }
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
     if (!adminFound || !currentUser?.roles?.includes("Admin")) {
@@ -123,17 +123,6 @@ async function subjectLecturers(req, res, next) {
         select: "divisionName",
       },
     ]);
-    // console.log("L-92: ", existingSubjectLecturers);
-
-    // if (existingSubjectLecturers?.length === 0) {
-    //   res.status(404).json({
-    //     errorMessage: {
-    //       message: ["No lecturers found teaching the specified subject!"],
-    //     },
-    //   });
-    //   return;
-    // }
-
     // Filter and format response to only include electives matching the subjectId
     const formattedLecturers = existingSubjectLecturers?.map((lecturer) => {
       const matchingElectives =
@@ -646,7 +635,6 @@ async function removeElectiveSubject(req, res, next) {
   const currentUser = req.user;
   const data = req.body;
   const { subjectId } = req.params;
-  console.log(data);
   try {
     if (
       !mongoose.Types.ObjectId.isValid(subjectId) ||
