@@ -197,11 +197,14 @@ exports.updateSubject = async (req, res) => {
   const currentUser = req.user;
   const data = req.body;
   const { subjectId } = req.params;
+  console.log("Update Subject Data: ", data);
+  console.log("subjectId: ", subjectId);
+
   try {
     //Find Admin
-    const adminFound = await User.findOne({ _id: data?.updatedBy });
+    const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
 
-    if (!adminFound || !currentUser?.roles?.includes("admin")) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're Not An Admin!"],
@@ -220,13 +223,18 @@ exports.updateSubject = async (req, res) => {
       return;
     }
     //check if subject name exists
-    const existingSubjectFound = await Subject.findOne({ name: data?.name });
+    const existingSubjectFound = await Subject.findOne({
+      _id: subjectId,
+      subjectName: data?.updatedSubjectName,
+    });
     if (!existingSubjectFound) {
       const updatedSubject = await Subject.findOneAndUpdate(
         subjectFound?._id,
         {
-          subjectName: data?.name,
-          lastUpdatedBy: data?.updatedBy,
+          subjectName: data?.updatedSubjectName,
+          lastUpdatedBy: data?.lastUpdatedBy,
+          previouslyUpdateDate: subjectFound?.lastUpdatedBy,
+          previouslyUpdateDate: subjectFound?.updatedAt,
         },
         {
           new: true,
@@ -289,166 +297,148 @@ exports.removeSubjectLecturer = async (req, res) => {
 // Delete  subject ✅
 exports.deleteSubject = async (req, res) => {
   const currentUser = req.user;
-  const { subjectId, adminId } = req.params;
+  const { subjectId } = req.params;
   try {
-    // Get all users
-    const allUsersData = await User.find({});
-    const filteredStudents = allUsersData.filter(
-      (user) => user && user?.roles?.includes("student")
-    );
-    const checkSubject = await Subject.findOne({ _id: subjectId });
-    //Find subject teachers
-    const teachersFound = allUsersData.filter(
-      (user) =>
-        user &&
-        user?.roles?.includes("teacher") &&
-        user?.teacherSchoolData?.teachingSubjects?.includes(checkSubject?._id)
-    );
-    const adminTakingAction = await User.findOne({ _id: currentUser?.id });
-    if (!adminTakingAction) {
+    //Find Admin
+    const adminFound = await User.findOne({ _id: currentUser?.id });
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
-          message: [`Operation Denied! You're Not An Admin!`],
+          message: ["Operation Denied! You're not an admin!"],
         },
       });
       return;
     }
-    if (checkSubject) {
-      const deletedSubject = await Subject.findByIdAndDelete({
-        _id: checkSubject?._id,
-      });
-      if (deletedSubject) {
-        try {
-          if (deletedSubject?.electiveSubInfo?.isElectiveSubject) {
-            const programFound = await Program.findOne({
-              _id: deletedSubject?.electiveSubInfo?.programId,
-            });
-            const programDivisionsFound = await ProgramDivision.find({
-              programId: deletedSubject?.electiveSubInfo?.programId,
-            });
-            if (programFound?.electiveSubjects?.includes(deletedSubject?._id)) {
-              programFound.electiveSubjects.pull(deletedSubject?._id);
-              await programFound.save();
-            }
-            if (
-              programFound?.optionalElectiveSubjects?.includes(
-                deletedSubject?._id
-              )
-            ) {
-              programFound.optionalElectiveSubjects.pull(deletedSubject?._id);
-              await programFound.save();
-            }
-            if (programDivisionsFound) {
-              programDivisionsFound?.forEach(async (program) => {
-                if (
-                  program &&
-                  program?.electiveSubjects?.includes(deletedSubject?._id)
-                ) {
-                  program.electiveSubjects.pull(deletedSubject?._id);
-                  await program.save();
-                }
-                if (
-                  program &&
-                  program?.optionalElectiveSubjects?.includes(
-                    deletedSubject?._id
-                  )
-                ) {
-                  program.optionalElectiveSubjects.pull(deletedSubject?._id);
-                  await program.save();
-                }
-              });
-            }
-          }
-          if (
-            adminTakingAction &&
-            adminTakingAction?.adminActionsData?.subjects?.includes(
-              deletedSubject?._id
-            )
-          ) {
-            await User.findOneAndUpdate(
-              adminTakingAction?._id,
-              { $pull: { "adminActionsData.subjects": deletedSubject?._id } },
-              { new: true }
-            );
-          }
-          if (teachersFound) {
-            teachersFound?.forEach(async (teacher) => {
-              if (
-                teacher &&
-                teacher?.teacherSchoolData?.teachingSubjects?.includes(
-                  deletedSubject?._id
-                )
-              ) {
-                teacher.teacherSchoolData.teachingSubjects.pull(
-                  deletedSubject?._id
-                );
-                await teacher.save();
-              }
-            });
-          }
-          if (deletedSubject?.electiveSubInfo) {
-            filteredStudents?.forEach(async (std) => {
-              if (
-                std &&
-                std?.studentSchoolData?.electiveSubjects?.includes(
-                  deletedSubject?._id
-                )
-              ) {
-                await User.findOneAndUpdate(
-                  std?._id,
-                  {
-                    $pull: {
-                      "studentSchoolData.electiveSubjects": deletedSubject?._id,
-                    },
-                  },
-                  { new: true }
-                );
-              }
-            });
-          }
-          if (deletedSubject?.coreSubInfo) {
-            filteredStudents?.forEach(async (std) => {
-              if (
-                std &&
-                std?.studentSchoolData?.coreSubjects?.includes(
-                  deletedSubject?._id
-                )
-              ) {
-                await User.findOneAndUpdate(
-                  std?._id,
-                  {
-                    $pull: {
-                      "studentSchoolData.coreSubjects": deletedSubject?._id,
-                    },
-                  },
-                  { new: true }
-                );
-              }
-            });
-          }
-        } catch (error) {
-          res.status(500).json({
-            errorMessage: {
-              message: ["Internal Server Error!"],
-            },
-          });
-        }
-      }
-      res.status(201).json({
-        successMessage: "Subject deleted successfully",
-        deletedSubject,
-      });
-    } else {
+    // Find subject
+    const subjectFound = await Subject.findOne({ _id: subjectId });
+    if (!subjectFound) {
       res.status(404).json({
         errorMessage: {
           message: ["Subject data not found!"],
         },
       });
+      return;
     }
+    // Delete subject
+    const subjectDeleted = await Subject.findOneAndDelete({ _id: subjectId });
+    // Get all Students
+    const studentsFound = await User.find({
+      roles: {
+        $in: ["Student"],
+      },
+      "studentSchoolData.subjects": {
+        $in: [subjectDeleted?._id],
+      },
+    });
+    // Find main Program
+    const mainProgramFound = await Program.findOne({
+      electiveSubjects: {
+        $in: [subjectDeleted?._id],
+      },
+    });
+    // Find division Program
+    const divisionProgramFound = await ProgramDivision.findOne({
+      electiveSubjects: {
+        $in: [subjectDeleted?._id],
+      },
+    });
+
+    //Find existing subject lecturers
+    const existingSubjectLecturers = await User.find({
+      "lecturerSchoolData.teachingSubjects.electives": {
+        $elemMatch: {
+          subject: subjectFound?._id,
+        },
+      },
+    });
+    if (subjectDeleted) {
+      // Remove subject from lecturer's teaching subjects
+      if (existingSubjectLecturers) {
+        existingSubjectLecturers?.forEach((lecturer) => {
+          const lecturerElectiveSubjectsData =
+            lecturer?.lecturerSchoolData?.teachingSubjects?.electives?.filter(
+              (electiveData) =>
+                electiveData?.subject?.toString() ===
+                subjectDeleted?._id?.toString()
+            );
+          console.log(
+            "lecturerElectiveSubjectsData: ",
+            lecturerElectiveSubjectsData
+          );
+          if (lecturerElectiveSubjectsData) {
+            lecturerElectiveSubjectsData?.forEach(async (subjectData) => {
+              await User.findOneAndUpdate(
+                { _id: lecturer?._id }, // Correct filter for the lecturer
+                {
+                  $pull: {
+                    "lecturerSchoolData.teachingSubjects.electives": {
+                      _id: subjectData?._id,
+                    },
+                  },
+                }
+              );
+            });
+          }
+        });
+      }
+      // Delete subject from each student's subjects array
+      if (studentsFound) {
+        studentsFound?.forEach(async (std) => {
+          if (
+            std &&
+            std?.studentSchoolData?.subjects?.includes(subjectDeleted?._id)
+          ) {
+            await User.findOneAndUpdate(
+              std?._id,
+              {
+                $pull: {
+                  "studentSchoolData.subjects": subjectDeleted?._id,
+                },
+              },
+              { new: true }
+            );
+          }
+        });
+      }
+      // Delete subject from either main program or sub-division program
+      if (
+        mainProgramFound &&
+        mainProgramFound?.electiveSubjects?.includes(subjectDeleted?._id)
+      ) {
+        await Program.findOneAndUpdate(
+          mainProgramFound?._id,
+          {
+            $pull: {
+              electiveSubjects: subjectDeleted?._id,
+            },
+          },
+          { new: true }
+        );
+      }
+      if (
+        divisionProgramFound &&
+        divisionProgramFound?.electiveSubjects?.includes(subjectDeleted?._id)
+      ) {
+        await ProgramDivision.findOneAndUpdate(
+          divisionProgramFound?._id,
+          {
+            $pull: {
+              electiveSubjects: subjectDeleted?._id,
+            },
+          },
+          { new: true }
+        );
+      }
+    }
+    res.status(201).json({
+      successMessage: "Subject deleted successfully!",
+      subjectDeleted,
+    });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       errorMessage: {
-        message: ["Something went wrong!"],
+        message: ["Something went wrong!", error?.message],
       },
     });
   }

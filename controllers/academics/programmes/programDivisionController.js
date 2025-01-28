@@ -9,7 +9,7 @@ module.exports.createDivisionProgram = async (req, res) => {
   console.log(data);
   try {
     //Find Admin
-    const adminFound = await User.findOne({ _id: data?.createdBy });
+    const adminFound = await User.findOne({ _id: currentUser?.id });
     if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {

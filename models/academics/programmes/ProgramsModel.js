@@ -94,6 +94,13 @@ const programSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    previouslyUpdatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    previousUpdateDate: {
+      type: Date,
+    },
     deletedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

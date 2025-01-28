@@ -39,6 +39,13 @@ const subjectSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    previouslyUpdatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    previouslyUpdateDate: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

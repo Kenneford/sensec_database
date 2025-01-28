@@ -7,6 +7,7 @@ const {
   updateProgram,
   deleteProgram,
   getAllFlattenedProgrammes,
+  getAllProgramStudents,
 } = require("../../../controllers/academics/programmes/programController");
 const {
   createDivisionProgram,
@@ -48,16 +49,6 @@ router.put(
   }),
   updateProgram
 );
-router.delete(
-  "/academics/programs/:programId/delete",
-  authUser,
-  authUserRole({
-    userRoles: {
-      admin: "Admin",
-    },
-  }),
-  deleteProgram
-);
 
 // Division programmes
 router.post(
@@ -73,6 +64,10 @@ router.post(
 router.get(
   "/academics/programs/:programId/divisions/fetch_all",
   getAllDivisionPrograms
+);
+router.get(
+  "/academics/programs/:programId/students/fetch_all",
+  getAllProgramStudents
 );
 router.get(
   "/academics/programs/divisions/fetch_all",
@@ -91,6 +86,16 @@ router.put(
     },
   }),
   updateDivisionProgram
+);
+router.delete(
+  "/academics/programs/:programId/delete",
+  authUser,
+  authUserRole({
+    userRoles: {
+      admin: "Admin",
+    },
+  }),
+  deleteProgram
 );
 router.delete(
   "/academics/programs/:programId/divisions/delete",
