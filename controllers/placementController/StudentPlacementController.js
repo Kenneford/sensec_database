@@ -12,11 +12,11 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
     const adminFound = await User.findOne({ _id: currentUser?.id });
     if (
       !adminFound ||
-      (currentUser && !currentUser?.roles?.includes("admin"))
+      (currentUser && !currentUser?.roles?.includes("Admin"))
     ) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation denied! You're not an admin!"],
         },
       });
       return;
@@ -24,7 +24,7 @@ module.exports.uploadPlacementFile = async (req, res, next) => {
     if (currentUser?.id !== data?.uploadedBy) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation Denied! You're not an admin!"],
         },
       });
       return;

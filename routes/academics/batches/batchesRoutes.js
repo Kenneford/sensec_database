@@ -15,7 +15,7 @@ const router = require("express").Router();
 router.post(
   "/academics/batches/create",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   createBatch
 );
 router.get("/academics/batches/fetch_all", fetchAllBatches);
@@ -23,13 +23,13 @@ router.get("/academics/batches/:batchId/fetch", fetchSingleBatch);
 router.put(
   "/academics/batches/:batchId/update",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   updateBatch
 );
 router.delete(
   "/academics/batches/:batchId/delete",
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   deleteBatch
 );
 

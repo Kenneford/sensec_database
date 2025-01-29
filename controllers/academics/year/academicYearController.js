@@ -10,7 +10,7 @@ module.exports.createAcademicYear = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
@@ -146,7 +146,7 @@ exports.updateAcademicYear = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
@@ -213,7 +213,7 @@ exports.deleteAcademicYear = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
