@@ -531,6 +531,10 @@ module.exports.searchClassAttendance = async (req, res) => {
   const data = req.body;
   console.log(data, "L-446");
   try {
+    const parseDate = (dateString) => {
+      const [day, month, year] = dateString.split("/").map(Number); // Extract day, month, year
+      return new Date(year, month - 1, day); // Create a JavaScript Date object
+    };
     if (!data) {
       res.status(403).json({
         errorMessage: {
@@ -565,9 +569,9 @@ module.exports.searchClassAttendance = async (req, res) => {
     }
     //Search Class Attendance
     let foundClassAttendance;
-    // Search By Year
+    // Search By Year✅
     if (data?.year) {
-      foundClassAttendance = await ClassAttendance.find({
+      const foundAttendance = await ClassAttendance.find({
         year: data?.year,
         lecturer: data?.lecturer,
         classLevelSection: data?.classSection,
@@ -590,13 +594,23 @@ module.exports.searchClassAttendance = async (req, res) => {
           ],
         },
       ]);
+      const transformedAttendance = foundAttendance.map((attendance) => ({
+        _id: attendance?._id,
+        classLevelSection: attendance?.classLevelSection,
+        students: attendance?.students,
+        lecturer: attendance?.lecturer,
+        semester: attendance?.semester,
+        year: attendance?.year,
+        dayOfTheWeek: attendance?.dayOfTheWeek,
+        time: attendance?.time,
+        createdAt: attendance?.createdAt,
+        updatedAt: attendance?.updatedAt,
+        date: parseDate(attendance?.date),
+      }));
+      foundClassAttendance = transformedAttendance;
     }
-    // Search By Date
+    // Search By Month✅
     if (data?.monthRange) {
-      const parseDate = (dateString) => {
-        const [day, month, year] = dateString.split("/").map(Number); // Extract day, month, year
-        return new Date(year, month - 1, day); // Create a JavaScript Date object
-      };
       const allAttendance = await ClassAttendance.find({
         // date: {
         //   $gte: parseDate(data?.monthRange?.start),
@@ -639,8 +653,6 @@ module.exports.searchClassAttendance = async (req, res) => {
         };
         return attObj;
       });
-      console.log("updatedAttendance: ", updatedAttendance);
-
       const filteredAttendance = updatedAttendance?.filter(
         (att) =>
           att?.date >= parseDate(data?.monthRange?.start) &&
@@ -648,9 +660,9 @@ module.exports.searchClassAttendance = async (req, res) => {
       );
       foundClassAttendance = filteredAttendance;
     }
-    // Search By Date
+    // Search By Date✅
     if (data?.date) {
-      foundClassAttendance = await ClassAttendance.find({
+      const allAttendance = await ClassAttendance.find({
         date: data?.date,
         lecturer: data?.lecturer,
         classLevelSection: data?.classSection,
@@ -673,10 +685,27 @@ module.exports.searchClassAttendance = async (req, res) => {
           ],
         },
       ]);
+      const updatedAttendance = allAttendance?.map((att) => {
+        const attObj = {
+          _id: att?._id,
+          classLevelSection: att?.classLevelSection,
+          students: att?.students,
+          lecturer: att?.lecturer,
+          semester: att?.semester,
+          year: att?.year,
+          dayOfTheWeek: att?.dayOfTheWeek,
+          time: att?.time,
+          createdAt: att?.createdAt,
+          updatedAt: att?.updatedAt,
+          date: parseDate(att?.date),
+        };
+        return attObj;
+      });
+      foundClassAttendance = updatedAttendance;
     }
     // Search By Date-Range
     if (data?.dateRange) {
-      foundClassAttendance = await ClassAttendance.find({
+      const allAttendance = await ClassAttendance.find({
         date: { $gte: data?.dateRange?.from, $lte: data?.dateRange?.to },
         lecturer: data?.lecturer,
         classLevelSection: data?.classSection,
@@ -699,10 +728,27 @@ module.exports.searchClassAttendance = async (req, res) => {
           ],
         },
       ]);
+      const updatedAttendance = allAttendance?.map((att) => {
+        const attObj = {
+          _id: att?._id,
+          classLevelSection: att?.classLevelSection,
+          students: att?.students,
+          lecturer: att?.lecturer,
+          semester: att?.semester,
+          year: att?.year,
+          dayOfTheWeek: att?.dayOfTheWeek,
+          time: att?.time,
+          createdAt: att?.createdAt,
+          updatedAt: att?.updatedAt,
+          date: parseDate(att?.date),
+        };
+        return attObj;
+      });
+      foundClassAttendance = updatedAttendance;
     }
     // Search By Semester
     if (data?.semester) {
-      foundClassAttendance = await ClassAttendance.find({
+      const allAttendance = await ClassAttendance.find({
         semester: data?.semester,
         lecturer: data?.lecturer,
         classLevelSection: data?.classSection,
@@ -725,6 +771,23 @@ module.exports.searchClassAttendance = async (req, res) => {
           ],
         },
       ]);
+      const updatedAttendance = allAttendance?.map((att) => {
+        const attObj = {
+          _id: att?._id,
+          classLevelSection: att?.classLevelSection,
+          students: att?.students,
+          lecturer: att?.lecturer,
+          semester: att?.semester,
+          year: att?.year,
+          dayOfTheWeek: att?.dayOfTheWeek,
+          time: att?.time,
+          createdAt: att?.createdAt,
+          updatedAt: att?.updatedAt,
+          date: parseDate(att?.date),
+        };
+        return attObj;
+      });
+      foundClassAttendance = updatedAttendance;
     }
     res.status(200).json({
       successMessage: "Attendance Fetched Successfully",
