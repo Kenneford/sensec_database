@@ -19,7 +19,7 @@ router.post(
   "/students/placement/excel_file/upload",
   uploadExcelFile.single("placementExcelFile"),
   authUser,
-  authUserRole({ userRoles: { admin: "admin" } }),
+  authUserRole({ userRoles: { admin: "Admin" } }),
   uploadPlacementFile
 );
 router.put("/students/:studentIndexNo/placement/update", updatePlacementData);

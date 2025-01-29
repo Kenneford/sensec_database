@@ -36,10 +36,10 @@ module.exports.createBatch = async (req, res) => {
     if (data?.createdBy) {
       //Find Admin
       const adminFound = await User.findOne({ _id: currentUser?.id });
-      if (!adminFound || !currentUser?.roles?.includes("admin")) {
+      if (!adminFound || !currentUser?.roles?.includes("Admin")) {
         res.status(403).json({
           errorMessage: {
-            message: ["Operation Denied! You're Not An Admin!"],
+            message: ["Operation Denied! You're not an admin!"],
           },
         });
         return;
@@ -47,7 +47,7 @@ module.exports.createBatch = async (req, res) => {
       if (currentUser?.id !== data?.createdBy) {
         res.status(403).json({
           errorMessage: {
-            message: ["Operation Denied! You're Not An Admin!"],
+            message: ["Operation Denied! You're not an admin!"],
           },
         });
         return;
@@ -158,7 +158,7 @@ module.exports.updateBatch = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
@@ -167,7 +167,7 @@ module.exports.updateBatch = async (req, res) => {
     if (currentUser?.id !== data?.lastUpdatedBy) {
       res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation Denied! You're not an admin!"],
         },
       });
       return;
@@ -233,7 +233,7 @@ module.exports.deleteBatch = async (req, res) => {
   try {
     // Find admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
-    if (!adminFound || !adminFound?.roles?.includes("admin")) {
+    if (!adminFound || !adminFound?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: { message: ["Operation denied! You're not an admin!"] },
       });
