@@ -488,7 +488,7 @@ async function assignElectiveSubject(req, res, next) {
       });
       return;
     }
-    //Find existing subject lecturer Lecturer
+    //Find existing subject lecturer
     const existingSubjectLecturer = await User.findOne({
       "lecturerSchoolData.teachingSubjects.electives": {
         $elemMatch: {
@@ -721,10 +721,6 @@ async function removeElectiveSubject(req, res, next) {
               electiveData?.subject?.toString() ===
               subjectFound?._id?.toString()
           );
-        console.log(
-          "lecturerMultiElectiveSubjectsData: ",
-          lecturerMultiElectiveSubjectsData
-        );
 
         const lecturerElectiveSubjData =
           lecturerFound?.lecturerSchoolData?.teachingSubjects?.electives?.find(
@@ -736,7 +732,6 @@ async function removeElectiveSubject(req, res, next) {
               electiveData?.programDivision?.toString() ===
                 divisionProgram?._id?.toString()
           );
-        console.log("L-582: ", lecturerElectiveSubjData);
         // Update current Teacher's teachingSubjects data
         await User.findOneAndUpdate(
           { _id: lecturerFound?._id }, // Correct filter for the lecturer
