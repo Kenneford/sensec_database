@@ -314,16 +314,66 @@ module.exports.approveStudentEnrollment = async (req, res) => {
         },
         { new: true }
       );
-      if (studentApproved && admin) {
-        await User.findOneAndUpdate(
-          admin?._id,
-          {
-            $push: {
-              "adminActionsData.registeredStudents": studentApproved?._id,
-            },
-          },
-          { upsert: true }
-        );
+      if (student?.studentSchoolData?.subjects > 0) {
+        student?.studentSchoolData?.subjects?.forEach(async (subj) => {
+          if (subj?.subjectInfo?.program?.type === "ProgramDivision") {
+            //Find existing subject lecturer
+            const subjectLecturer = await User.findOne({
+              "lecturerSchoolData.teachingSubjects.electives": {
+                $elemMatch: {
+                  subject: subj?._id,
+                  classLevel: student?.studentSchoolData?.currentClassLevel,
+                  programDivision:
+                    student?.studentSchoolData?.program?.programId,
+                },
+              },
+            });
+            const lecturerElectiveSubjData =
+              subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+                (electiveData) =>
+                  electiveData?.subject?.toString() === subj?._id?.toString() &&
+                  electiveData?.classLevel?.toString() ===
+                    student?.studentSchoolData?.currentClassLevel?.toString() &&
+                  electiveData?.programDivision?.toString() ===
+                    student?.studentSchoolData?.program?.programId?.toString()
+              );
+            if (
+              lecturerElectiveSubjData &&
+              !lecturerElectiveSubjData?.students?.includes(student?._id)
+            ) {
+              lecturerElectiveSubjData?.students?.push(student?._id);
+              await lecturerElectiveSubjData.save();
+            }
+          }
+          if (subj?.subjectInfo?.program?.type === "Program") {
+            //Find existing subject lecturer
+            const subjectLecturer = await User.findOne({
+              "lecturerSchoolData.teachingSubjects.electives": {
+                $elemMatch: {
+                  subject: subj?._id,
+                  classLevel: student?.studentSchoolData?.currentClassLevel,
+                  program: student?.studentSchoolData?.program?.programId,
+                },
+              },
+            });
+            const lecturerElectiveSubjData =
+              subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+                (electiveData) =>
+                  electiveData?.subject?.toString() === subj?._id?.toString() &&
+                  electiveData?.classLevel?.toString() ===
+                    student?.studentSchoolData?.currentClassLevel?.toString() &&
+                  electiveData?.programDivision?.toString() ===
+                    divisionProgram?._id?.toString()
+              );
+            if (
+              lecturerElectiveSubjData &&
+              !lecturerElectiveSubjData?.students?.includes(student?._id)
+            ) {
+              lecturerElectiveSubjData?.students?.push(student?._id);
+              await lecturerElectiveSubjData.save();
+            }
+          }
+        });
       }
       // Update student's current class section
       if (
