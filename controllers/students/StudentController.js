@@ -317,14 +317,21 @@ module.exports.approveStudentEnrollment = async (req, res) => {
       if (student?.studentSchoolData?.subjects > 0) {
         student?.studentSchoolData?.subjects?.forEach(async (subj) => {
           if (subj?.subjectInfo?.program?.type === "ProgramDivision") {
+            // Extract student's programme ID
+            const programId =
+              student?.studentSchoolData?.program?.programId instanceof
+              mongoose.Types.ObjectId
+                ? student.studentSchoolData.program.programId
+                : new mongoose.Types.ObjectId(
+                    student?.studentSchoolData?.program?.programId?.toString()
+                  );
             //Find existing subject lecturer
             const subjectLecturer = await User.findOne({
               "lecturerSchoolData.teachingSubjects.electives": {
                 $elemMatch: {
                   subject: subj?._id,
                   classLevel: student?.studentSchoolData?.currentClassLevel,
-                  programDivision:
-                    student?.studentSchoolData?.program?.programId,
+                  programDivision: programId,
                 },
               },
             });
