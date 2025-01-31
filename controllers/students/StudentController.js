@@ -328,24 +328,26 @@ module.exports.approveStudentEnrollment = async (req, res) => {
                 },
               },
             });
-            const lecturerElectiveSubjData =
-              subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
-                (electiveData) =>
-                  electiveData?.subject?.toString() === subj?._id?.toString() &&
-                  electiveData?.classLevel?.toString() ===
-                    student?.studentSchoolData?.currentClassLevel?.toString() &&
-                  electiveData?.programDivision?.toString() ===
-                    student?.studentSchoolData?.program?.programId?.toString()
-              );
-            if (
-              lecturerElectiveSubjData &&
-              !lecturerElectiveSubjData?.students?.includes(student?._id)
-            ) {
-              lecturerElectiveSubjData?.students?.push(student?._id);
-              await lecturerElectiveSubjData.save();
+            if (subjectLecturer) {
+              const lecturerElectiveSubjData =
+                subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+                  (electiveData) =>
+                    electiveData?.subject?.toString() ===
+                      subj?._id?.toString() &&
+                    electiveData?.classLevel?.toString() ===
+                      student?.studentSchoolData?.currentClassLevel?.toString() &&
+                    electiveData?.programDivision?.toString() ===
+                      student?.studentSchoolData?.program?.programId?.toString()
+                );
+              if (
+                lecturerElectiveSubjData &&
+                !lecturerElectiveSubjData?.students?.includes(student?._id)
+              ) {
+                lecturerElectiveSubjData?.students?.push(student?._id);
+                await subjectLecturer.save();
+              }
             }
-          }
-          if (subj?.subjectInfo?.program?.type === "Program") {
+          } else if (subj?.subjectInfo?.program?.type === "Program") {
             //Find existing subject lecturer
             const subjectLecturer = await User.findOne({
               "lecturerSchoolData.teachingSubjects.electives": {
@@ -356,21 +358,24 @@ module.exports.approveStudentEnrollment = async (req, res) => {
                 },
               },
             });
-            const lecturerElectiveSubjData =
-              subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
-                (electiveData) =>
-                  electiveData?.subject?.toString() === subj?._id?.toString() &&
-                  electiveData?.classLevel?.toString() ===
-                    student?.studentSchoolData?.currentClassLevel?.toString() &&
-                  electiveData?.programDivision?.toString() ===
-                    divisionProgram?._id?.toString()
-              );
-            if (
-              lecturerElectiveSubjData &&
-              !lecturerElectiveSubjData?.students?.includes(student?._id)
-            ) {
-              lecturerElectiveSubjData?.students?.push(student?._id);
-              await lecturerElectiveSubjData.save();
+            if (subjectLecturer) {
+              const lecturerElectiveSubjData =
+                subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+                  (electiveData) =>
+                    electiveData?.subject?.toString() ===
+                      subj?._id?.toString() &&
+                    electiveData?.classLevel?.toString() ===
+                      student?.studentSchoolData?.currentClassLevel?.toString() &&
+                    electiveData?.program?.toString() ===
+                      student?.studentSchoolData?.program?.programId?.toString()
+                );
+              if (
+                lecturerElectiveSubjData &&
+                !lecturerElectiveSubjData?.students?.includes(student?._id)
+              ) {
+                lecturerElectiveSubjData?.students?.push(student?._id);
+                await subjectLecturer.save();
+              }
             }
           }
         });
