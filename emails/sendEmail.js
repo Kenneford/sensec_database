@@ -26,6 +26,7 @@ const UserVerificationData = require("../models/user/userRefs/signUpModel/UserVe
 const AcademicTerm = require("../models/academics/term/AcademicTermModel");
 const ClassLevelSection = require("../models/academics/class/ClassLevelSectionModel");
 const Program = require("../models/academics/programmes/ProgramsModel");
+const ProgramDivision = require("../models/academics/programmes/divisions/ProgramDivisionModel");
 
 const sendVerificationEmail = async (req, res, next) => {
   // Get verification data
@@ -214,8 +215,11 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
         foundStudent?.studentSchoolData?.currentClassLevelSection,
     });
     //Find student's Program✅
-    const programFound = await Program.findOne({
-      _id: foundStudent?.studentSchoolData?.program,
+    const mainProgramFound = await Program.findOne({
+      _id: foundStudent?.studentSchoolData?.program?.programId,
+    });
+    const divisionProgramFound = await ProgramDivision.findOne({
+      _id: foundStudent?.studentSchoolData?.program?.programId,
     });
     //Find student's Class
     const studentClass = await ClassLevelSection.findOne({
@@ -257,7 +261,11 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
       subject: "Your Enrollment Status",
       template: "enrollmentApprovalEmail",
       context: {
-        studentProgram: programFound ? programFound?.name : "Unknown",
+        studentProgram: mainProgramFound
+          ? mainProgramFound?.name
+          : divisionProgramFound
+          ? divisionProgramFound?.divisionName
+          : "Unknown",
         studentClass: studentClass ? studentClass?.label : "Unknown",
         studentLecturer: studentLecturer?.personalInfo
           ? studentLecturer?.personalInfo?.fullName
@@ -267,8 +275,7 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
         nextSemester: nextSemester?.from,
         userImage: foundStudent?.personalInfo?.profilePicture.url,
         uniqueId: foundStudent?.uniqueId,
-        firstName: foundStudent?.personalInfo?.firstName,
-        lastName: foundStudent?.personalInfo?.lastName,
+        fullName: foundStudent?.personalInfo?.fullName,
         company: "Senya Senior High School",
         urlLink: `${url}/sensec/students/enrollment/online/${foundStudent?.uniqueId}/success`,
         linkText: "Visit Our Website",

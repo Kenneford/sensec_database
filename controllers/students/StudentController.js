@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const { sendEnrollmentApprovalEmail } = require("../../emails/sendEmail");
 const { cloudinary } = require("../../middlewares/cloudinary/cloudinary");
 const {
@@ -6,6 +7,7 @@ const {
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
 const ProgramDivision = require("../../models/academics/programmes/divisions/ProgramDivisionModel");
 const Program = require("../../models/academics/programmes/ProgramsModel");
+const Subject = require("../../models/academics/subjects/SubjectModel");
 const AcademicYear = require("../../models/academics/year/AcademicYearModel");
 const User = require("../../models/user/UserModel");
 
@@ -280,6 +282,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
 module.exports.approveStudentEnrollment = async (req, res) => {
   const { enrollmentApprovedBy } = req.body;
   const student = req?.enrollmentApprovalData?.studentFound;
+
   try {
     //Find Student Class Section
     const studentClassSection = await ClassLevelSection.findOne({
@@ -300,42 +303,116 @@ module.exports.approveStudentEnrollment = async (req, res) => {
       student?.studentStatusExtend?.enrollmentStatus === "pending"
     ) {
       const studentApproved = await User.findOneAndUpdate(
-        { _id: student?.id },
+        { _id: student?._id },
         {
           "studentStatusExtend.enrollmentStatus": "approved",
           "studentStatusExtend.isStudent": true,
           "studentStatusExtend.enrollmentApprovedBy": admin?._id,
-          // "studentSchoolData.currentClassLevelSection":
-          //   studentClassSection?._id,
-          // "studentSchoolData.currentClassTeacher":
-          //   studentClassSection?.currentTeacher,
           "studentStatusExtend.enrollmentApprovementDate":
             new Date().toISOString(),
         },
         { new: true }
       );
-      if (student?.studentSchoolData?.subjects > 0) {
-        student?.studentSchoolData?.subjects?.forEach(async (subj) => {
-          if (subj?.subjectInfo?.program?.type === "ProgramDivision") {
-            // Extract student's programme ID
-            const programId =
-              student?.studentSchoolData?.program?.programId instanceof
-              mongoose.Types.ObjectId
-                ? student.studentSchoolData.program.programId
-                : new mongoose.Types.ObjectId(
-                    student?.studentSchoolData?.program?.programId?.toString()
-                  );
-            //Find existing subject lecturer
+      // if (student?.studentSchoolData?.subjects > 0) {
+      //   student?.studentSchoolData?.subjects?.forEach(async (subj) => {
+      //     if (subj?.subjectInfo?.program?.type === "ProgramDivision") {
+      //       // Extract student's programme ID
+      //       const programId =
+      //         student?.studentSchoolData?.program?.programId instanceof
+      //         mongoose.Types.ObjectId
+      //           ? student.studentSchoolData.program.programId
+      //           : new mongoose.Types.ObjectId(
+      //               student?.studentSchoolData?.program?.programId?.toString()
+      //             );
+      //       //Find existing subject lecturer
+      //       const subjectLecturer = await User.findOne({
+      //         "lecturerSchoolData.teachingSubjects.electives": {
+      //           $elemMatch: {
+      //             subject: subj?._id,
+      //             classLevel: student?.studentSchoolData?.currentClassLevel,
+      //             programDivision:
+      //               student?.studentSchoolData?.program?.programId,
+      //           },
+      //         },
+      //       });
+      //       if (subjectLecturer) {
+      //         const lecturerElectiveSubjData =
+      //           subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+      //             (electiveData) =>
+      //               electiveData?.subject?.toString() ===
+      //                 subj?._id?.toString() &&
+      //               electiveData?.classLevel?.toString() ===
+      //                 student?.studentSchoolData?.currentClassLevel?.toString() &&
+      //               electiveData?.programDivision?.toString() ===
+      //                 student?.studentSchoolData?.program?.programId?.toString()
+      //           );
+      //         if (
+      //           lecturerElectiveSubjData &&
+      //           !lecturerElectiveSubjData?.students?.includes(student?._id)
+      //         ) {
+      //           lecturerElectiveSubjData?.students?.push(student?._id);
+      //           await subjectLecturer.save();
+      //         }
+      //       }
+      //     } else if (subj?.subjectInfo?.program?.type === "Program") {
+      //       //Find existing subject lecturer
+      //       const subjectLecturer = await User.findOne({
+      //         "lecturerSchoolData.teachingSubjects.electives": {
+      //           $elemMatch: {
+      //             subject: subj?._id,
+      //             classLevel: student?.studentSchoolData?.currentClassLevel,
+      //             program: student?.studentSchoolData?.program?.programId,
+      //           },
+      //         },
+      //       });
+      //       if (subjectLecturer) {
+      //         const lecturerElectiveSubjData =
+      //           subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+      //             (electiveData) =>
+      //               electiveData?.subject?.toString() ===
+      //                 subj?._id?.toString() &&
+      //               electiveData?.classLevel?.toString() ===
+      //                 student?.studentSchoolData?.currentClassLevel?.toString() &&
+      //               electiveData?.program?.toString() ===
+      //                 student?.studentSchoolData?.program?.programId?.toString()
+      //           );
+      //         if (
+      //           lecturerElectiveSubjData &&
+      //           !lecturerElectiveSubjData?.students?.includes(student?._id)
+      //         ) {
+      //           lecturerElectiveSubjData?.students?.push(student?._id);
+      //           await subjectLecturer.save();
+      //         }
+      //       }
+      //     }
+      //   });
+      // }
+      if (student?.studentSchoolData?.subjects?.length > 0) {
+        // Extract student's programme ID
+        const programId =
+          student?.studentSchoolData?.program?.programId instanceof
+          mongoose.Types.ObjectId
+            ? student.studentSchoolData.program.programId
+            : new mongoose.Types.ObjectId(
+                student?.studentSchoolData?.program?.programId?.toString()
+              );
+        for (const subj of student.studentSchoolData.subjects) {
+          // Find subject data
+          const subjectFound = await Subject.findOne({ _id: subj });
+          if (subjectFound?.subjectInfo?.program?.type === "ProgramDivision") {
+            // Find existing subject lecturer
             const subjectLecturer = await User.findOne({
               "lecturerSchoolData.teachingSubjects.electives": {
                 $elemMatch: {
-                  subject: subj?._id,
+                  subject: subjectFound?._id,
                   classLevel: student?.studentSchoolData?.currentClassLevel,
                   programDivision: programId,
                 },
               },
             });
+
             if (subjectLecturer) {
+              // Locate the specific elective subject data
               const lecturerElectiveSubjData =
                 subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
                   (electiveData) =>
@@ -343,29 +420,34 @@ module.exports.approveStudentEnrollment = async (req, res) => {
                       subj?._id?.toString() &&
                     electiveData?.classLevel?.toString() ===
                       student?.studentSchoolData?.currentClassLevel?.toString() &&
-                    electiveData?.programDivision?.toString() ===
-                      student?.studentSchoolData?.program?.programId?.toString()
+                    electiveData.programDivision?.toString() ===
+                      student?.studentSchoolData?.program?.programId.toString()
                 );
+
+              // Ensure student is not already in the list
               if (
                 lecturerElectiveSubjData &&
-                !lecturerElectiveSubjData?.students?.includes(student?._id)
+                !lecturerElectiveSubjData?.students?.includes(student._id)
               ) {
-                lecturerElectiveSubjData?.students?.push(student?._id);
-                await subjectLecturer.save();
+                lecturerElectiveSubjData?.students?.push(student._id);
+                await subjectLecturer.save(); // Save the updated document
               }
             }
-          } else if (subj?.subjectInfo?.program?.type === "Program") {
-            //Find existing subject lecturer
+          }
+          if (subjectFound?.subjectInfo?.program?.type === "Program") {
+            // Find existing subject lecturer
             const subjectLecturer = await User.findOne({
               "lecturerSchoolData.teachingSubjects.electives": {
                 $elemMatch: {
-                  subject: subj?._id,
+                  subject: subjectFound?._id,
                   classLevel: student?.studentSchoolData?.currentClassLevel,
-                  program: student?.studentSchoolData?.program?.programId,
+                  program: programId,
                 },
               },
             });
+
             if (subjectLecturer) {
+              // Locate the specific elective subject data
               const lecturerElectiveSubjData =
                 subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
                   (electiveData) =>
@@ -376,17 +458,19 @@ module.exports.approveStudentEnrollment = async (req, res) => {
                     electiveData?.program?.toString() ===
                       student?.studentSchoolData?.program?.programId?.toString()
                 );
+
               if (
                 lecturerElectiveSubjData &&
                 !lecturerElectiveSubjData?.students?.includes(student?._id)
               ) {
                 lecturerElectiveSubjData?.students?.push(student?._id);
-                await subjectLecturer.save();
+                await subjectLecturer.save(); // Save changes
               }
             }
           }
-        });
+        }
       }
+
       // Update student's current class section
       if (
         studentClassSection &&
@@ -428,6 +512,8 @@ module.exports.approveStudentEnrollment = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({
       errorMessage: {
         message: [`Internal Server Error!`],
