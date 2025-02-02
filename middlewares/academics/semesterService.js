@@ -59,7 +59,7 @@ module.exports.updateCurrentSemester = async (res = null) => {
   try {
     // Fetch all semesters
     const semesters = await AcademicTerm.find({});
-    if (!semesters) {
+    if (!semesters || semesters.length === 0) {
       console.log("No semesters found in the database!");
       if (res)
         return res.status(404).json({
@@ -78,13 +78,16 @@ module.exports.updateCurrentSemester = async (res = null) => {
           errorMessage: { message: ["No active semester found!"] },
         });
     }
-    // Update database: mark the active semester
-    await AcademicTerm.updateMany({}, { $set: { isCurrent: false } }); // Reset all
+    // Update all semesters to isCurrent: false
+    await AcademicTerm.updateMany(
+      {},
+      { $set: { isCurrent: false, isNext: false } }
+    );
+    // Mark the current semester as active
     const updatedAcademicTerm = await AcademicTerm.findOneAndUpdate(
-      currentSemester?._id,
+      { _id: currentSemester?._id },
       {
-        $set: { isCurrent: true },
-        $set: { isNext: false },
+        $set: { isCurrent: true, isNext: false },
       },
       { new: true }
     );
@@ -93,23 +96,19 @@ module.exports.updateCurrentSemester = async (res = null) => {
       from: { $gt: currentSemester?.to },
       isNext: true,
     }).sort({ from: 1 }); // Get the next semester by closest start date
+    if (!nextSemester) {
+      // Find the upcoming semester based on dates
+      const upcomingSemester = await AcademicTerm.findOne({
+        from: { $gt: currentSemester.to },
+      }).sort({ from: 1 });
 
-    if (nextSemester) {
-      console.log(`Semester ${nextSemester?.name} is already marked as next.`);
-      return; // Skip updating if the next semester is already correctly set
+      if (upcomingSemester) {
+        upcomingSemester.isNext = true;
+        await upcomingSemester.save();
+        console.log(`Semester ${upcomingSemester.name} is now marked as next.`);
+      }
     }
-    // Step 3: Find the actual next semester based on dates
-    const upcomingSemester = await AcademicTerm.findOne({
-      from: { $gt: currentSemester?.to },
-    }).sort({ from: 1 }); // Get the next semester by closest start date
-    // Mark the upcoming semester as next
-    upcomingSemester.isNext = true;
-    await upcomingSemester.save();
-
-    console.log(`Semester ${upcomingSemester?.name} is now marked as next.`);
-    console.log(
-      `Current semester updated to: ${currentSemester?.name} ${currentSemester?.year}`
-    );
+    console.log(`Current semester updated to: ${currentSemester?.name}`);
     if (res)
       res.status(201).json({
         successMessage: "Current semester updated successfully!",
@@ -131,58 +130,83 @@ module.exports.updateAcademicYear = async () => {
   const currentYear = now.getFullYear();
   const month = now.getMonth(); // January = 0, December = 11
 
-  let academicYearStart, academicYearEnd;
-
-  // Determine the academic year based on the current month
-  if (month >= 8) {
-    // From September to December (Fall)
-    academicYearStart = currentYear; // Start of academic year
-    academicYearEnd = currentYear + 1; // End of academic year (next year)
-  } else {
-    // From January to August (Spring/Summer)
-    academicYearStart = currentYear - 1; // Previous year as the start of academic year
-    academicYearEnd = currentYear; // Current year as the end of academic year
-  }
-
-  // Format academic year as "YYYY/YYYY"
-  const yearRange = `${academicYearStart}/${academicYearEnd}`;
-  //   const year = `${academicYearStart}-${academicYearEnd}`; // You could use "2024-2025" instead of "2024/2025"
-
   try {
-    // Step 1: Check if the academic year already exists
-    const existingYear = await AcademicYear.findOne({ yearRange });
+    let academicYearStart, academicYearEnd;
 
-    if (existingYear) {
-      // Step 2: If the academic year exists, just update the 'isCurrent' field
-      // Set all other academic years to 'isCurrent: false'
-      await AcademicYear.updateMany({}, { $set: { isCurrent: false } });
-
-      // Now set the current academic year as 'isCurrent: true'
-      await AcademicYear.updateOne(
-        { yearRange }, // We match by the `year` field
-        { $set: { isCurrent: true } } // Mark this academic year as current
-      );
-
-      console.log(`Academic Year ${yearRange} is already set as current.`);
+    // Determine academic year range
+    if (month >= 8) {
+      academicYearStart = currentYear;
+      academicYearEnd = currentYear + 1;
     } else {
-      // Step 3: If the academic year does not exist, create it
-      const newAcademicYear = new AcademicYear({
+      academicYearStart = currentYear - 1;
+      academicYearEnd = currentYear;
+    }
+
+    const yearRange = `${academicYearStart}/${academicYearEnd}`;
+
+    // Check if the current academic year exists
+    let currentAcademicYear = await AcademicYear.findOne({ yearRange });
+
+    if (!currentAcademicYear) {
+      console.log(`Creating new Academic Year: ${yearRange}`);
+      currentAcademicYear = new AcademicYear({
         fromYear: academicYearStart.toString(),
         toYear: academicYearEnd.toString(),
-        isCurrent: true, // Mark this new year as the current year
+        isCurrent: true,
+        isNext: false,
         isAutoCreated: true,
+        yearRange,
       });
-
-      await newAcademicYear.save(); // Save the new academic year to DB
-
-      // Ensure no other academic year is marked as current
-      await AcademicYear.updateMany(
-        { yearRange: { $ne: yearRange } }, // Update all other years except the current one
-        { $set: { isCurrent: false } }
-      );
-
-      console.log(`Created new Academic Year: ${yearRange}`);
+      await currentAcademicYear.save();
+    } else {
+      console.log(`Academic Year ${yearRange} already exists.`);
     }
+
+    // Reset `isCurrent` for all years and update the current one
+    await AcademicYear.bulkWrite([
+      {
+        updateMany: {
+          filter: {},
+          update: { $set: { isCurrent: false, isNext: false } },
+        },
+      },
+      {
+        updateOne: {
+          filter: { yearRange },
+          update: { $set: { isCurrent: true } },
+          upsert: true,
+        },
+      },
+    ]);
+
+    // Find the next academic year (starts after the current one)
+    let nextAcademicYear = await AcademicYear.findOne({
+      fromYear: academicYearEnd.toString(), // The next academic year starts after the current one
+    });
+
+    if (!nextAcademicYear) {
+      console.log(
+        `Creating next Academic Year: ${academicYearEnd}/${academicYearEnd + 1}`
+      );
+      nextAcademicYear = new AcademicYear({
+        fromYear: academicYearEnd.toString(),
+        toYear: (academicYearEnd + 1).toString(),
+        isCurrent: false,
+        isNext: true,
+        isAutoCreated: true,
+        yearRange: `${academicYearEnd}/${academicYearEnd + 1}`,
+      });
+      await nextAcademicYear.save();
+    } else {
+      // Ensure it's marked as `isNext`
+      await AcademicYear.updateOne(
+        { _id: nextAcademicYear._id },
+        { $set: { isNext: true } }
+      );
+    }
+
+    console.log(`Updated current academic year: ${yearRange}`);
+    console.log(`Next academic year set to: ${nextAcademicYear.yearRange}`);
   } catch (error) {
     console.error("Error updating academic year:", error);
   }
