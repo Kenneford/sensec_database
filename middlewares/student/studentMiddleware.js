@@ -404,65 +404,32 @@ async function updateMultiApprovedStudentData(req, res, next) {
 
   try {
     //Check if students data is greater than 0
-    if (!students || students?.length < 1) {
-      res.status(404).json({
+    if (!students || students?.length === 0) {
+      return res.status(404).json({
         errorMessage: {
           message: [`No student data selected!`],
         },
       });
-      return;
     }
     //Find Admin
     const adminFound = await User.findOne({ _id: currentUser?.id });
     if (!adminFound || !currentUser?.roles?.includes("Admin")) {
-      res.status(403).json({
+      return res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation denied! You're not an admin!"],
         },
       });
-      return;
     }
     if (currentUser?.id !== enrollmentApprovedBy) {
-      res.status(403).json({
+      return res.status(403).json({
         errorMessage: {
-          message: ["Operation Denied! You're Not An Admin!"],
+          message: ["Operation denied! You're not an admin!"],
         },
       });
-      return;
     }
-    students.forEach(async (student) => {
-      //Find student
-      const studentFound = await User.findOne({ uniqueId: student?.uniqueId });
-      if (studentFound?.studentStatusExtend?.enrollmentStatus === "pending") {
-        // Push classLevel into his students classLevels array ✅
-        if (
-          !studentFound?.studentSchoolData?.classLevels?.includes(
-            studentFound?.studentSchoolData?.currentClassLevel
-          )
-        ) {
-          studentFound.studentSchoolData.classLevels.push(
-            studentFound?.studentSchoolData?.currentClassLevel
-          );
-          await studentFound.save();
-        }
-        // push current academic year into students academic years array ✅
-        if (
-          !studentFound?.studentSchoolData?.academicYears?.includes(
-            studentFound?.studentSchoolData?.currentAcademicYear
-          )
-        ) {
-          studentFound.studentSchoolData.academicYears.push(
-            studentFound?.studentSchoolData?.currentAcademicYear
-          );
-          await studentFound.save();
-        }
-      }
-      // console.log(students);
-      // console.log(studentsData);
-
-      req.multiEnrollmentApprovalData = { students, adminFound };
-      next();
-    });
+    req.multiEnrollmentApprovalData = { students, adminFound };
+    next();
+    // });
   } catch (error) {
     res.status(500).json({
       errorMessage: {
