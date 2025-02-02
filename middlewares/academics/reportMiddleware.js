@@ -403,7 +403,7 @@ async function multiCoreReport(req, res, next) {
 async function fetchMultiElectiveReport(req, res, next) {
   const currentUser = req.user;
   const data = req.body;
-  console.log(data);
+  // console.log(data);
   try {
     if (!data) {
       return res.status(500).json({
@@ -445,7 +445,7 @@ async function fetchMultiElectiveReport(req, res, next) {
       })
         .populate([{ path: "students" }])
         .lean();
-      console.log("existingMultiStudentsReport: ", existingMultiStudentsReport);
+      // console.log("existingMultiStudentsReport: ", existingMultiStudentsReport);
 
       if (existingMultiStudentsReport) {
         const allUsers = await User.find({});
