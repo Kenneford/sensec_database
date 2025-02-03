@@ -9,6 +9,7 @@ const {
   assignSubjectLecturer,
   removeSubjectLecturer,
   getAllSubjectLecturers,
+  getAllSubjectStudents,
 } = require("../../../controllers/academics/subjects/subjectController");
 const {
   validateSubjectData,
@@ -54,11 +55,22 @@ router.post(
 );
 router.get("/academics/subjects/fetch_all", getAllSubjects);
 router.get(
+  "/academics/subjects/students/fetch_all",
+  authUser,
+  authUserRole({
+    userRoles: {
+      admin: "Admin",
+      lecturer: "Lecturer",
+    },
+  }),
+  getAllSubjectStudents
+);
+router.get(
   "/academics/subjects/:subjectId/fetch",
   authUser,
   authUserRole({
     userRoles: {
-      admin: "admin",
+      admin: "Admin",
     },
   }),
   getSingleSubject

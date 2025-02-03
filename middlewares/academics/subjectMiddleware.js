@@ -228,11 +228,9 @@ async function programmeElectiveSubject(req, res, next) {
     const divisionProgramFound = await ProgramDivision.findOne({
       _id: data?.program,
     });
-    console.log(divisionProgramFound);
     const programFound = await Program.findOne({
       _id: data?.program,
     });
-    console.log(programFound);
     // Find main programme
     if (!programFound && !divisionProgramFound) {
       res.status(404).json({
@@ -293,13 +291,16 @@ async function programmeElectiveSubject(req, res, next) {
       // }
       // Push non-optional elective subject into each student's elective subjects✅
       if (subjectCreated && !subjectCreated?.subjectInfo?.isOptional) {
-        allStudents?.forEach(async (student) => {
+        for (const student of allStudents) {
+          const studentFound = await User.findOne({ _id: student?._id });
           if (
-            !student?.studentSchoolData?.subjects?.includes(subjectCreated?._id)
+            !studentFound?.studentSchoolData?.subjects?.includes(
+              subjectCreated?._id
+            )
           ) {
-            student?.studentSchoolData?.subjects?.push(subjectCreated?._id);
+            // student?.studentSchoolData?.subjects?.push(subjectCreated?._id);
             await User.findOneAndUpdate(
-              student?._id,
+              studentFound?._id,
               {
                 $push: {
                   "studentSchoolData.subjects": subjectCreated?._id,
@@ -308,7 +309,7 @@ async function programmeElectiveSubject(req, res, next) {
               { upsert: true }
             );
           }
-        });
+        }
       }
       req.subjectCreated = subjectCreated;
       next();
@@ -544,7 +545,7 @@ async function assignElectiveSubject(req, res, next) {
                 subject: subjectFound?._id, // Elective subject ID
                 classLevel: classLevel?._id, // Class Level ID
                 programDivision: data?.program || null, // Program Division ID (optional)
-                students: students || [], // Array of student IDs (can be empty if not provided)
+                // students: students || [], // Array of student IDs (can be empty if not provided)
               },
             },
           },
@@ -580,7 +581,7 @@ async function assignElectiveSubject(req, res, next) {
                 subject: subjectFound?._id, // Elective subject ID
                 classLevel: classLevel?._id, // Class Level ID
                 program: data?.program || null, // Program ID
-                students: students || [], // Array of student IDs (can be empty if not provided)
+                // students: students || [], // Array of student IDs (can be empty if not provided)
               },
             },
           },
@@ -918,7 +919,9 @@ async function assignCoreSubject(req, res, next) {
         roles: { $in: ["Student"] },
       });
       const filteredStudents = await User.find({
-        "studentSchoolData.program": { $ne: generalScienceProgram?._id },
+        "studentSchoolData.program.programId": {
+          $ne: generalScienceProgram?._id,
+        },
         roles: { $in: ["Student"] },
       });
       // Update current Teacher's teachingSubjects data

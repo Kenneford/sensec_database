@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const ClassLevel = require("../../models/academics/class/ClassLevelModel");
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
 const House = require("../../models/academics/house/HouseModel");
@@ -802,7 +803,7 @@ async function validateMultiStudentsPromotionData(req, res, next) {
   const authAdmin = req.user;
   try {
     //Check if students data is greater than 0
-    if (!students || students?.length < 1) {
+    if (!students || students?.length === 0) {
       res.status(404).json({
         errorMessage: {
           message: [`No student data selected!`],
@@ -876,19 +877,33 @@ async function level100MultiStudentsPromotion(req, res, next) {
         });
         return;
       }
-      students.forEach(async (student) => {
+      for (const student of students) {
+        // Find Student
+        const studentFound = await User.findOne({
+          uniqueId: student?.uniqueId,
+        });
+        // Extract student's programme ID
+        const programId =
+          student?.studentSchoolData?.program?.programId instanceof
+          mongoose.Types.ObjectId
+            ? studentFound.studentSchoolData.program.programId
+            : new mongoose.Types.ObjectId(
+                studentFound?.studentSchoolData?.program?.programId?.toString()
+              );
         //Find Student Next Class Section
         let studentNextClassSection;
         //Find Student Next Class Section
-        if (studentFound?.studentSchoolData?.divisionProgram) {
+        if (
+          studentFound?.studentSchoolData?.program?.type === "ProgramDivision"
+        ) {
           studentNextClassSection = await ClassLevelSection.findOne({
             classLevelName: "Level 200",
-            divisionProgram: studentFound?.studentSchoolData?.divisionProgram,
+            divisionProgram: programId,
           });
         } else {
           studentNextClassSection = await ClassLevelSection.findOne({
             classLevelName: "Level 200",
-            program: studentFound?.studentSchoolData?.program,
+            program: programId,
           });
         }
         // if (!studentNextClassSection) {
@@ -908,12 +923,13 @@ async function level100MultiStudentsPromotion(req, res, next) {
         //Update student's next class-level-section teacher✅
         //Update Student's Promotion Status Data✅
         await User.findOneAndUpdate(
-          student?._id,
+          studentFound?._id,
           {
             "studentSchoolData.currentClassLevel": studentNextClassLevel?._id,
             "studentSchoolData.currentClassLevelSection":
               studentNextClassSection?._id,
-            "studentSchoolData.currentClassTeacher": level200TeacherFound?._id,
+            "studentSchoolData.currentClassTeacher":
+              level200TeacherFound?._id || null,
             "studentStatusExtend.isPromoted": true,
             "studentStatusExtend.isPromotedToLevel200": true,
             "studentStatusExtend.lastPromotedBy": adminFound?._id,
@@ -921,6 +937,84 @@ async function level100MultiStudentsPromotion(req, res, next) {
           },
           { new: true }
         );
+        // Find lecturer for each of the student's subject❓
+        // for (const subj of studentPromoted?.studentSchoolData?.subjects) {
+        //   // Find subject data
+        //   const subjectFound = await Subject.findOne({ _id: subj });
+        //   if (subjectFound?.subjectInfo?.program?.type === "ProgramDivision") {
+        //     // Find existing subject lecturer
+        //     const subjectLecturer = await User.findOne({
+        //       "lecturerSchoolData.teachingSubjects.electives": {
+        //         $elemMatch: {
+        //           subject: subjectFound?._id,
+        //           classLevel: studentNextClassLevel?._id,
+        //           programDivision: programId,
+        //         },
+        //       },
+        //     });
+
+        //     if (subjectLecturer) {
+        //       // Locate the specific elective subject data
+        //       const lecturerElectiveSubjData =
+        //         subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+        //           (electiveData) =>
+        //             electiveData?.subject?.toString() ===
+        //               subj?._id?.toString() &&
+        //             electiveData?.classLevel?.toString() ===
+        //               studentNextClassLevel?._id?.toString() &&
+        //             electiveData.programDivision?.toString() ===
+        //               studentPromoted?.studentSchoolData?.program?.programId.toString()
+        //         );
+
+        //       // Ensure student is not already in the list
+        //       if (
+        //         lecturerElectiveSubjData &&
+        //         !lecturerElectiveSubjData?.students?.includes(
+        //           studentPromoted._id
+        //         )
+        //       ) {
+        //         lecturerElectiveSubjData?.students?.push(studentPromoted._id);
+        //         await subjectLecturer.save(); // Save the updated document
+        //       }
+        //     }
+        //   }
+        //   if (subjectFound?.subjectInfo?.program?.type === "Program") {
+        //     // Find existing subject lecturer
+        //     const subjectLecturer = await User.findOne({
+        //       "lecturerSchoolData.teachingSubjects.electives": {
+        //         $elemMatch: {
+        //           subject: subjectFound?._id,
+        //           classLevel: studentNextClassLevel?._id,
+        //           program: programId,
+        //         },
+        //       },
+        //     });
+
+        //     if (subjectLecturer) {
+        //       // Locate the specific elective subject data
+        //       const lecturerElectiveSubjData =
+        //         subjectLecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
+        //           (electiveData) =>
+        //             electiveData?.subject?.toString() ===
+        //               subj?._id?.toString() &&
+        //             electiveData?.classLevel?.toString() ===
+        //               studentNextClassLevel?._id?.toString() &&
+        //             electiveData?.program?.toString() ===
+        //               studentPromoted?.studentSchoolData?.program?.programId?.toString()
+        //         );
+
+        //       if (
+        //         lecturerElectiveSubjData &&
+        //         !lecturerElectiveSubjData?.students?.includes(
+        //           studentPromoted?._id
+        //         )
+        //       ) {
+        //         lecturerElectiveSubjData?.students?.push(studentPromoted?._id);
+        //         await subjectLecturer.save(); // Save changes
+        //       }
+        //     }
+        //   }
+        // }
         // Push student's current class-level into his/her classLevels array
         if (
           !studentFound?.studentSchoolData?.classLevels?.includes(
@@ -944,7 +1038,8 @@ async function level100MultiStudentsPromotion(req, res, next) {
           );
           await studentFound.save();
         }
-      });
+      }
+      // students.forEach(async (student) => {});
       req.promotedStudents = students;
       next();
     } else {
@@ -974,18 +1069,32 @@ async function level200MultiStudentsPromotion(req, res, next) {
         });
         return;
       }
-      students.forEach(async (student) => {
+      for (const student of students) {
+        // Find Student
+        const studentFound = await User.findOne({
+          uniqueId: student?.uniqueId,
+        });
+        // Extract student's programme ID
+        const programId =
+          student?.studentSchoolData?.program?.programId instanceof
+          mongoose.Types.ObjectId
+            ? studentFound.studentSchoolData.program.programId
+            : new mongoose.Types.ObjectId(
+                studentFound?.studentSchoolData?.program?.programId?.toString()
+              );
         let studentNextClassSection;
         //Find Student Next Class Section
-        if (studentFound?.studentSchoolData?.divisionProgram) {
+        if (
+          studentFound?.studentSchoolData?.program?.type === "ProgramDivision"
+        ) {
           studentNextClassSection = await ClassLevelSection.findOne({
             classLevelName: "Level 300",
-            divisionProgram: studentFound?.studentSchoolData?.divisionProgram,
+            divisionProgram: programId,
           });
         } else {
           studentNextClassSection = await ClassLevelSection.findOne({
             classLevelName: "Level 300",
-            program: studentFound?.studentSchoolData?.program,
+            program: programId,
           });
         }
         // if (!studentNextClassSection) {
@@ -1005,7 +1114,7 @@ async function level200MultiStudentsPromotion(req, res, next) {
         //Update student's next class-level-section teacher✅
         //Update Student's Promotion Status Data✅
         await User.findOneAndUpdate(
-          student?._id,
+          studentFound?._id,
           {
             "studentSchoolData.currentClassLevel": studentNextClassLevel?._id,
             "studentSchoolData.currentClassLevelSection":
@@ -1041,7 +1150,7 @@ async function level200MultiStudentsPromotion(req, res, next) {
           );
           await studentFound.save();
         }
-      });
+      }
       req.promotedStudents = students;
       next();
     } else {
@@ -1074,13 +1183,17 @@ async function level300MultiStudentsPromotion(req, res, next) {
       }
     }
     if (isLevel300Students) {
-      students.forEach(async (student) => {
+      for (const student of students) {
+        // Find Student
+        const studentFound = await User.findOne({
+          uniqueId: student?.uniqueId,
+        });
         //Find Student's House
         const studentHouse = await House.findOne({
-          _id: student?.studentSchoolData?.house,
+          _id: studentFound?.studentSchoolData?.enrollmentCode,
         });
         const studentPlacementData = await PlacementStudent.findOne({
-          enrollmentId: student?.uniqueId,
+          enrollmentCode: studentFound?.studentSchoolData?.enrollmentCode,
         });
         //Update student's currentClassLevel to null✅
         //update his/her current classLevelSection to null✅
@@ -1088,7 +1201,7 @@ async function level300MultiStudentsPromotion(req, res, next) {
         //Update student's class teacher to null✅
         //Update Student's Promotion Status Data✅
         await User.findOneAndUpdate(
-          student?._id,
+          studentFound?._id,
           {
             "studentSchoolData.currentClassLevel": null,
             "studentSchoolData.currentClassLevelSection": null,
@@ -1103,8 +1216,8 @@ async function level300MultiStudentsPromotion(req, res, next) {
           },
           { new: true }
         );
-        if (studentHouse?.students?.includes(student?._id)) {
-          studentHouse.students.pull(student?._id);
+        if (studentHouse?.students?.includes(studentFound?._id)) {
+          studentHouse.students.pull(studentFound?._id);
           await studentHouse.save();
         }
         if (studentPlacementData) {
@@ -1113,12 +1226,12 @@ async function level300MultiStudentsPromotion(req, res, next) {
         }
         if (
           oldStudentsBatchFound &&
-          !oldStudentsBatchFound?.students?.includes(student?._id)
+          !oldStudentsBatchFound?.students?.includes(studentFound?._id)
         ) {
-          oldStudentsBatchFound.students.push(student?._id);
+          oldStudentsBatchFound.students.push(studentFound?._id);
           await oldStudentsBatchFound.save();
         }
-      });
+      }
       req.promotedStudents = students;
       next();
     } else {

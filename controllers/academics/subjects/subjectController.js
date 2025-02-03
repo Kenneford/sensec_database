@@ -1,7 +1,9 @@
+const mongoose = require("mongoose");
 const ProgramDivision = require("../../../models/academics/programmes/divisions/ProgramDivisionModel");
 const Program = require("../../../models/academics/programmes/ProgramsModel");
 const Subject = require("../../../models/academics/subjects/SubjectModel");
 const User = require("../../../models/user/UserModel");
+const ClassLevel = require("../../../models/academics/class/ClassLevelModel");
 
 // Create subject ✅
 module.exports.createSubject = async (req, res) => {
@@ -66,6 +68,76 @@ exports.getAllSubjectLecturers = async (req, res) => {
     });
   }
 };
+// Assign subject students ✅
+exports.getAllSubjectStudents = async (req, res) => {
+  const currentUser = req.user;
+  const data = req.body;
+
+  try {
+    if (
+      !mongoose.Types.ObjectId.isValid(data?.subjectId) ||
+      !mongoose.Types.ObjectId.isValid(data?.classLevel)
+    ) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["Invalid object ID detected!"],
+        },
+      });
+    }
+    //Find Admin
+    const authUserFound = await User.findOne({ _id: currentUser?.id });
+    if (
+      !authUserFound ||
+      (!currentUser?.roles?.includes("Lecturer") &&
+        !currentUser?.roles?.includes("Admin"))
+    ) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation denied! You're not a Lecturer!"],
+        },
+      });
+      return;
+    }
+    //Find subject by ID
+    const subjectFound = await Subject.findOne({ _id: data?.subjectId });
+    if (!subjectFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Subject data not found!"],
+        },
+      });
+      return;
+    }
+    //Find classLevel by ID
+    const classLevelFound = await ClassLevel.findOne({ _id: data?.classLevel });
+    if (!classLevelFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Class level data not found!"],
+        },
+      });
+      return;
+    }
+    //Find all students this programme
+    const allSubjectStudents = await User.find({
+      "studentSchoolData.subjects": { $in: [subjectFound?._id] },
+      "studentSchoolData.currentClassLevel": classLevelFound?._id,
+    });
+    // console.log("L-139: ", formattedLecturers);
+
+    res.status(200).json({
+      successMessage: "Subject students fetched successfully!",
+      allSubjectStudents,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
+      },
+    });
+  }
+};
 // Get single subject ✅
 exports.getSingleSubject = async (req, res) => {
   const { subjectId } = req.params;
@@ -78,7 +150,7 @@ exports.getSingleSubject = async (req, res) => {
       { path: "lastUpdatedBy" },
     ]);
     if (subject) {
-      res.status(201).json({
+      res.status(200).json({
         successMessage: "Subject fetched successfully!",
         subject,
       });
@@ -125,7 +197,7 @@ exports.getAllProgramElectiveSubjects = async (req, res) => {
       },
     ]);
     if (subjectsFound) {
-      res.status(201).json({
+      res.status(200).json({
         successMessage: "Programme Elective Subjects Fetched Successfully...",
         subjectsFound,
       });
@@ -173,7 +245,7 @@ exports.getAllProgramOptionalElectiveSubjects = async (req, res) => {
       },
     ]);
     if (subjectsFound) {
-      res.status(201).json({
+      res.status(200).json({
         successMessage: "Optional Elective Subjects Fetched Successfully!",
         subjectsFound,
       });
