@@ -1,10 +1,10 @@
+const mongoose = require("mongoose");
 const AcademicGrade = require("../../../models/academics/grades/AcademicGradesModel");
 const Subject = require("../../../models/academics/subjects/SubjectModel");
 const DraftReport = require("../../../models/reports/DraftReportModel");
 const Report = require("../../../models/reports/ReportModel");
 const StudentReport = require("../../../models/reports/StudentReportModel");
 const User = require("../../../models/user/UserModel");
-const mongoose = require("mongoose");
 
 module.exports.createStudentReport = async (req, res) => {
   const { studentId } = req.params;
@@ -342,109 +342,105 @@ module.exports.saveDraftReports = async (req, res) => {
   }
 };
 module.exports.fetchElectiveDraftReport = async (req, res) => {
-  const currentUser = req.user;
-  const data = req.body;
-  // console.log("L-321: ", data);
   try {
+    const { user: currentUser, body: data } = req;
+
     if (!data) {
-      return res.status(500).json({
-        errorMessage: {
-          message: ["No data to search for!"],
-        },
-      });
+      return res
+        .status(400)
+        .json({ errorMessage: { message: ["No data to search for!"] } });
     }
+
+    // Validate Object IDs
+    const invalidIds = ["subject", "currentTeacher", "classLevel"].filter(
+      (field) => data[field] && !mongoose.Types.ObjectId.isValid(data[field])
+    );
+
+    if (invalidIds.length > 0) {
+      return res
+        .status(400)
+        .json({ errorMessage: { message: ["Invalid object ID detected!"] } });
+    }
+
+    // Validate User
+    const authUserFound = await User.findById(currentUser?.id);
     if (
-      (data?.subject && !mongoose.Types.ObjectId.isValid(data?.subject)) ||
-      (data?.currentTeacher &&
-        !mongoose.Types.ObjectId.isValid(data?.currentTeacher)) ||
-      (data.classLevel && !mongoose.Types.ObjectId.isValid(data.classLevel))
+      !authUserFound ||
+      (!currentUser?.roles?.includes("Lecturer") &&
+        !currentUser?.roles?.includes("Admin"))
     ) {
       return res.status(403).json({
         errorMessage: {
-          message: ["Invalid object ID detected!"],
-        },
-      });
-    }
-    //Find Lecturer
-    const lecturerFound = await User.findOne({ _id: currentUser?.id });
-    if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
-      res.status(403).json({
-        errorMessage: {
           message: ["Operation Denied! You're not a lecturer!"],
         },
       });
-      return;
     }
-    if (currentUser?.id !== data?.lecturer) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation Denied! You're not a lecturer!"],
-        },
-      });
-      return;
-    }
-    //Find Subject
-    const subjectFound = await Subject.findOne({ _id: data?.subject });
-    // If Elective Subject
-    if (subjectFound?.subjectInfo?.isElectiveSubject) {
-      // Find existing draft data
-      const existingDraftData = await DraftReport.findOne({
-        classLevel: data?.classLevel,
-        semester: data?.semester,
-        subject: data?.subject,
-        lecturer: data?.lecturer,
-      });
-      // console.log(existingDraftData);
 
-      if (existingDraftData) {
-        res.status(200).json({
-          successMessage: "Draft report data fetched successfully!",
-          foundDraftReport: existingDraftData,
-        });
-      } else {
-        const lecturer = await User.findOne({ _id: data?.lecturer }).populate([
-          {
-            path: "lecturerSchoolData.teachingSubjects.electives.students", // Path to populate
-            // model: "User", // Model to reference
-            // match: { active: true }, // (Optional) Filter students if needed
-            select:
-              "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
-          },
-        ]);
-        // console.log(lecturer);
-
-        const lecturerElectiveSubjData =
-          lecturer?.lecturerSchoolData?.teachingSubjects?.electives?.find(
-            (electiveData) =>
-              electiveData?.subject?.toString() === data?.subject &&
-              electiveData?.classLevel?.toString() === data?.classLevel &&
-              electiveData
-          );
-        // If no draft, fetch students matching the classLevel and subject
-        const students = await User.find({
-          "studentSchoolData.currentClassLevel": data?.classLevel,
-          $or: [
-            { "studentSchoolData.electiveSubjects": data?.subject },
-            { "studentSchoolData.coreSubjects": data?.subject },
-          ],
-        });
-        res.status(200).json({
-          successMessage: "Students data fetched successfully!",
-          foundDraftReport: lecturerElectiveSubjData,
-        });
-      }
-    } else {
+    // Validate Subject
+    const subjectFound = await Subject.findById(data?.subject);
+    if (!subjectFound?.subjectInfo?.isElectiveSubject) {
       return res.status(404).json({
-        errorMessage: {
-          message: ["Subject data not found or invalid!"],
-        },
+        errorMessage: { message: ["Subject data not found or invalid!"] },
       });
     }
+
+    // Find Lecturer
+    const lecturerFound = await User.findOne({
+      _id: authUserFound?._id,
+      "lecturerSchoolData.teachingSubjects.electives": {
+        $elemMatch: {
+          subject: subjectFound?._id,
+          classLevel: data?.classLevel,
+        },
+      },
+    });
+    if (!lecturerFound) {
+      return res.status(404).json({
+        errorMessage: { message: ["You're not the lecturer!"] },
+      });
+    }
+    console.log("lecturerFound: ", lecturerFound);
+
+    // Check if draft report exists
+    const existingDraftData = await DraftReport.findOne({
+      classLevel: data?.classLevel,
+      semester: data?.semester,
+      subject: data?.subject,
+      lecturer: data?.lecturer,
+    });
+
+    if (existingDraftData) {
+      return res.status(200).json({
+        successMessage: "Draft report data fetched successfully!",
+        foundDraftReport: existingDraftData,
+      });
+    }
+
+    // Fetch Students for the Elective Subject
+    const students = await User.find({
+      "studentSchoolData.currentClassLevel": data?.classLevel,
+      "studentSchoolData.subjects": { $in: [data?.subject] },
+    }).select("_id uniqueId personalInfo.profilePicture personalInfo.fullName");
+
+    const studentsObject = students.map((std) => ({
+      _id: std._id,
+      uniqueId: std.uniqueId,
+      personalInfo: std.personalInfo,
+    }));
+
+    return res.status(200).json({
+      successMessage: "Students data fetched successfully!",
+      foundDraftReport: {
+        classLevel: data?.classLevel,
+        subject: subjectFound?._id,
+        students: studentsObject,
+      },
+    });
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching elective draft report:", error);
     return res.status(500).json({
       errorMessage: {
-        message: ["Internal Server Error!", error?.message],
+        message: ["Internal Server Error!", error.message],
       },
     });
   }
