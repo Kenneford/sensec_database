@@ -439,12 +439,108 @@ function authSensosaUser({ userVerified }) {
 }
 
 // For Student Data Update
+// async function updateUserProfileImage(req, res, next) {
+//   const { userId } = req.params;
+//   const { updateData } = req.body;
+
+//   try {
+//     // Find the student by ID
+//     const foundUser = await User.findOne({ uniqueId: userId });
+//     if (!foundUser) {
+//       return res.status(404).json({
+//         errorMessage: {
+//           message: ["User data not found!"],
+//         },
+//       });
+//     }
+//     console.log("Image From Data", updateData?.profilePicture?.public_id);
+//     console.log(
+//       "Image From Existing User",
+//       foundUser?.personalInfo?.profilePicture?.public_id
+//     );
+
+//     if (
+//       foundUser?.personalInfo?.profilePicture?.public_id ===
+//       updateData?.profilePicture?.public_id
+//     ) {
+//       // Attach the updated student data to the request object
+//       req.foundUser = foundUser;
+//       next();
+//     } else {
+//       // Determine the profile picture source (for web vs Postman)
+//       const profilePictureSource =
+//         req?.file?.path || updateData?.profilePicture;
+
+//       if (!profilePictureSource) {
+//         return res.status(400).json({
+//           errorMessage: {
+//             message: ["No profile picture provided!"],
+//           },
+//         });
+//       }
+
+//       // Handle existing image deletion if applicable
+//       const existingImgId = foundUser?.personalInfo?.profilePicture?.public_id;
+//       console.log("existingImgId: ", existingImgId);
+
+//       if (existingImgId) {
+//         await cloudinary.uploader.destroy(existingImgId);
+//       }
+
+//       // Upload new image to Cloudinary
+//       const result = await cloudinary.uploader.upload(profilePictureSource, {
+//         folder: "Students",
+//         transformation: [
+//           { width: 300, height: 400, crop: "fill", gravity: "center" },
+//           { quality: "auto" },
+//           { fetch_format: "auto" },
+//         ],
+//       });
+
+//       // Update the student's profile picture in the database
+//       const updatedUser = await User.findOneAndUpdate(
+//         { _id: foundUser?._id },
+//         {
+//           "personalInfo.profilePicture": {
+//             public_id: result?.public_id,
+//             url: result?.secure_url,
+//           },
+//           lastUpdatedBy: updateData?.lastUpdatedBy,
+//           updatedDate: new Date().toISOString(),
+//         },
+//         { new: true }
+//       );
+
+//       if (!updatedUser) {
+//         return res.status(500).json({
+//           errorMessage: {
+//             message: ["Failed to update profile image!"],
+//           },
+//         });
+//       }
+
+//       // Attach the updated student data to the request object
+//       req.foundUser = updatedUser;
+
+//       // Proceed to the next middleware or handler
+//       next();
+//     }
+//   } catch (error) {
+//     console.error("Error updating user profile image:", error);
+//     res.status(500).json({
+//       errorMessage: {
+//         message: [error.message],
+//       },
+//     });
+//   }
+// }
 async function updateUserProfileImage(req, res, next) {
   const { userId } = req.params;
-  const { updateData } = req.body;
+  const updateData = req.body?.updateData || {}; // Ensure updateData exists
+  console.log(updateData);
 
   try {
-    // Find the student by ID
+    // Find the user by uniqueId (make sure this field is correct)
     const foundUser = await User.findOne({ uniqueId: userId });
     if (!foundUser) {
       return res.status(404).json({
@@ -453,33 +549,41 @@ async function updateUserProfileImage(req, res, next) {
         },
       });
     }
+
     if (
-      foundUser?.personalInfo?.profilePicture?.public_id ===
-      updateData?.profilePicture?.public_id
+      foundUser?.personalInfo?.profilePicture?.public_id &&
+      foundUser.personalInfo.profilePicture.public_id ===
+        updateData?.profilePicture?.public_id
     ) {
-      // Attach the updated student data to the request object
       req.foundUser = foundUser;
-      next();
-    } else {
-      // Determine the profile picture source (for web vs Postman)
-      const profilePictureSource = req.file?.path || updateData?.profilePicture;
+      return next(); // Added return to prevent further execution
+    }
 
-      if (!profilePictureSource) {
-        return res.status(400).json({
-          errorMessage: {
-            message: ["No profile picture provided!"],
-          },
-        });
-      }
+    // Determine profile picture source
+    const profilePictureSource = req?.file?.path || updateData?.profilePicture;
 
-      // Handle existing image deletion if applicable
-      const existingImgId = foundUser?.personalInfo?.profilePicture?.public_id;
-      if (existingImgId) {
+    if (!profilePictureSource) {
+      return res.status(400).json({
+        errorMessage: {
+          message: ["No profile picture provided!"],
+        },
+      });
+    }
+
+    // Delete existing Cloudinary image if applicable
+    const existingImgId = foundUser?.personalInfo?.profilePicture?.public_id;
+    if (existingImgId) {
+      try {
         await cloudinary.uploader.destroy(existingImgId);
+      } catch (err) {
+        console.warn("Failed to delete existing Cloudinary image:", err);
       }
+    }
 
-      // Upload new image to Cloudinary
-      const result = await cloudinary.uploader.upload(profilePictureSource, {
+    // Upload new image to Cloudinary (ensure it's a valid path)
+    let result;
+    if (typeof profilePictureSource === "string") {
+      result = await cloudinary.uploader.upload(profilePictureSource, {
         folder: "Students",
         transformation: [
           { width: 300, height: 400, crop: "fill", gravity: "center" },
@@ -487,44 +591,48 @@ async function updateUserProfileImage(req, res, next) {
           { fetch_format: "auto" },
         ],
       });
-
-      // Update the student's profile picture in the database
-      const updatedUser = await User.findOneAndUpdate(
-        foundUser._id,
-        {
-          "personalInfo.profilePicture": {
-            public_id: result.public_id,
-            url: result.secure_url,
-          },
-          lastUpdatedBy: updateData?.lastUpdatedBy,
-          updatedDate: new Date().toISOString(),
+    } else {
+      return res.status(400).json({
+        errorMessage: {
+          message: ["Invalid profile picture format!"],
         },
-        { new: true }
-      );
-
-      if (!updatedUser) {
-        return res.status(500).json({
-          errorMessage: {
-            message: ["Failed to update profile image."],
-          },
-        });
-      }
-
-      // Attach the updated student data to the request object
-      req.foundUser = updatedUser;
-
-      // Proceed to the next middleware or handler
-      next();
+      });
     }
+
+    // Update the user's profile picture in the database
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: foundUser._id },
+      {
+        "personalInfo.profilePicture": {
+          public_id: result?.public_id,
+          url: result?.secure_url,
+        },
+        lastUpdatedBy: updateData?.lastUpdatedBy || foundUser.lastUpdatedBy,
+        updatedDate: new Date().toISOString(),
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(500).json({
+        errorMessage: {
+          message: ["Failed to update profile image!"],
+        },
+      });
+    }
+
+    req.foundUser = updatedUser;
+    return next(); // Added return statement to prevent unintended execution
   } catch (error) {
     console.error("Error updating user profile image:", error);
     res.status(500).json({
       errorMessage: {
-        message: [error.message],
+        message: [error.message || "Internal Server Error"],
       },
     });
   }
 }
+
 module.exports = {
   authUser,
   authUserRole,

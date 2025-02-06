@@ -51,7 +51,7 @@ exports.getAllSubjects = async (req, res) => {
     });
   }
 };
-// Assign subject lecturer ✅
+// Assign subject lecturers ✅
 exports.getAllSubjectLecturers = async (req, res) => {
   const { lecturersFound } = req.lecturersData;
 
@@ -68,7 +68,7 @@ exports.getAllSubjectLecturers = async (req, res) => {
     });
   }
 };
-// Assign subject students ✅
+// Fetch elective subject students ✅
 exports.getAllSubjectStudents = async (req, res) => {
   const currentUser = req.user;
   const data = req.body;
@@ -129,6 +129,101 @@ exports.getAllSubjectStudents = async (req, res) => {
       successMessage: "Subject students fetched successfully!",
       allSubjectStudents,
     });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
+      },
+    });
+  }
+};
+// Fetch core subject students ✅
+exports.getCoreSubjectStudents = async (req, res) => {
+  const currentUser = req.user;
+  const data = req.body;
+
+  try {
+    if (
+      !mongoose.Types.ObjectId.isValid(data?.subjectId) ||
+      !mongoose.Types.ObjectId.isValid(data?.classLevel)
+    ) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["Invalid object ID detected!"],
+        },
+      });
+    }
+    //Find Admin
+    const authUserFound = await User.findOne({ _id: currentUser?.id });
+    if (
+      !authUserFound ||
+      (!currentUser?.roles?.includes("Lecturer") &&
+        !currentUser?.roles?.includes("Admin"))
+    ) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation denied! You're not a Lecturer!"],
+        },
+      });
+      return;
+    }
+    //Find subject by ID
+    const subjectFound = await Subject.findOne({ _id: data?.subjectId });
+    if (!subjectFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Subject data not found!"],
+        },
+      });
+      return;
+    }
+    //Find classLevel by ID
+    const classLevelFound = await ClassLevel.findOne({ _id: data?.classLevel });
+    if (!classLevelFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Class level data not found!"],
+        },
+      });
+      return;
+    }
+
+    // Extract program IDs and their types
+    const programIds = data?.programmes?.map((p) => p?.programId) || [];
+    //Find existing subject lecturer
+    const existingSubjectLecturer = await User.findOne({
+      "lecturerSchoolData.teachingSubjects.cores": {
+        $elemMatch: {
+          subject: subjectFound?._id,
+          classLevel: classLevelFound?._id,
+          "programmes.programId": { $all: programIds }, // Ensure all programIds exist
+        },
+      },
+      "lecturerSchoolData.teachingSubjects.cores.programmes": {
+        $size: programIds.length, // Ensure no extra programmes
+      },
+    });
+    console.log("existingSubjectLecturer: ", existingSubjectLecturer);
+    if (existingSubjectLecturer) {
+      //Find all students base on programme
+      const allSubjectStudents = await User.find({
+        "studentSchoolData.program.programId": { $in: programIds },
+        "studentSchoolData.currentClassLevel": classLevelFound?._id,
+      });
+      // console.log("L-139: ", formattedLecturers);
+
+      res.status(200).json({
+        successMessage: "Subject students fetched successfully!",
+        allSubjectStudents,
+      });
+    } else {
+      return res.status(404).json({
+        errorMessage: {
+          message: ["Lecturer not found for this subject!"],
+        },
+      });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({
