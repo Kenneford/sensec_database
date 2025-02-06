@@ -5,6 +5,7 @@ const DraftReport = require("../../../models/reports/DraftReportModel");
 const Report = require("../../../models/reports/ReportModel");
 const StudentReport = require("../../../models/reports/StudentReportModel");
 const User = require("../../../models/user/UserModel");
+const ClassLevel = require("../../../models/academics/class/ClassLevelModel");
 
 module.exports.createStudentReport = async (req, res) => {
   const { studentId } = req.params;
@@ -495,14 +496,24 @@ module.exports.fetchCoreDraftReport = async (req, res) => {
       });
       return;
     }
+    //Find classLevel by ID
+    const classLevelFound = await ClassLevel.findOne({ _id: data?.classLevel });
+    if (!classLevelFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Class level data not found!"],
+        },
+      });
+      return;
+    }
     //Find Subject
     const subjectFound = await Subject.findOne({ _id: data?.subject });
     if (subjectFound?.subjectInfo?.isCoreSubject) {
       // Extract program IDs and their types
-      const programIds = data?.programmes?.map((p) => p?.program);
+      const programIds = data?.programmes?.map((p) => p?.programId);
       // Find existing draft data
       const existingDraftData = await DraftReport.findOne({
-        classLevel: data?.classLevel, // Match classLevel
+        classLevel: classLevelFound?._id, // Match classLevel
         semester: data?.semester, // Match semester
         subject: subjectFound?._id, // Match subject
         lecturer: data?.lecturer, // Match lecturer
@@ -530,46 +541,47 @@ module.exports.fetchCoreDraftReport = async (req, res) => {
           foundDraftReport: existingDraftData,
         });
       } else {
-        const lecturer = await User.findOne({ _id: data?.lecturer }).populate([
-          {
-            path: "lecturerSchoolData.teachingSubjects.cores.students", // Path to populate
-            // model: "User", // Model to reference
-            // match: { active: true }, // (Optional) Filter students if needed
-            select:
-              "_id uniqueId personalInfo.profilePicture personalInfo.fullName", // (Optional) Specify fields to include
-          },
-          {
-            path: "lecturerSchoolData.teachingSubjects.cores.subject", // Path to populate
-          },
-        ]);
-        // console.log(lecturer);
+        //Find all students this programme
+        const students = await User.find({
+          "studentSchoolData.program.programId": { $in: programIds },
+          "studentSchoolData.currentClassLevel": classLevelFound?._id,
+        });
+        const studentsObject = students?.map((std) => ({
+          _id: std._id,
+          uniqueId: std.uniqueId,
+          personalInfo: std.personalInfo,
+        }));
 
-        const lecturerElectiveSubjData =
-          lecturer?.lecturerSchoolData?.teachingSubjects?.cores?.find(
-            (coreData) =>
-              coreData?.subject?._id?.toString() === data?.subject &&
-              coreData?.classLevel?.toString() === data?.classLevel &&
-              programIds?.every(
-                (programId) =>
-                  coreData?.programmes?.some(
-                    (data) => data?.program?.toString() === programId
-                  ) // Ensure ALL programs exist
-              ) &&
-              coreData
+        const lecturerCoreSubjData =
+          lecturerFound?.lecturerSchoolData?.teachingSubjects?.cores?.find(
+            (coreData) => {
+              return (
+                coreData?.subject?.toString() ===
+                  subjectFound?._id?.toString() &&
+                coreData?.classLevel?.toString() ===
+                  classLevelFound?._id?.toString() &&
+                // Strictly match all program IDs
+                coreData?.programmes?.length === programIds.length && // Ensure same length
+                coreData?.programmes?.every(
+                  (prog) => programIds?.includes(prog.programId.toString()) // Check if every stored programId exists in programIds
+                )
+              );
+            }
           );
         // console.log(lecturerElectiveSubjData);
         // Check programmes length
-        if (!lecturerElectiveSubjData) {
+        if (!lecturerCoreSubjData) {
           return res.status(403).json({
             errorMessage: {
-              message: ["Please select all programmes under this subject!"],
+              message: [
+                "Programme mismatch! Kindly select the right form, subject and programmes!",
+              ],
             },
           });
         }
         if (
-          lecturerElectiveSubjData &&
-          lecturerElectiveSubjData?.programmes?.length !==
-            data?.programmes?.length
+          lecturerCoreSubjData &&
+          lecturerCoreSubjData?.programmes?.length !== programIds?.length
         ) {
           return res.status(403).json({
             errorMessage: {
@@ -580,7 +592,11 @@ module.exports.fetchCoreDraftReport = async (req, res) => {
 
         res.status(200).json({
           successMessage: "Students data fetched successfully!",
-          foundDraftReport: lecturerElectiveSubjData,
+          foundDraftReport: {
+            classLevel: classLevelFound?._id,
+            subject: subjectFound?._id,
+            students: studentsObject,
+          },
         });
       }
     } else {

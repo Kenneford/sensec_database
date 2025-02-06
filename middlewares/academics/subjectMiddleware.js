@@ -74,11 +74,22 @@ async function subjectLecturers(req, res, next) {
     //Find existing subject lecturers
     const existingSubjectLecturers = await User.find(
       {
-        "lecturerSchoolData.teachingSubjects.electives": {
-          $elemMatch: {
-            subject: subjectFound?._id,
+        $or: [
+          {
+            "lecturerSchoolData.teachingSubjects.electives": {
+              $elemMatch: {
+                subject: subjectFound?._id,
+              },
+            },
           },
-        },
+          {
+            "lecturerSchoolData.teachingSubjects.cores": {
+              $elemMatch: {
+                subject: subjectFound?._id,
+              },
+            },
+          },
+        ],
       },
       {
         // Project only required fields
@@ -86,6 +97,7 @@ async function subjectLecturers(req, res, next) {
         uniqueId: 1,
         personalInfo: 1,
         "lecturerSchoolData.teachingSubjects.electives": 2,
+        "lecturerSchoolData.teachingSubjects.cores": 2,
       }
     ).populate([
       {
@@ -122,12 +134,28 @@ async function subjectLecturers(req, res, next) {
         path: "lecturerSchoolData.teachingSubjects.electives.programDivision", // Path to populate
         select: "divisionName",
       },
+      {
+        path: "lecturerSchoolData.teachingSubjects.cores.classLevel", // Path to populate
+        select: "name",
+      },
+      {
+        path: "lecturerSchoolData.teachingSubjects.cores.programmes.programId", // Path to populate
+        select: "name",
+      },
+      // {
+      //   path: "lecturerSchoolData.teachingSubjects.cores.programDivision", // Path to populate
+      //   select: "divisionName",
+      // },
     ]);
     // Filter and format response to only include electives matching the subjectId
     const formattedLecturers = existingSubjectLecturers?.map((lecturer) => {
       const matchingElectives =
         lecturer?.lecturerSchoolData?.teachingSubjects?.electives?.filter(
           (elective) => elective?.subject?._id.toString() === subjectId
+        );
+      const matchingCores =
+        lecturer?.lecturerSchoolData?.teachingSubjects?.cores?.filter(
+          (core) => core?.subject?._id.toString() === subjectId
         );
 
       return {
@@ -144,6 +172,15 @@ async function subjectLecturers(req, res, next) {
           isElectiveSubject: elective?.subject?.subjectInfo?.isElectiveSubject,
           isCoreSubject: elective?.subject?.subjectInfo?.isCoreSubject,
           isOptionalSubject: elective?.subject?.subjectInfo?.isOptional,
+        })),
+        cores: matchingCores?.map((core) => ({
+          _id: core?._id,
+          classLevel: core?.classLevel?.name || "N/A",
+          programmes: core.programmes,
+          subject: core?.subject?.subjectName || "N/A",
+          isCoreSubject: core?.subject?.subjectInfo?.isCoreSubject,
+          isCoreSubject: core?.subject?.subjectInfo?.isCoreSubject,
+          isOptionalSubject: core?.subject?.subjectInfo?.isOptional,
         })),
       };
     });
@@ -168,7 +205,7 @@ async function coreSubject(req, res, next) {
       //check if subject exist
       const subject = await Subject.findOne({
         subjectName: data?.subjectName,
-        "coreSubInfo.isCoreSubject": true,
+        "subjectInfo.isCoreSubject": true,
       });
       if (subject) {
         res.status(400).json({
@@ -183,28 +220,29 @@ async function coreSubject(req, res, next) {
       // Create subject
       const subjectCreated = await Subject.create({
         subjectName: data?.subjectName,
-        "coreSubInfo.isCoreSubject": true,
+        "subjectInfo.isCoreSubject": true,
         createdBy: adminFound?._id,
       });
       // Push core subject into each student's core subjects✅
-      allStudents?.forEach(async (student) => {
-        if (
-          student &&
-          !student?.studentSchoolData?.coreSubjects?.includes(
-            subjectCreated?._id
-          )
-        ) {
-          await User.findOneAndUpdate(
-            student?._id,
-            {
-              $push: {
-                "studentSchoolData.coreSubjects": subjectCreated?._id,
-              },
-            },
-            { upsert: true }
-          );
-        }
-      });
+      // for (const student of allStudents) {
+      //   // Find student
+      //   const studentFound = await User.findOne({ _id: student?._id });
+      //   if (
+      //     !studentFound?.studentSchoolData?.coreSubjects?.includes(
+      //       subjectCreated?._id
+      //     )
+      //   ) {
+      //     await User.findOneAndUpdate(
+      //       studentFound?._id,
+      //       {
+      //         $push: {
+      //           "studentSchoolData.coreSubjects": subjectCreated?._id,
+      //         },
+      //       },
+      //       { upsert: true }
+      //     );
+      //   }
+      // }
       req.subjectCreated = subjectCreated;
       next();
     } else {
@@ -489,25 +527,37 @@ async function assignElectiveSubject(req, res, next) {
       });
       return;
     }
-    //Find existing subject lecturer
-    const existingSubjectLecturer = await User.findOne({
-      "lecturerSchoolData.teachingSubjects.electives": {
-        $elemMatch: {
-          subject: subjectFound?._id,
-          classLevel: classLevel?._id,
-          $or: [{ program: data.program }, { programDivision: data.program }],
-        },
-      },
-    });
-    if (existingSubjectLecturer) {
-      res.status(403).json({
+    // Validate subject's isCoreSubject or isElectiveSubject
+    if (
+      !subjectFound?.subjectInfo?.isCoreSubject &&
+      !subjectFound?.subjectInfo?.isElectiveSubject
+    ) {
+      res.status(404).json({
         errorMessage: {
-          message: ["Lecturer already assigned for this subject!"],
+          message: ["Subject data not found!"],
         },
       });
       return;
     }
     if (subjectFound?.subjectInfo?.isElectiveSubject) {
+      //Find existing subject lecturer
+      const existingSubjectLecturer = await User.findOne({
+        "lecturerSchoolData.teachingSubjects.electives": {
+          $elemMatch: {
+            subject: subjectFound?._id,
+            classLevel: classLevel?._id,
+            $or: [{ program: data.program }, { programDivision: data.program }],
+          },
+        },
+      });
+      if (existingSubjectLecturer) {
+        res.status(403).json({
+          errorMessage: {
+            message: ["Lecturer already assigned for this subject!"],
+          },
+        });
+        return;
+      }
       const allUsers = await User.find({});
       const mainProgram = await Program.findOne({ _id: data?.program });
       const divisionProgram = await ProgramDivision.findOne({
@@ -619,9 +669,17 @@ async function assignElectiveSubject(req, res, next) {
       req.assignSubjectLecturerData = {
         subjectFound,
         lecturerFound,
+        classLevel,
+        adminFound,
       };
       next();
     } else {
+      req.assignSubjectLecturerData = {
+        subjectFound,
+        lecturerFound,
+        classLevel,
+        adminFound,
+      };
       next();
     }
   } catch (error) {
@@ -690,27 +748,27 @@ async function removeElectiveSubject(req, res, next) {
       });
       return;
     }
-    //Find existing subject lecturer
-    const existingSubjectLecturer = await User.findOne({
-      _id: lecturerFound?._id,
-      "lecturerSchoolData.teachingSubjects.electives": {
-        $elemMatch: {
-          subject: subjectFound?._id,
-          classLevel: classLevel?._id,
-          $or: [{ program: data.program }, { programDivision: data.program }],
-          // programId: data.program,
-        },
-      },
-    });
-    if (!existingSubjectLecturer) {
-      res.status(404).json({
-        errorMessage: {
-          message: ["Subject data not found!"],
+    if (subjectFound?.subjectInfo?.isElectiveSubject) {
+      //Find existing subject lecturer
+      const existingSubjectLecturer = await User.findOne({
+        _id: lecturerFound?._id,
+        "lecturerSchoolData.teachingSubjects.electives": {
+          $elemMatch: {
+            subject: subjectFound?._id,
+            classLevel: classLevel?._id,
+            $or: [{ program: data.program }, { programDivision: data.program }],
+            // programId: data.program,
+          },
         },
       });
-      return;
-    }
-    if (subjectFound?.subjectInfo?.isElectiveSubject) {
+      if (!existingSubjectLecturer) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Subject data not found!"],
+          },
+        });
+        return;
+      }
       const mainProgram = await Program.findOne({ _id: data?.program });
       const divisionProgram = await ProgramDivision.findOne({
         _id: data?.program,
@@ -780,7 +838,6 @@ async function removeElectiveSubject(req, res, next) {
                 classLevel?._id?.toString() &&
               electiveData?.program?.toString() === mainProgram?._id?.toString()
           );
-        console.log(lecturerElectiveSubjData);
         // Update current Teacher's teachingSubjects data
         await User.findOneAndUpdate(
           { _id: lecturerFound?._id },
@@ -831,63 +888,16 @@ async function assignCoreSubject(req, res, next) {
   const currentUser = req.user;
   const data = req.body;
   const { subjectId } = req.params;
-  console.log(data);
+  const { subjectFound, lecturerFound, classLevel, adminFound } =
+    req.assignSubjectLecturerData;
+  // console.log("data: ", data);
   try {
-    if (
-      !mongoose.Types.ObjectId.isValid(subjectId) ||
-      !mongoose.Types.ObjectId.isValid(data?.currentTeacher) ||
-      !mongoose.Types.ObjectId.isValid(data.classLevel)
-    ) {
-      return res.status(403).json({
-        errorMessage: {
-          message: ["Invalid ID detected!"],
-        },
-      });
-    }
-    //Find Admin
-    const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
-    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation Denied! You're not an admin!"],
-        },
-      });
-      return;
-    }
-    //Find Lecturer
-    const lecturerFound = await User.findOne({ _id: data?.currentTeacher });
-    if (!lecturerFound) {
-      res.status(404).json({
-        errorMessage: {
-          message: ["Lecturer data not found!"],
-        },
-      });
-      return;
-    }
-    //Check if class level exists
-    const classLevel = await ClassLevel.findOne({ _id: data?.classLevel });
-    if (!classLevel) {
-      res.status(404).json({
-        errorMessage: {
-          message: [`Class level data not found!`],
-        },
-      });
-      return;
-    }
-    //Find subject by ID
-    const subjectFound = await Subject.findOne({ _id: subjectId });
-    if (!subjectFound) {
-      res.status(404).json({
-        errorMessage: {
-          message: ["Subject data not found!"],
-        },
-      });
-      return;
-    }
     if (subjectFound?.subjectInfo?.isCoreSubject) {
       // Extract program IDs and their types
-      const programIds = data?.programmes?.map((p) => p?.program);
-      //Find existing subject lecturer Lecturer
+      const programIds = data?.programmes?.map((p) => p?.programId) || [];
+      console.log("programIds: ", programIds);
+
+      //Find existing subject lecturer
       const existingSubjectLecturer = await User.findOne({
         "lecturerSchoolData.teachingSubjects.cores": {
           $elemMatch: {
@@ -895,16 +905,54 @@ async function assignCoreSubject(req, res, next) {
             classLevel: classLevel?._id,
             programmes: {
               $elemMatch: {
-                program: { $in: programIds }, // Match any programId
+                programId: { $in: programIds }, // Match any programId
               },
             },
           },
         },
       });
       if (existingSubjectLecturer) {
+        // Extract the matching programIds
+        let matchedProgramIds = [];
+        // existingSubjectLecturer.lecturerSchoolData.teachingSubjects
+        //   .flatMap((subject) => subject.cores)
+        //   .filter(
+        //     (core) =>
+        //       core.subject.equals(subjectFound?._id) &&
+        //       core.classLevel.equals(classLevel?._id)
+        //   )
+        //   .flatMap((core) => core.programmes)
+        //   .map((program) => program.programId)
+        //   .filter((programId) => programIds.includes(programId)); // Ensure it's in the original list
+
+        for (const subject of existingSubjectLecturer?.lecturerSchoolData
+          ?.teachingSubjects?.cores) {
+          // if (subject) {
+          //   subject?.programmes?.forEach((program) => {
+          //     if (programIds.includes(program.programId?.toString())) {
+          //       matchedProgramIds.push(program.programId);
+          //     }
+          //   });
+          // }
+          for (const program of subject?.programmes) {
+            // console.log("program of subject?.programmes", program);
+            // console.log(subject?.programmes);
+
+            if (programIds.includes(program?.programId?.toString())) {
+              matchedProgramIds.push(program);
+            }
+          }
+        }
+        console.log(matchedProgramIds);
+
         res.status(403).json({
           errorMessage: {
-            message: ["Lecturer already assigned for this subject!"],
+            message: [
+              matchedProgramIds
+                ? `Existing subject programme found!`
+                : `Lecturer already assigned for this subject!`,
+            ],
+            programmes: matchedProgramIds,
           },
         });
         return;
@@ -933,10 +981,10 @@ async function assignCoreSubject(req, res, next) {
               subject: subjectFound?._id, // Elective subject ID
               classLevel: classLevel?._id, // Class Level ID
               programmes: data?.programmes || null,
-              students:
-                subjectFound?.subjectName !== "Science"
-                  ? allStudents
-                  : filteredStudents, // Array of student IDs (can be empty if not provided)
+              // students:
+              //   subjectFound?.subjectName !== "Science"
+              //     ? allStudents
+              //     : filteredStudents, // Array of student IDs (can be empty if not provided)
             },
           },
         },
@@ -959,7 +1007,7 @@ async function assignCoreSubject(req, res, next) {
         subjectFound.teachers.push(lecturerFound?._id);
         await subjectFound.save();
       }
-      // Push lecturer into subjects teachers array
+      // Push classLevel into lecturers classLevels array
       if (
         lecturerFound &&
         !lecturerFound?.lecturerSchoolData?.classLevels?.includes(
@@ -986,6 +1034,147 @@ async function assignCoreSubject(req, res, next) {
     });
   }
 }
+async function removeCoreSubject(req, res, next) {
+  const currentUser = req.user;
+  const data = req.body;
+  const { subjectId } = req.params;
+  try {
+    if (
+      !mongoose.Types.ObjectId.isValid(subjectId) ||
+      (data.program && !mongoose.Types.ObjectId.isValid(data.program))
+    ) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["Invalid ID detected!"],
+        },
+      });
+    }
+    //Find Admin
+    const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not an admin!"],
+        },
+      });
+      return;
+    }
+    //Check if class level exists
+    const classLevel = await ClassLevel.findOne({ name: data?.classLevel });
+    if (!classLevel) {
+      res.status(404).json({
+        errorMessage: {
+          message: [`Class level data not found!`],
+        },
+      });
+      return;
+    }
+    //Find subject by ID
+    const subjectFound = await Subject.findOne({ _id: subjectId });
+    if (!subjectFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Subject data not found!"],
+        },
+      });
+      return;
+    }
+    //Find Lecturer
+    const lecturerFound = await User.findOne({
+      uniqueId: data?.currentTeacher,
+    });
+    if (!lecturerFound) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Lecturer data not found!"],
+        },
+      });
+      return;
+    }
+    if (subjectFound?.subjectInfo?.isCoreSubject) {
+      // Extract program IDs and their types
+      const programIds = data?.programmes?.map((p) => p?.programId) || [];
+      //Find existing subject lecturer
+      const existingSubjectLecturer = await User.findOne({
+        "lecturerSchoolData.teachingSubjects.cores": {
+          $elemMatch: {
+            subject: subjectFound?._id,
+            classLevel: classLevel?._id,
+            "programmes.programId": { $all: programIds }, // Ensure all programIds exist
+          },
+        },
+        "lecturerSchoolData.teachingSubjects.cores.programmes": {
+          $size: programIds.length, // Ensure no extra programmes
+        },
+      });
+      if (!existingSubjectLecturer) {
+        res.status(404).json({
+          errorMessage: {
+            message: ["Subject data not found!"],
+          },
+        });
+        return;
+      }
+      const lecturerMultiCoreSubjectsData =
+        lecturerFound?.lecturerSchoolData?.teachingSubjects?.cores?.filter(
+          (coreData) =>
+            coreData?.subject?.toString() === subjectFound?._id?.toString()
+        );
+
+      const lecturerCoreSubjData =
+        lecturerFound?.lecturerSchoolData?.teachingSubjects?.cores?.find(
+          (coreData) => {
+            return (
+              coreData?.subject?.toString() === subjectFound?._id?.toString() &&
+              coreData?.classLevel?.toString() ===
+                classLevel?._id?.toString() &&
+              // Strictly match all program IDs
+              coreData?.programmes?.length === programIds.length && // Ensure same length
+              coreData?.programmes?.every(
+                (prog) => programIds?.includes(prog.programId.toString()) // Check if every stored programId exists in programIds
+              )
+            );
+          }
+        );
+      console.log("lecturerCoreSubjData: ", lecturerCoreSubjData);
+
+      // Update current Teacher's teachingSubjects data
+      await User.findOneAndUpdate(
+        { _id: lecturerFound?._id }, // Correct filter for the lecturer
+        {
+          $pull: {
+            "lecturerSchoolData.teachingSubjects.cores": {
+              _id: lecturerCoreSubjData?._id,
+            },
+          },
+        }
+      );
+      let updatedLecturer;
+      // Remove lecturer from subject teachers array
+      if (
+        subjectFound?.teachers?.includes(lecturerFound?._id) &&
+        lecturerMultiCoreSubjectsData?.length <= 1
+      ) {
+        subjectFound?.teachers?.pull(lecturerFound?._id);
+        await subjectFound.save();
+      }
+      req.removedSubjectLecturerData = {
+        lecturerRemoved: updatedLecturer,
+      };
+      next();
+    } else {
+      next();
+    }
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      errorMessage: {
+        message: ["Something went wrong!", error?.message],
+      },
+    });
+  }
+}
 module.exports = {
   validateSubjectData,
   coreSubject,
@@ -993,6 +1182,7 @@ module.exports = {
   divisionProgrammeElectiveSubject,
   assignElectiveSubject,
   removeElectiveSubject,
+  removeCoreSubject,
   assignCoreSubject,
   subjectLecturers,
 };

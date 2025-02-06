@@ -10,6 +10,7 @@ const {
   removeSubjectLecturer,
   getAllSubjectLecturers,
   getAllSubjectStudents,
+  getCoreSubjectStudents,
 } = require("../../../controllers/academics/subjects/subjectController");
 const {
   validateSubjectData,
@@ -20,6 +21,7 @@ const {
   assignCoreSubject,
   removeElectiveSubject,
   subjectLecturers,
+  removeCoreSubject,
 } = require("../../../middlewares/academics/subjectMiddleware");
 const {
   authUser,
@@ -64,6 +66,17 @@ router.get(
     },
   }),
   getAllSubjectStudents
+);
+router.get(
+  "/academics/subjects/core/students/fetch_all",
+  authUser,
+  authUserRole({
+    userRoles: {
+      admin: "Admin",
+      lecturer: "Lecturer",
+    },
+  }),
+  getCoreSubjectStudents
 );
 router.get(
   "/academics/subjects/:subjectId/fetch",
@@ -137,6 +150,7 @@ router.put(
     },
   }),
   removeElectiveSubject,
+  removeCoreSubject,
   removeSubjectLecturer
 );
 router.delete(
