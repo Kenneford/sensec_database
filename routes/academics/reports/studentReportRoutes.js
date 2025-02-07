@@ -122,7 +122,7 @@ router.get(
   fetchReportStudents
 );
 router.put(
-  "/academics/report/subject/fetch_all",
+  "/academics/report/elective_subject/multi_students/fetch_all",
   authUser,
   authUserRole({
     userRoles: {
@@ -130,6 +130,18 @@ router.put(
     },
   }),
   fetchMultiElectiveReport,
+  // fetchMultiCoreReport,
+  fetchSubjectMultiStudentsReport
+);
+router.put(
+  "/academics/report/core_subject/multi_students/fetch_all",
+  authUser,
+  authUserRole({
+    userRoles: {
+      lecturer: "Lecturer",
+    },
+  }),
+  // fetchMultiElectiveReport,
   fetchMultiCoreReport,
   fetchSubjectMultiStudentsReport
 );

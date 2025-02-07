@@ -418,7 +418,7 @@ async function fetchMultiElectiveReport(req, res, next) {
     const subjectFound = await Subject.findOne({ _id: data?.subject });
 
     // If Elective Subject
-    if (subjectFound?.subjectInfo?.isElectiveSubject) {
+    if (subjectFound && subjectFound?.subjectInfo?.isElectiveSubject) {
       // Find existing multiStudentsReport data
       const existingMultiStudentsReport = await Report.findOne({
         classLevel: data?.classLevel,
@@ -464,7 +464,11 @@ async function fetchMultiElectiveReport(req, res, next) {
         next();
       }
     } else {
-      next();
+      return res.status(500).json({
+        errorMessage: {
+          message: ["Subject data not found!"],
+        },
+      });
     }
   } catch (error) {
     console.log(error);
@@ -480,6 +484,20 @@ async function fetchMultiCoreReport(req, res, next) {
   const data = req.body;
   // console.log("dataFromBody: ",data);
   try {
+    if (!data) {
+      return res.status(500).json({
+        errorMessage: {
+          message: ["No data to search for!"],
+        },
+      });
+    }
+    if (!data?.programmes?.length > 0) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["No program data selected!"],
+        },
+      });
+    }
     //Find Lecturer
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
     if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
@@ -508,21 +526,7 @@ async function fetchMultiCoreReport(req, res, next) {
       });
     }
     // If Elective Subject
-    if (subjectFound?.subjectInfo?.isCoreSubject) {
-      if (!data) {
-        return res.status(500).json({
-          errorMessage: {
-            message: ["No data to search for!"],
-          },
-        });
-      }
-      if (!data?.programmes?.length > 0) {
-        return res.status(403).json({
-          errorMessage: {
-            message: ["No program data selected!"],
-          },
-        });
-      }
+    if (subjectFound && subjectFound?.subjectInfo?.isCoreSubject) {
       // Extract program IDs and their types
       const programIds = data?.programmes?.map((p) => p?.programId);
       // Find existing multiStudentsReport data
@@ -574,7 +578,11 @@ async function fetchMultiCoreReport(req, res, next) {
         next();
       }
     } else {
-      next();
+      return res.status(500).json({
+        errorMessage: {
+          message: ["Subject data not found!"],
+        },
+      });
     }
   } catch (error) {
     console.log(error);
