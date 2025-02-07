@@ -18,7 +18,10 @@ const ReportSchema = new mongoose.Schema(
     },
     programmes: [
       {
-        program: { type: mongoose.Schema.Types.ObjectId, required: true },
+        programId: { type: mongoose.Schema.Types.ObjectId, required: true },
+        nameOfProgram: {
+          type: String,
+        },
         type: {
           type: String,
           enum: ["Program", "ProgramDivision"],
