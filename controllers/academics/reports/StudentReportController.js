@@ -573,9 +573,7 @@ module.exports.fetchCoreDraftReport = async (req, res) => {
         if (!lecturerCoreSubjData) {
           return res.status(403).json({
             errorMessage: {
-              message: [
-                "Programme mismatch! Kindly select the right form, subject and programmes!",
-              ],
+              message: ["You're not the lecturer!"],
             },
           });
         }
