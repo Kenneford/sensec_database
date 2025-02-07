@@ -188,7 +188,7 @@ module.exports.createStudentReport = async (req, res) => {
 module.exports.saveDraftReports = async (req, res) => {
   const currentUser = req.user;
   const { data } = req.body;
-  // console.log(data);
+  console.log(data?.programmes);
   try {
     if (!data) {
       return res.status(404).json({
@@ -449,7 +449,7 @@ module.exports.fetchElectiveDraftReport = async (req, res) => {
 module.exports.fetchCoreDraftReport = async (req, res) => {
   const currentUser = req.user;
   const data = req.body;
-  console.log(data);
+  // console.log(data);
 
   try {
     if (!data) {
@@ -519,7 +519,7 @@ module.exports.fetchCoreDraftReport = async (req, res) => {
         lecturer: data?.lecturer, // Match lecturer
         programmes: {
           $all: programIds?.map((programId) => ({
-            $elemMatch: { program: programId }, // Ensure all programIds exist
+            $elemMatch: { programId: programId }, // Ensure all programIds exist
           })),
         },
       });
@@ -767,7 +767,7 @@ module.exports.fetchAllStudentReports = async (req, res) => {
     });
   }
 };
-
+// Not In Use❓
 module.exports.fetchReportStudents = async (req, res) => {
   const data = req.body;
   // console.log(data);

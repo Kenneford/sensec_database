@@ -17,6 +17,13 @@ async function multiElectiveReport(req, res, next) {
         },
       });
     }
+    if (!data?.students?.length > 0) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["No student data selected!"],
+        },
+      });
+    }
     //Find Lecturer
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
     if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
@@ -65,9 +72,9 @@ async function multiElectiveReport(req, res, next) {
         });
       }
       if (data?.students?.length > 0) {
-        data?.students?.forEach(async (std) => {
-          if (std) {
-            if (!std?.classScore || !std?.examScore) {
+        for (const student of data?.students) {
+          if (student) {
+            if (!student?.classScore || !student?.examScore) {
               return res.status(403).json({
                 errorMessage: {
                   message: ["Please fill all students reports!"],
@@ -86,12 +93,12 @@ async function multiElectiveReport(req, res, next) {
             const lecturerFound = await User.findOne({ _id: currentUser?.id });
             // Fetch the grade based on score
             const gradeFound = await AcademicGrade.findOne({
-              minScore: { $lte: std?.totalScore },
-              maxScore: { $gte: std?.totalScore },
+              minScore: { $lte: student?.totalScore },
+              maxScore: { $gte: student?.totalScore },
             });
             // Find existing student report
             const existingReport = await StudentReport.findOne({
-              studentId: std?.studentId,
+              studentId: student?.studentId,
               classLevel: data?.classLevel,
               semester: data?.semester,
               subject: data?.subject,
@@ -100,13 +107,13 @@ async function multiElectiveReport(req, res, next) {
             if (!existingReport) {
               // Create Single Student Report
               const newStudentReport = await StudentReport.create({
-                studentId: std?.studentId,
+                studentId: student?.studentId,
                 classLevel: data?.classLevel,
                 semester: data?.semester,
                 subject: data?.subject,
-                classScore: std?.classScore,
-                examScore: std?.examScore,
-                totalScore: std?.totalScore,
+                classScore: student?.classScore,
+                examScore: student?.examScore,
+                totalScore: student?.totalScore,
                 grade: gradeFound?.grade,
                 remark: gradeFound?.remark,
                 lecturerRemark: data?.remark,
@@ -132,13 +139,13 @@ async function multiElectiveReport(req, res, next) {
               const updatedReport = await StudentReport.findOneAndUpdate(
                 existingReport?._id,
                 {
-                  studentId: std?.studentId,
+                  studentId: student?.studentId,
                   classLevel: data?.classLevel,
                   semester: data?.semester,
                   subject: data?.subject,
-                  classScore: std?.classScore,
-                  examScore: std?.examScore,
-                  totalScore: std?.totalScore,
+                  classScore: student?.classScore,
+                  examScore: student?.examScore,
+                  totalScore: student?.totalScore,
                   grade: gradeFound?.grade,
                   remark: gradeFound?.remark,
                   lecturerRemark: data?.remark,
@@ -166,18 +173,16 @@ async function multiElectiveReport(req, res, next) {
             req.multiReportData = {
               multiStudentsReport,
               existingDraftData,
+              lecturerFound,
             };
             next();
           }
-        });
-      } else {
-        return res.status(403).json({
-          errorMessage: {
-            message: ["No student data selected!"],
-          },
-        });
+        }
       }
     } else {
+      req.multiReportData = {
+        lecturerFound,
+      };
       next();
     }
   } catch (error) {
@@ -192,26 +197,9 @@ async function multiElectiveReport(req, res, next) {
 async function multiCoreReport(req, res, next) {
   const currentUser = req.user;
   const { data } = req.body;
+  const { lecturerFound } = req.multiReportData;
   console.log(data);
   try {
-    //Find Lecturer
-    const lecturerFound = await User.findOne({ _id: currentUser?.id });
-    if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation Denied! You're not a lecturer!"],
-        },
-      });
-      return;
-    }
-    if (currentUser?.id !== data?.lecturer) {
-      res.status(403).json({
-        errorMessage: {
-          message: ["Operation Denied! You're not a lecturer!"],
-        },
-      });
-      return;
-    }
     //Find Subject
     const subjectFound = await Subject.findOne({ _id: data?.subject });
     // If Elective Subject
@@ -231,17 +219,18 @@ async function multiCoreReport(req, res, next) {
         });
       }
       // Extract program IDs and their types
-      const programIds = data?.programmes?.map((p) => p?.program);
+      const programIds = data?.programmes?.map((p) => p?.programId);
       // Find existing draft data
       const existingDraftData = await DraftReport.findOne({
         classLevel: data?.classLevel, // Match classLevel
         semester: data?.semester, // Match semester
         subject: subjectFound?._id, // Match subject
-        lecturer: data?.lecturer, // Match lecturer
+        lecturer: lecturerFound?._id, // Match lecturer
         programmes: {
           $all: programIds?.map((programId) => ({
-            $elemMatch: { program: programId }, // Ensure all programIds exist
+            $elemMatch: { programId: programId }, // Ensure all programIds exist
           })),
+          $size: programIds.length,
         },
         year: data?.year,
       });
@@ -250,12 +239,13 @@ async function multiCoreReport(req, res, next) {
         classLevel: data?.classLevel,
         semester: data?.semester,
         subject: data?.subject,
-        lecturer: data?.lecturer,
-        programmes: {
-          $all: programIds?.map((programId) => ({
-            $elemMatch: { program: programId }, // Ensure all programIds exist
-          })),
-        },
+        lecturer: lecturerFound?._id,
+        "programmes.programId": { $all: programIds },
+        // programmes: {
+        //   $all: programIds?.map((programId) => ({
+        //     $elemMatch: { programId: programId }, // Ensure all programIds exist
+        //   })),
+        // },
         year: data?.year,
       });
       if (existingMultiStudentsReport) {
@@ -274,13 +264,13 @@ async function multiCoreReport(req, res, next) {
           classLevel: data?.classLevel,
           semester: data?.semester,
           subject: data?.subject,
-          lecturer: data?.lecturer,
+          lecturer: lecturerFound?._id,
           programmes: data?.programmes,
           year: data?.year,
         });
-        data?.students?.forEach(async (std) => {
-          if (std) {
-            if (!std?.classScore || !std?.examScore) {
+        for (const student of data?.students) {
+          if (student) {
+            if (!student?.classScore || !student?.examScore) {
               return res.status(403).json({
                 errorMessage: {
                   message: ["Please fill all students reports!"],
@@ -291,12 +281,12 @@ async function multiCoreReport(req, res, next) {
             const lecturerFound = await User.findOne({ _id: currentUser?.id });
             // Fetch the grade based on score
             const gradeFound = await AcademicGrade.findOne({
-              minScore: { $lte: std?.totalScore },
-              maxScore: { $gte: std?.totalScore },
+              minScore: { $lte: student?.totalScore },
+              maxScore: { $gte: student?.totalScore },
             });
             // Find existing student report
             const existingReport = await StudentReport.findOne({
-              studentId: std?.studentId,
+              studentId: student?.studentId,
               classLevel: data?.classLevel,
               semester: data?.semester,
               subject: data?.subject,
@@ -310,13 +300,13 @@ async function multiCoreReport(req, res, next) {
             if (!existingReport) {
               // Create Single Student Report
               const newStudentReport = await StudentReport.create({
-                studentId: std?.studentId,
+                studentId: student?.studentId,
                 classLevel: data?.classLevel,
                 semester: data?.semester,
                 subject: data?.subject,
-                classScore: std?.classScore,
-                examScore: std?.examScore,
-                totalScore: std?.totalScore,
+                classScore: student?.classScore,
+                examScore: student?.examScore,
+                totalScore: student?.totalScore,
                 grade: gradeFound?.grade,
                 remark: gradeFound?.remark,
                 lecturerRemark: data?.remark,
@@ -342,17 +332,17 @@ async function multiCoreReport(req, res, next) {
               const updatedReport = await StudentReport.findOneAndUpdate(
                 existingReport?._id,
                 {
-                  studentId: std?.studentId,
+                  studentId: student?.studentId,
                   classLevel: data?.classLevel,
                   semester: data?.semester,
                   subject: data?.subject,
-                  classScore: std?.classScore,
-                  examScore: std?.examScore,
-                  totalScore: std?.totalScore,
+                  classScore: student?.classScore,
+                  examScore: student?.examScore,
+                  totalScore: student?.totalScore,
                   grade: gradeFound?.grade,
                   remark: gradeFound?.remark,
                   lecturerRemark: data?.remark,
-                  lecturer: data?.lecturer,
+                  lecturer: lecturerFound?._id,
                   programmes: data?.programmes,
                   year: data?.year,
                 },
@@ -380,13 +370,7 @@ async function multiCoreReport(req, res, next) {
             };
             next();
           }
-        });
-      } else {
-        return res.status(403).json({
-          errorMessage: {
-            message: ["No student data selected!"],
-          },
-        });
+        }
       }
     } else {
       next();
@@ -494,7 +478,7 @@ async function fetchMultiElectiveReport(req, res, next) {
 async function fetchMultiCoreReport(req, res, next) {
   const currentUser = req.user;
   const data = req.body;
-  // console.log(data);
+  // console.log("dataFromBody: ",data);
   try {
     //Find Lecturer
     const lecturerFound = await User.findOne({ _id: currentUser?.id });
@@ -540,18 +524,19 @@ async function fetchMultiCoreReport(req, res, next) {
         });
       }
       // Extract program IDs and their types
-      const programIds = data?.programmes?.map((p) => p?.program);
+      const programIds = data?.programmes?.map((p) => p?.programId);
       // Find existing multiStudentsReport data
       const existingMultiStudentsReport = await Report.findOne({
         classLevel: data?.classLevel,
         semester: data?.semester,
         subject: data?.subject,
-        lecturer: data?.lecturer,
-        programmes: {
-          $all: programIds?.map((programId) => ({
-            $elemMatch: { program: programId }, // Ensure all programIds exist
-          })),
-        },
+        lecturer: lecturerFound?._id,
+        "programmes.programId": { $all: programIds },
+        // programmes: {
+        //   $all: programIds?.map((programId) => ({
+        //     $elemMatch: { program: programId }, // Ensure all programIds exist
+        //   })),
+        // },
         year: data?.year,
       })
         .populate([{ path: "students" }])
