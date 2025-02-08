@@ -138,6 +138,7 @@ module.exports.createStudentReport = async (req, res) => {
           reportFound?._id,
           {
             studentId: data?.studentId,
+            student: studentFound?._id,
             classLevel: data?.classLevel,
             semester: data?.semester,
             subject: data?.subject,
@@ -158,6 +159,7 @@ module.exports.createStudentReport = async (req, res) => {
       } else {
         const newReport = await StudentReport.create({
           studentId: data?.studentId,
+          student: studentFound?._id,
           classLevel: data?.classLevel,
           semester: data?.semester,
           subject: data?.subject,
@@ -847,6 +849,222 @@ module.exports.fetchReportStudents = async (req, res) => {
     res.status(500).json({
       errorMessage: {
         message: [`Internal sever error! ${error?.message}`],
+      },
+    });
+    return;
+  }
+};
+module.exports.searchClassReport = async (req, res) => {
+  const currentUser = req.user;
+  const data = req.body;
+  console.log(data, "L-446");
+  try {
+    const setStartOfDay = (date) => {
+      date.setHours(0, 0, 0, 0);
+      return date;
+    };
+
+    const setEndOfDay = (date) => {
+      date.setHours(23, 59, 59, 999);
+      return date;
+    };
+    const parseDate = (dateString) => {
+      if (!dateString) return null;
+      const [day, month, year] = dateString.split("/").map(Number);
+      return new Date(year, month - 1, day); // Convert to valid Date object
+    };
+    if (!data) {
+      res.status(403).json({
+        errorMessage: {
+          message: [`No data to search for!`],
+        },
+      });
+      return;
+    }
+    const lecturerFound = await User.findOne({ _id: currentUser?.id });
+    if (!lecturerFound || !currentUser?.roles?.includes("Lecturer")) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Not an authorized user!"],
+        },
+      });
+      return;
+    }
+    //Search Class Attendance
+    let foundClassReports;
+    // Search By Year✅
+    if (data?.year) {
+      const foundReports = await Report.find({
+        year: data?.year,
+        lecturer: data?.lecturer,
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      foundClassReports = foundReports;
+    }
+    // Search By Month✅
+    if (data?.monthRange) {
+      // Convert date strings to real Date objects
+      const monthStart = setStartOfDay(parseDate(data?.monthRange?.start));
+      const monthEnd = setEndOfDay(parseDate(data?.monthRange?.end));
+      console.log("Month Start:", data?.monthRange?.start);
+      console.log("Month End:", data?.monthRange?.end);
+      const foundReports = await Report.find({
+        lecturer: data?.lecturer,
+        createdAt: { $gte: monthStart, $lte: monthEnd },
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      foundClassReports = foundReports;
+    }
+    // Search By Week-Range
+    if (data?.weekRange) {
+      // Convert date strings to real Date objects
+      const fromDate = setStartOfDay(parseDate(data?.weekRange?.start));
+      const toDate = setEndOfDay(parseDate(data?.weekRange?.end));
+      const foundReports = await Report.find({
+        lecturer: data?.lecturer,
+        createdAt: { $gte: fromDate, $lte: toDate },
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      foundClassReports = foundReports;
+    }
+    // // Search By Date✅
+    if (data?.date) {
+      const fromDate = setStartOfDay(parseDate(data?.date));
+      const toDate = setEndOfDay(parseDate(data?.date));
+      const foundReports = await Report.find({
+        createdAt: { $gte: fromDate, $lte: toDate },
+        lecturer: data?.lecturer,
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      foundClassReports = foundReports;
+    }
+    // // Search By Date-Range
+    if (data?.dateRange) {
+      // Convert date strings to real Date objects
+      const fromDate = setStartOfDay(parseDate(data?.dateRange?.from));
+      const toDate = setEndOfDay(parseDate(data?.dateRange?.to));
+
+      const foundReports = await Report.find({
+        lecturer: data?.lecturer,
+        createdAt: { $gte: fromDate, $lte: toDate },
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      foundClassReports = foundReports;
+    }
+    // // Search By Semester
+    if (data?.semester) {
+      const foundReports = await Report.find({
+        semester: data?.semester,
+        lecturer: data?.lecturer,
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      foundClassReports = foundReports;
+    }
+    res.status(200).json({
+      successMessage: "Class report fetched successfully!",
+      foundClassReports,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      errorMessage: {
+        message: [`Internal Sever Error!`, error?.message],
       },
     });
     return;

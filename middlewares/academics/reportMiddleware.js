@@ -74,6 +74,10 @@ async function multiElectiveReport(req, res, next) {
       if (data?.students?.length > 0) {
         for (const student of data?.students) {
           if (student) {
+            //Find student
+            const studentFound = await User.findOne({
+              uniqueId: student?.studentId,
+            });
             if (!student?.classScore || !student?.examScore) {
               return res.status(403).json({
                 errorMessage: {
@@ -108,6 +112,7 @@ async function multiElectiveReport(req, res, next) {
               // Create Single Student Report
               const newStudentReport = await StudentReport.create({
                 studentId: student?.studentId,
+                student: studentFound?._id,
                 classLevel: data?.classLevel,
                 semester: data?.semester,
                 subject: data?.subject,
@@ -140,6 +145,7 @@ async function multiElectiveReport(req, res, next) {
                 existingReport?._id,
                 {
                   studentId: student?.studentId,
+                  student: studentFound?._id,
                   classLevel: data?.classLevel,
                   semester: data?.semester,
                   subject: data?.subject,
@@ -270,6 +276,10 @@ async function multiCoreReport(req, res, next) {
         });
         for (const student of data?.students) {
           if (student) {
+            //Find student
+            const studentFound = await User.findOne({
+              uniqueId: student?.studentId,
+            });
             if (!student?.classScore || !student?.examScore) {
               return res.status(403).json({
                 errorMessage: {
@@ -301,6 +311,7 @@ async function multiCoreReport(req, res, next) {
               // Create Single Student Report
               const newStudentReport = await StudentReport.create({
                 studentId: student?.studentId,
+                student: studentFound?._id,
                 classLevel: data?.classLevel,
                 semester: data?.semester,
                 subject: data?.subject,
@@ -333,6 +344,7 @@ async function multiCoreReport(req, res, next) {
                 existingReport?._id,
                 {
                   studentId: student?.studentId,
+                  student: studentFound?._id,
                   classLevel: data?.classLevel,
                   semester: data?.semester,
                   subject: data?.subject,

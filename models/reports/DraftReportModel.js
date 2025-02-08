@@ -9,6 +9,28 @@ const DraftReportSchema = new mongoose.Schema(
     semester: {
       type: String,
     },
+    date: {
+      type: String,
+      default: function () {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); // Adjust for local time
+
+        const day = String(date.getDate()).padStart(2, "0"); // Ensure 2-digit day
+        const month = String(date.getMonth() + 1).padStart(2, "0"); // Ensure 2-digit month
+        const year = date.getFullYear();
+
+        return `${day}/${month}/${year}`; // Format: "DD/MM/YYYY"
+      },
+      // required: true
+    },
+    time: {
+      type: String,
+      default: function () {
+        return new Date().toLocaleTimeString();
+      },
+      //   default: new Date().toLocaleTimeString(),
+      // required: true
+    },
     year: {
       type: String,
     },
