@@ -275,11 +275,14 @@ async function multiCoreReport(req, res, next) {
           year: data?.year,
         });
         for (const student of data?.students) {
+          console.log("student: ", student);
+          //   //Find student
+          const studentFound = await User.findOne({
+            uniqueId: student?.studentId,
+          });
+          console.log("studentFound: ", studentFound?._id);
+
           if (student) {
-            //Find student
-            const studentFound = await User.findOne({
-              uniqueId: student?.studentId,
-            });
             if (!student?.classScore || !student?.examScore) {
               return res.status(403).json({
                 errorMessage: {
@@ -300,11 +303,6 @@ async function multiCoreReport(req, res, next) {
               classLevel: data?.classLevel,
               semester: data?.semester,
               subject: data?.subject,
-              // programmes: {
-              //   $all: programIds?.map((programId) => ({
-              //     $elemMatch: { program: programId }, // Ensure all programIds exist
-              //   })),
-              // },
               year: data?.year,
             });
             if (!existingReport) {
