@@ -531,6 +531,15 @@ module.exports.searchClassAttendance = async (req, res) => {
   const data = req.body;
   console.log(data, "L-446");
   try {
+    const setStartOfDay = (date) => {
+      date.setHours(0, 0, 0, 0);
+      return date;
+    };
+
+    const setEndOfDay = (date) => {
+      date.setHours(23, 59, 59, 999);
+      return date;
+    };
     const parseDate = (dateString) => {
       const [day, month, year] = dateString.split("/").map(Number); // Extract day, month, year
       return new Date(year, month - 1, day); // Create a JavaScript Date object
@@ -611,11 +620,11 @@ module.exports.searchClassAttendance = async (req, res) => {
     }
     // Search By Month✅
     if (data?.monthRange) {
+      // Convert date strings to real Date objects
+      const monthStart = setStartOfDay(parseDate(data?.monthRange?.start));
+      const monthEnd = setEndOfDay(parseDate(data?.monthRange?.end));
       const allAttendance = await ClassAttendance.find({
-        // date: {
-        //   $gte: parseDate(data?.monthRange?.start),
-        //   $lte: parseDate(data?.monthRange?.end),
-        // },
+        createdAt: { $gte: monthStart, $lte: monthEnd },
         lecturer: data?.lecturer,
         classLevelSection: data?.classSection,
       }).populate([
@@ -637,33 +646,14 @@ module.exports.searchClassAttendance = async (req, res) => {
           ],
         },
       ]);
-      const updatedAttendance = allAttendance?.map((att) => {
-        const attObj = {
-          _id: att?._id,
-          classLevelSection: att?.classLevelSection,
-          students: att?.students,
-          lecturer: att?.lecturer,
-          semester: att?.semester,
-          year: att?.year,
-          dayOfTheWeek: att?.dayOfTheWeek,
-          time: att?.time,
-          createdAt: att?.createdAt,
-          updatedAt: att?.updatedAt,
-          date: parseDate(att?.date),
-        };
-        return attObj;
-      });
-      const filteredAttendance = updatedAttendance?.filter(
-        (att) =>
-          att?.date >= parseDate(data?.monthRange?.start) &&
-          att?.date <= parseDate(data?.monthRange?.end)
-      );
-      foundClassAttendance = filteredAttendance;
+      foundClassAttendance = allAttendance;
     }
     // Search By Date✅
     if (data?.date) {
+      const fromDate = setStartOfDay(parseDate(data?.date));
+      const toDate = setEndOfDay(parseDate(data?.date));
       const allAttendance = await ClassAttendance.find({
-        date: data?.date,
+        createdAt: { $gte: fromDate, $lte: toDate },
         lecturer: data?.lecturer,
         classLevelSection: data?.classSection,
       }).populate([
@@ -685,28 +675,45 @@ module.exports.searchClassAttendance = async (req, res) => {
           ],
         },
       ]);
-      const updatedAttendance = allAttendance?.map((att) => {
-        const attObj = {
-          _id: att?._id,
-          classLevelSection: att?.classLevelSection,
-          students: att?.students,
-          lecturer: att?.lecturer,
-          semester: att?.semester,
-          year: att?.year,
-          dayOfTheWeek: att?.dayOfTheWeek,
-          time: att?.time,
-          createdAt: att?.createdAt,
-          updatedAt: att?.updatedAt,
-          date: parseDate(att?.date),
-        };
-        return attObj;
-      });
-      foundClassAttendance = updatedAttendance;
+      foundClassAttendance = allAttendance;
     }
     // Search By Date-Range
     if (data?.dateRange) {
+      // Convert date strings to real Date objects
+      const fromDate = setStartOfDay(parseDate(data?.dateRange?.from));
+      const toDate = setEndOfDay(parseDate(data?.dateRange?.to));
       const allAttendance = await ClassAttendance.find({
-        date: { $gte: data?.dateRange?.from, $lte: data?.dateRange?.to },
+        createdAt: { $gte: fromDate, $lte: toDate },
+        lecturer: data?.lecturer,
+        classLevelSection: data?.classSection,
+      }).populate([
+        {
+          path: "lecturer",
+          select:
+            "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        },
+        {
+          path: "students",
+          select: "_id status",
+          populate: [
+            {
+              path: "student",
+              select:
+                "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+              // populate: [{ path: "studentSchoolData.program" }],
+            },
+          ],
+        },
+      ]);
+      foundClassAttendance = allAttendance;
+    }
+    // Search By Week-Range
+    if (data?.weekRange) {
+      // Convert date strings to real Date objects
+      const fromDate = parseDate(data?.weekRange?.start);
+      const toDate = parseDate(data?.weekRange?.end);
+      const allAttendance = await ClassAttendance.find({
+        // date: { $gte: data?.dateRange?.from, $lte: data?.dateRange?.to },
         lecturer: data?.lecturer,
         classLevelSection: data?.classSection,
       }).populate([
@@ -744,7 +751,11 @@ module.exports.searchClassAttendance = async (req, res) => {
         };
         return attObj;
       });
-      foundClassAttendance = updatedAttendance;
+      const filteredAttendance = updatedAttendance?.filter((report) => {
+        const reportDate = report?.date;
+        return reportDate >= fromDate && reportDate <= toDate;
+      });
+      foundClassAttendance = filteredAttendance;
     }
     // Search By Semester
     if (data?.semester) {
@@ -771,23 +782,7 @@ module.exports.searchClassAttendance = async (req, res) => {
           ],
         },
       ]);
-      const updatedAttendance = allAttendance?.map((att) => {
-        const attObj = {
-          _id: att?._id,
-          classLevelSection: att?.classLevelSection,
-          students: att?.students,
-          lecturer: att?.lecturer,
-          semester: att?.semester,
-          year: att?.year,
-          dayOfTheWeek: att?.dayOfTheWeek,
-          time: att?.time,
-          createdAt: att?.createdAt,
-          updatedAt: att?.updatedAt,
-          date: parseDate(att?.date),
-        };
-        return attObj;
-      });
-      foundClassAttendance = updatedAttendance;
+      foundClassAttendance = allAttendance;
     }
     res.status(200).json({
       successMessage: "Attendance Fetched Successfully",
