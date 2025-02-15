@@ -914,6 +914,11 @@ module.exports.searchClassReport = async (req, res) => {
             },
           ],
         },
+        {
+          path: "classLevel",
+          select: "_id name",
+        },
+        { path: "subject", select: "_id subjectName" },
       ]);
       foundClassReports = foundReports;
     }
@@ -977,6 +982,11 @@ module.exports.searchClassReport = async (req, res) => {
             },
           ],
         },
+        {
+          path: "classLevel",
+          select: "_id name",
+        },
+        { path: "subject", select: "_id subjectName" },
       ]);
       foundClassReports = foundReports;
     }
@@ -1004,6 +1014,11 @@ module.exports.searchClassReport = async (req, res) => {
             },
           ],
         },
+        {
+          path: "classLevel",
+          select: "_id name",
+        },
+        { path: "subject", select: "_id subjectName" },
       ]);
       foundClassReports = foundReports;
     }
@@ -1033,6 +1048,11 @@ module.exports.searchClassReport = async (req, res) => {
             },
           ],
         },
+        {
+          path: "classLevel",
+          select: "_id name",
+        },
+        { path: "subject", select: "_id subjectName" },
       ]);
       foundClassReports = foundReports;
     }
@@ -1058,8 +1078,11 @@ module.exports.searchClassReport = async (req, res) => {
             },
           ],
         },
-        { path: "classLevel" },
-        { path: "subject" },
+        {
+          path: "classLevel",
+          select: "_id name",
+        },
+        { path: "subject", select: "_id subjectName" },
       ]);
       foundClassReports = foundReports;
     }
