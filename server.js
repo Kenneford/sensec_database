@@ -38,10 +38,26 @@ const {
 
 const start = async (req, res) => {
   try {
+    // List of allowed origins
+    const allowedOrigins = [
+      "https://senyashs.com",
+      "https://official-sensec-website.onrender.com",
+      "http://localhost:2025",
+      "http://192.168.178.22:2025",
+    ];
     // Configure CORS options if needed
     const corsOptions = {
+      origin: function (origin, callback) {
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+          // Allow the request if the origin is in the list or if it's a server-side request (no origin)
+          callback(null, true);
+        } else {
+          // Reject the request if the origin is not in the list
+          callback(new Error("Not allowed by CORS"), false);
+        }
+      },
       // origin: "*",
-      origin: "https://senyashs.com",
+      // origin: "https://senyashs.com",
       // origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
       methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
       // allowedHeaders: ["Content-Type"],
