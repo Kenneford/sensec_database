@@ -24,7 +24,9 @@ async function requestPasswordReset(req, res, next) {
     {
       id: userFound?._id,
       uniqueId: userFound?.uniqueId,
-      role: userFound?.role,
+      personalInfo: userFound?.personalInfo,
+      userSignUpDetails: userFound?.userSignUpDetails,
+      roles: userFound?.roles,
       isVerified: userFound?.isVerified,
       isVerifiedSensosa: userFound?.isVerifiedSensosa,
       lastUpdatedBy: userFound?.lastUpdatedBy,
@@ -32,7 +34,7 @@ async function requestPasswordReset(req, res, next) {
     },
     secret,
     {
-      expiresIn: process.env.TOKEN_EXP,
+      expiresIn: process.env.SHORT_LIFE_TOKEN_EXP,
     }
   );
   if (token) {
@@ -49,40 +51,60 @@ async function requestPasswordReset(req, res, next) {
 async function verifyPasswordResetToken(req, res, next) {
   const token = req?.params?.token;
   const uniqueId = req?.params?.userId;
-  if (!token) {
-    return res.status(404).json({
-      errorMessage: { message: [`Token not found`] },
-    });
-  }
-  if (!uniqueId) {
-    res.status(400).json({
-      errorMessage: { message: [`User unique ID required!`] },
-    });
-    return;
-  }
-  const userFound = await User.findOne({ uniqueId }).select(
-    "+userSignUpDetails.password"
-  );
-  if (!userFound) {
-    res.status(404).json({
-      errorMessage: { message: [`User data not found!`] },
-    });
-    return;
-  }
-  const secret =
-    process.env.TOKEN_SECRET + userFound?.userSignUpDetails?.password;
-  const isValidToken = jwt.verify(token, secret);
-  if (!isValidToken) {
-    res.status(404).json({
-      errorMessage: {
-        message: ["Password reset token not found!"],
-      },
-    });
-    return;
-  } else {
-    // Attach userFound and token to the request for further use
-    req.data = { userFound };
-    next();
+  try {
+    if (!token) {
+      return res.status(404).json({
+        errorMessage: { message: [`Token not found`] },
+      });
+    }
+    if (!uniqueId) {
+      res.status(400).json({
+        errorMessage: { message: [`User unique ID required!`] },
+      });
+      return;
+    }
+    const userFound = await User.findOne({ uniqueId }).select(
+      "+userSignUpDetails.password"
+    );
+    if (!userFound) {
+      res.status(404).json({
+        errorMessage: { message: [`User data not found!`] },
+      });
+      return;
+    }
+    const secret =
+      process.env.TOKEN_SECRET + userFound?.userSignUpDetails?.password;
+    const isValidToken = jwt.verify(token, secret);
+    if (!isValidToken) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Password reset token not found!"],
+        },
+      });
+      return;
+    } else {
+      // Attach userFound and token to the request for further use
+      req.data = { userFound };
+      next();
+    }
+  } catch (error) {
+    console.log(error);
+    if (error?.message === "invalid signature") {
+      // console.log("Invalid signature!");
+      return res.status(500).json({
+        errorMessage: {
+          message: [
+            "Internal Server Error! Invalid signature or token expired!",
+          ],
+        },
+      });
+    } else {
+      return res.status(500).json({
+        errorMessage: {
+          message: ["Internal Server Error!", error?.message],
+        },
+      });
+    }
   }
 }
 

@@ -12,6 +12,7 @@ const {
   fetchCoreDraftReport,
   fetchSubjectMultiStudentsReport,
   searchClassReport,
+  fetchSingleStudentReports,
 } = require("../../../controllers/academics/reports/StudentReportController");
 const {
   multiElectiveReport,
@@ -156,6 +157,18 @@ router.put(
     },
   }),
   searchClassReport
+);
+router.get(
+  "/academics/student/:studentId/report/search",
+  authUser,
+  authUserRole({
+    userRoles: {
+      lecturer: "Lecturer",
+      admin: "Admin",
+      student: "Student",
+    },
+  }),
+  fetchSingleStudentReports
 );
 
 module.exports = router;

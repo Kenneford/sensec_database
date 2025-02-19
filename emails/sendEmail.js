@@ -5,16 +5,16 @@ const {
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
 const { format } = require("date-fns");
+const nodemailer = require("nodemailer");
 
 // Text message engine
-const twilioClient = require("twilio")(
-  process.env.TWILIO_SID,
-  process.env.TWILIO_AUTH_TOKEN,
-  {
-    autoRetry: true,
-    maxRetries: 3,
-  }
-);
+
+const accountSid = process.env.TWILIO_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioClient = require("twilio")(accountSid, authToken, {
+  autoRetry: true,
+  maxRetries: 3,
+});
 const { Vonage } = require("@vonage/server-sdk");
 const User = require("../models/user/UserModel");
 const vonage = new Vonage({
@@ -123,8 +123,15 @@ async function passwordResetRequestEmail(req, res, next) {
   const user = req?.data?.userFound;
   const token = req?.data?.token;
   console.log(user);
-  let body = `<h4>Hello ${user?.userSignUpDetails?.userName},</h4><p>To reset your password, kindly <a href="http://localhost:3000/sensec/password/${user.uniqueId}/${user._id}/${token}/reset"> click here</a> to do so.</p>`;
-  const transporter = createMailTransporter();
+  const url = process.env.EMAIL_URL;
+  let body = `<h4>Hello ${user?.userSignUpDetails?.userName},</h4><p>To reset your password, kindly <a href="${url}/sensec/password/${user?.uniqueId}/${user?._id}/${token}/reset"> click here</a> to do so.</p>`;
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.NODEMAILER_GMAIL,
+      pass: process.env.NODEMAILER_PASSWORD,
+    },
+  });
   let mailTemplate = {
     from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
     to: user?.contactAddress?.email,
@@ -145,6 +152,40 @@ async function passwordResetRequestEmail(req, res, next) {
     }
   });
 }
+// User password reset success email
+const passwordResetSuccessEmail = async ({ userFound, password }) => {
+  const url = process.env.EMAIL_URL;
+  let body = `
+<h4>Hello ${userFound?.userSignUpDetails?.userName},</h4><p>Your password was changed to ${password}. Kindly <a href="${url}/sensec/contact"> click here</a> to contact our support team if you didn't take this action.</p>
+<p>Best regards,</p>
+<p style="font-weight: 600; padding-bottom: -.5rem">Support Team,
+<br>
+Senya Senior High School.</p>
+`;
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.NODEMAILER_GMAIL,
+      pass: process.env.NODEMAILER_PASSWORD,
+    },
+  });
+  let mailTemplate = {
+    from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
+    to: userFound?.contactAddress?.email,
+    subject: "Password Reset Successful",
+    html: body,
+  };
+  transporter.sendMail(mailTemplate, (error, info) => {
+    if (error) {
+      console.log("Error sending password reset email:", error);
+      return res
+        .status(400)
+        .json({ errorMessage: { message: "Failed to send email." } });
+    } else {
+      console.log("Password reset link sent!", info);
+    }
+  });
+};
 
 const sendEnrollmentEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
@@ -591,8 +632,8 @@ const employmentSMS = async ({ foundUser }) => {
 
 Hello ${foundUser?.personalInfo?.firstName},
 
-This mail is to inform you that your employment process was successful, and you're on pending for final approval. 
-We're going to send you another mail with your employment details as soon as your employment is approved. 
+This mail is to inform you that your employment process was successful, and you're on pending for final approval.
+We're going to send you another mail with your employment details as soon as your employment is approved.
 As you wait for your approval, you can also visit our website to know more about Senya Senior High School.
 Click: ${url} to visit our website.
 
@@ -655,6 +696,7 @@ Senya Senior High School.
 module.exports = {
   sendVerificationEmail,
   passwordResetRequestEmail,
+  passwordResetSuccessEmail,
   sendEnrollmentEmail,
   sendEnrollmentApprovalEmail,
   studentEnrollmentApprovalSMS,
