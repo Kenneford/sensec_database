@@ -35,17 +35,24 @@ const {
   notifyNextSemester,
   createNextAcademicYear,
 } = require("./middlewares/academics/semesterService");
-const { sendEnrollmentCodeSMS } = require("./emails/sendSms");
 
 const start = async (req, res) => {
   try {
     // Configure CORS options if needed
     const corsOptions = {
-      origin: "*", // or '*' to allow all origins
+      // origin: "*",
+      origin: "https://senyashs.com",
       // origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
       methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-      // allowedHeaders: "Content-Type,Authorization",
+      // allowedHeaders: ["Content-Type"],
     };
+    if (process.env.NODE_ENV === "development") {
+      app.use(
+        cors({
+          origin: "http://192.168.178.22:2025", // Local dev server
+        })
+      );
+    }
     // Database connection error middleware
     function dbErrorHandler(err, req, res, next) {
       if (
@@ -190,3 +197,31 @@ const start = async (req, res) => {
 };
 
 start();
+
+// // For Server Setting on VPS
+// proxy_pass http://localhost:7006;
+// proxy_http_version 1.1;
+// proxy_set_header Upgrade $http_upgrade;
+// proxy_set_header Connection 'upgrade';
+// proxy_set_header Host $host;
+// proxy_cache_bypass $http_upgrade;
+// proxy_set_header X-Real-IP $remote_addr;
+// proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+// proxy_set_header X-Forwarded-Proto $scheme;
+// proxy_connect_timeout 90;
+// proxy_send_timeout 90;
+// proxy_read_timeout 90;
+// server {
+//     if ($host = www.senyashs.com) {
+//         return 301 https://$host$request_uri;
+//     } # managed by Certbot
+
+//     if ($host = senyashs.com) {
+//         return 301 https://$host$request_uri;
+//     } # managed by Certbot
+
+//     listen 80;
+//     server_name senyashs.com www.senyashs.com;
+
+//     return 301 https://$host$request_uri;
+// }

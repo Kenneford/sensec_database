@@ -3,7 +3,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("node:crypto");
 const UserVerificationData = require("../../models/user/userRefs/signUpModel/UserVerificationModel");
-const { sendVerificationEmail } = require("../../emails/sendEmail");
+const {
+  sendVerificationEmail,
+  passwordResetSuccessEmail,
+} = require("../../emails/sendEmail");
 const Program = require("../../models/academics/programmes/ProgramsModel");
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
 
@@ -336,13 +339,27 @@ module.exports.forgotPasswordRequest = async (req, res) => {
 module.exports.resetPassword = async (req, res) => {
   const passwordResetToken = req?.data?.token;
   const user = req?.data?.userFound;
-  const { password } = req?.body;
+  const { password, confirmPassword } = req?.body;
   //   const user = await User.findOne({ uniqueId }).select(
   //     "+userSignUpDetails.password"
   //   );
   if (!password) {
     return res.status(404).json({
       errorMessage: { message: [`Enter your new password!`] },
+    });
+  }
+  if (!password?.length >= 6) {
+    return res.status(404).json({
+      errorMessage: {
+        message: [`Password must be at least 6 characters long!`],
+      },
+    });
+  }
+  if (confirmPassword !== password) {
+    return res.status(404).json({
+      errorMessage: {
+        message: [`Confirm password must be same as your password!`],
+      },
     });
   }
   const oldPassword = await bcrypt.compare(
@@ -368,6 +385,7 @@ module.exports.resetPassword = async (req, res) => {
           new: true,
         }
       );
+      passwordResetSuccessEmail({ userFound: user, password });
       res.status(200).cookie("userToken", passwordResetToken).json({
         successMessage: "Password changed successfully!",
         user,

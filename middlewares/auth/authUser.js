@@ -115,19 +115,21 @@ async function generateUserToken(req, res, next) {
 
 // Generate password reset token for user
 async function generatePasswordResetUserToken(req, res, next) {
-  const user = req?.data?.userFound;
+  const userFound = req?.data?.userFound;
 
-  if (user) {
+  if (userFound) {
     // Generate user token
     const token = jwt.sign(
       {
-        id: user?._id,
-        uniqueId: user?.uniqueId,
-        role: user?.role,
-        isVerified: user?.isVerified,
-        isVerifiedSensosa: user?.isVerifiedSensosa,
-        lastUpdatedBy: user?.lastUpdatedBy,
-        updatedDate: user?.updatedDate,
+        id: userFound?._id,
+        uniqueId: userFound?.uniqueId,
+        personalInfo: userFound?.personalInfo,
+        userSignUpDetails: userFound?.userSignUpDetails,
+        roles: userFound?.roles,
+        isVerified: userFound?.isVerified,
+        isVerifiedSensosa: userFound?.isVerifiedSensosa,
+        lastUpdatedBy: userFound?.lastUpdatedBy,
+        updatedDate: userFound?.updatedDate,
       },
       process.env.TOKEN_SECRET,
       {
@@ -135,7 +137,7 @@ async function generatePasswordResetUserToken(req, res, next) {
       }
     );
     // Attach userFound and token to the request for further use
-    req.data = { userFound: user, token };
+    req.data = { userFound, token };
     next();
   } else {
     res.status(400).json({

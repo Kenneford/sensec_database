@@ -767,6 +767,66 @@ module.exports.fetchAllStudentReports = async (req, res) => {
     });
   }
 };
+module.exports.fetchSingleStudentReports = async (req, res) => {
+  const currentUser = req.user;
+  const { studentId } = req.params;
+  try {
+    //Find authUser
+    const userFound = await User.findOne({ _id: currentUser?.id });
+    if (
+      !userFound ||
+      (!currentUser?.roles?.includes("Admin") &&
+        !currentUser?.roles?.includes("Lecturer") &&
+        !currentUser?.roles?.includes("Student"))
+    ) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not an authorized user!"],
+        },
+      });
+      return;
+    }
+    //Find student
+    const studentFound = await User.findOne({ uniqueId: studentId });
+    // Find reports
+    const allReports = await StudentReport.find({}).populate([
+      {
+        path: "lecturer",
+        select:
+          "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+      },
+      {
+        path: "student",
+        select:
+          "_id uniqueId personalInfo.profilePicture personalInfo.fullName",
+        // populate: [{ path: "studentSchoolData.program" }],
+      },
+      {
+        path: "classLevel",
+        select: "_id name",
+      },
+      { path: "subject", select: "_id subjectName" },
+    ]);
+    if (allReports) {
+      const filteredReport = allReports?.filter(
+        (reportData) =>
+          reportData?.student === studentFound?._id ||
+          reportData?.studentId === studentFound?.uniqueId
+      );
+      res.status(201).json({
+        successMessage: "Reports data fetched successfully!",
+        allStudentReports: filteredReport,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
+};
 // Not In Use❓
 module.exports.fetchReportStudents = async (req, res) => {
   const data = req.body;

@@ -44,7 +44,7 @@ router.post(
   validateUserSignUpData,
   createUserVerificationData,
   sendVerificationEmail,
-  userSignUpSMS,
+  // userSignUpSMS,
   userSignUp
 );
 router.get(

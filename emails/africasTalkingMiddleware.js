@@ -1,7 +1,7 @@
-// Africa's Talking Configuration
-const africastalking = require("africastalking")({
-  apiKey: process.env.AT_API_KEY,
-  username: process.env.AT_USERNAME,
-});
+// // Africa's Talking Configuration
+// const africastalking = require("africastalking")({
+//   apiKey: process.env.AT_API_KEY,
+//   username: process.env.AT_USERNAME,
+// });
 
-module.exports = { africastalking };
+// module.exports = { africastalking };
