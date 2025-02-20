@@ -41,6 +41,7 @@ const start = async (req, res) => {
     // List of allowed origins
     const allowedOrigins = [
       "https://senyashs.com",
+      "https://www.senyashs.com",
       "https://official-sensec-website.onrender.com",
       "http://localhost:2025",
       "http://192.168.178.22:2025",
