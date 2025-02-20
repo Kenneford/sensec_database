@@ -63,7 +63,7 @@ const start = async (req, res) => {
       // origin: "https://senyashs.com",
       // origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
       methods: "GET,PUT,PATCH,POST,DELETE",
-      // allowedHeaders: ["Content-Type"],
+      allowedHeaders: ["Content-Type", "Authorization"],
     };
     if (process.env.NODE_ENV === "development") {
       app.use(
@@ -244,3 +244,9 @@ start();
 
 //     return 301 https://$host$request_uri;
 // }
+// # Error page or redirect if needed
+//     error_page 502 /502.html;
+//     location = /502.html {
+//         root /usr/share/nginx/html;
+//         internal;
+//     }
