@@ -7,7 +7,16 @@ async function requestPasswordReset(req, res, next) {
   console.log("email: ", email);
 
   try {
-    if (email && !validator.isEmail(email)) {
+    // Check if email is a string
+    if (typeof email !== "string") {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Invalid email format!"],
+        },
+      });
+      return;
+    }
+    if (!validator.isEmail(email)) {
       res.status(403).json({
         errorMessage: {
           message: ["Please provide a valid email!"],
