@@ -124,6 +124,12 @@ async function passwordResetRequestEmail(req, res, next) {
   const token = req?.data?.token;
   const url = process.env.EMAIL_URL;
   let body = `<h4>Hello ${user?.userSignUpDetails?.userName},</h4><p>To reset your password, kindly <a href="${url}/sensec/password/${user?.uniqueId}/${user?._id}/${token}/reset"> click here</a> to do so.</p>`;
+
+  if (!user) {
+    return res.status(404).json({
+      errorMessage: { message: ["User not found!"] },
+    });
+  }
   try {
     if (user?.userSignUpDetails?.passwordResetRequest) {
       return res.status(400).json({
@@ -131,31 +137,48 @@ async function passwordResetRequestEmail(req, res, next) {
       });
     }
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      // service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // Use SSL
       auth: {
         user: process.env.NODEMAILER_GMAIL,
         pass: process.env.NODEMAILER_PASSWORD,
       },
     });
-    let mailTemplate = {
+    const mailTemplate = {
       from: `Sensec <${process.env.NODEMAILER_GMAIL}>`,
       to: user?.contactAddress?.email,
       subject: "Password Reset Link",
       html: body,
     };
-    transporter.sendMail(mailTemplate, (error, info) => {
-      if (error) {
-        console.log("Error sending password reset email:", error);
-        return res
-          .status(400)
-          .json({ errorMessage: { message: ["Failed to send email."] } });
-      } else {
-        console.log("Password reset link sent!", info);
-        // Attach userFound and token to the request for further use
-        req.data = { user, token };
-        next();
-      }
-    });
+    // transporter.sendMail(mailTemplate, (error, info) => {
+    //   if (error) {
+    //     console.log("Error sending password reset email:", error);
+    //     return res
+    //       .status(400)
+    //       .json({ errorMessage: { message: ["Failed to send email."] } });
+    //   } else {
+    //     console.log("Password reset link sent!", info);
+    //     // Attach userFound and token to the request for further use
+    //     req.data = { user, token };
+    //     next();
+    //   }
+    // });
+    try {
+      await transporter.sendMail(mailTemplate);
+      console.log("Password reset link sent!");
+      req.data = { user, token };
+      next();
+      // return res.status(200).json({
+      //   successMessage: "Password reset link sent!",
+      // });
+    } catch (error) {
+      console.log("Error sending email:", error);
+      return res.status(400).json({
+        errorMessage: { message: ["Failed to send email."] },
+      });
+    }
   } catch (error) {
     return res.status(500).json({
       errorMessage: {

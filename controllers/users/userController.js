@@ -316,7 +316,7 @@ module.exports.forgotPasswordRequest = async (req, res) => {
 
   try {
     const userPassResetRequest = await User.findOneAndUpdate(
-      user?._id,
+      { _id: user?._id },
       {
         "userSignUpDetails.passwordResetRequest": true,
       },
