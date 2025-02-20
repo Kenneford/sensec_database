@@ -310,9 +310,10 @@ module.exports.refreshUserToken = async (req, res) => {
 };
 
 module.exports.forgotPasswordRequest = async (req, res) => {
-  const { email } = req.body;
   const user = req?.data?.user;
   const token = req?.data?.token;
+  // console.log("user: ", user);
+
   try {
     const userPassResetRequest = await User.findOneAndUpdate(
       user?._id,
