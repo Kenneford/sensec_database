@@ -125,13 +125,15 @@ async function passwordResetRequestEmail(req, res, next) {
   const url = process.env.EMAIL_URL;
   let body = `<h4>Hello ${user?.userSignUpDetails?.userName},</h4><p>To reset your password, kindly <a href="${url}/sensec/password/${user?.uniqueId}/${user?._id}/${token}/reset"> click here</a> to do so.</p>`;
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.NODEMAILER_GMAIL,
-        pass: process.env.NODEMAILER_PASSWORD,
-      },
-    });
+    // const transporter = nodemailer.createTransport({
+    //   service: "gmail",
+    //   auth: {
+    //     user: process.env.NODEMAILER_GMAIL,
+    //     pass: process.env.NODEMAILER_PASSWORD,
+    //   },
+    // });
+
+    const transporter = createGMailTransporter();
     let mailTemplate = {
       from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
       to: user?.contactAddress?.email,
