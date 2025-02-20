@@ -3,9 +3,11 @@ const jwt = require("jsonwebtoken");
 const User = require("../../../models/user/UserModel");
 
 async function requestPasswordReset(req, res, next) {
-  const { userEmail } = req.body.email;
+  const { email } = req.body.email;
+  console.log("email: ", email);
+
   try {
-    if (userEmail && !validator.isEmail(userEmail)) {
+    if (email && !validator.isEmail(email)) {
       res.status(403).json({
         errorMessage: {
           message: ["Please provide a valid email!"],
@@ -15,7 +17,7 @@ async function requestPasswordReset(req, res, next) {
     }
     // Find user by email
     const userFound = await User.findOne({
-      "contactAddress.email": userEmail,
+      "contactAddress.email": email,
     }).select("+userSignUpDetails.password");
     // Create new secret with token secret and user's password
     const secret =
