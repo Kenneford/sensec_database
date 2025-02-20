@@ -62,7 +62,7 @@ const start = async (req, res) => {
       // origin: "*",
       // origin: "https://senyashs.com",
       // origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
-      methods: "GET,PUT,PATCH,POST,DELETE",
+      methods: ["GET", "POST", "PUT", "DELETE"],
       allowedHeaders: ["Content-Type", "Authorization"],
     };
     if (process.env.NODE_ENV === "development") {
