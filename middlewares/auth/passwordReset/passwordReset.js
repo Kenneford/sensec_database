@@ -4,46 +4,55 @@ const User = require("../../../models/user/UserModel");
 
 async function requestPasswordReset(req, res, next) {
   const userEmail = req.body.email;
-  if (userEmail && !validator.isEmail(userEmail)) {
-    res.status(403).json({
-      errorMessage: {
-        message: ["Please provide a valid email!"],
-      },
-    });
-    return;
-  }
-  // Find user by email
-  const userFound = await User.findOne({
-    "contactAddress.email": userEmail,
-  }).select("+userSignUpDetails.password");
-  // Create new secret with token secret and user's password
-  const secret =
-    process.env.TOKEN_SECRET + userFound?.userSignUpDetails?.password;
-  // Generate user token
-  const token = jwt.sign(
-    {
-      id: userFound?._id,
-      uniqueId: userFound?.uniqueId,
-      personalInfo: userFound?.personalInfo,
-      userSignUpDetails: userFound?.userSignUpDetails,
-      roles: userFound?.roles,
-      isVerified: userFound?.isVerified,
-      isVerifiedSensosa: userFound?.isVerifiedSensosa,
-      lastUpdatedBy: userFound?.lastUpdatedBy,
-      updatedDate: userFound?.updatedDate,
-    },
-    secret,
-    {
-      expiresIn: process.env.SHORT_LIFE_TOKEN_EXP,
+  try {
+    if (userEmail && !validator.isEmail(userEmail)) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Please provide a valid email!"],
+        },
+      });
+      return;
     }
-  );
-  if (token) {
-    // Attach userFound and token to the request for further use
-    req.data = { userFound, token };
-    next();
-  } else {
-    return res.status(400).json({
-      errorMessage: { message: "Failed to request for password reset!" },
+    // Find user by email
+    const userFound = await User.findOne({
+      "contactAddress.email": userEmail,
+    }).select("+userSignUpDetails.password");
+    // Create new secret with token secret and user's password
+    const secret =
+      process.env.TOKEN_SECRET + userFound?.userSignUpDetails?.password;
+    // Generate user token
+    const token = jwt.sign(
+      {
+        id: userFound?._id,
+        uniqueId: userFound?.uniqueId,
+        personalInfo: userFound?.personalInfo,
+        userSignUpDetails: userFound?.userSignUpDetails,
+        roles: userFound?.roles,
+        isVerified: userFound?.isVerified,
+        isVerifiedSensosa: userFound?.isVerifiedSensosa,
+        lastUpdatedBy: userFound?.lastUpdatedBy,
+        updatedDate: userFound?.updatedDate,
+      },
+      secret,
+      {
+        expiresIn: process.env.SHORT_LIFE_TOKEN_EXP,
+      }
+    );
+    if (token) {
+      // Attach userFound and token to the request for further use
+      req.data = { userFound, token };
+      next();
+    } else {
+      return res.status(400).json({
+        errorMessage: { message: "Failed to request for password reset!" },
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
     });
   }
 }

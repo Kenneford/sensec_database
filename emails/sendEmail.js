@@ -124,32 +124,40 @@ async function passwordResetRequestEmail(req, res, next) {
   const token = req?.data?.token;
   const url = process.env.EMAIL_URL;
   let body = `<h4>Hello ${user?.userSignUpDetails?.userName},</h4><p>To reset your password, kindly <a href="${url}/sensec/password/${user?.uniqueId}/${user?._id}/${token}/reset"> click here</a> to do so.</p>`;
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.NODEMAILER_GMAIL,
-      pass: process.env.NODEMAILER_PASSWORD,
-    },
-  });
-  let mailTemplate = {
-    from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
-    to: user?.contactAddress?.email,
-    subject: "Password Reset Link",
-    html: body,
-  };
-  transporter.sendMail(mailTemplate, (error, info) => {
-    if (error) {
-      console.log("Error sending password reset email:", error);
-      return res
-        .status(400)
-        .json({ errorMessage: { message: "Failed to send email." } });
-    } else {
-      console.log("Password reset link sent!", info);
-      // Attach userFound and token to the request for further use
-      req.data = { user, token };
-      next();
-    }
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.NODEMAILER_GMAIL,
+        pass: process.env.NODEMAILER_PASSWORD,
+      },
+    });
+    let mailTemplate = {
+      from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
+      to: user?.contactAddress?.email,
+      subject: "Password Reset Link",
+      html: body,
+    };
+    transporter.sendMail(mailTemplate, (error, info) => {
+      if (error) {
+        console.log("Error sending password reset email:", error);
+        return res
+          .status(400)
+          .json({ errorMessage: { message: "Failed to send email." } });
+      } else {
+        console.log("Password reset link sent!", info);
+        // Attach userFound and token to the request for further use
+        req.data = { user, token };
+        next();
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
 }
 // User password reset success email
 const passwordResetSuccessEmail = async ({ userFound, password }) => {
