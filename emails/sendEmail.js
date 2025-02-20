@@ -122,9 +122,7 @@ const sendVerificationEmail = async (req, res, next) => {
 async function passwordResetRequestEmail(req, res, next) {
   const user = req?.data?.userFound;
   const token = req?.data?.token;
-  // console.log(user);
-  const url = "https://senyashs.com";
-  // const url = process.env.EMAIL_URL;
+  const url = process.env.EMAIL_URL;
   let body = `<h4>Hello ${user?.userSignUpDetails?.userName},</h4><p>To reset your password, kindly <a href="${url}/sensec/password/${user?.uniqueId}/${user?._id}/${token}/reset"> click here</a> to do so.</p>`;
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -139,7 +137,7 @@ async function passwordResetRequestEmail(req, res, next) {
     subject: "Password Reset Link",
     html: body,
   };
-  transporter?.sendMail(mailTemplate, (error, info) => {
+  transporter.sendMail(mailTemplate, (error, info) => {
     if (error) {
       console.log("Error sending password reset email:", error);
       return res
