@@ -177,7 +177,7 @@ Senya Senior High School.</p>
     },
   });
   let mailTemplate = {
-    from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
+    from: `Sensec <${process.env.NODEMAILER_GMAIL}>`,
     to: userFound?.contactAddress?.email,
     subject: "Password Reset Successful",
     html: body,
