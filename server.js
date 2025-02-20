@@ -42,7 +42,7 @@ const start = async (req, res) => {
     const allowedOrigins = [
       "https://senyashs.com",
       "https://www.senyashs.com",
-      // "https://backend.senyashs.com",
+      "https://backend.senyashs.com",
       "https://official-sensec-website.onrender.com",
       "http://localhost:2025",
       "http://192.168.178.22:2025",
@@ -59,9 +59,6 @@ const start = async (req, res) => {
           callback(new Error("Not allowed by CORS"), false);
         }
       },
-      // origin: "*",
-      // origin: "https://senyashs.com",
-      // origin: "https://official-sensec-website.onrender.com", // or '*' to allow all origins
       methods: ["GET", "POST", "PUT", "DELETE"],
       allowedHeaders: ["Content-Type", "Authorization"],
     };
