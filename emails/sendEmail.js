@@ -125,6 +125,11 @@ async function passwordResetRequestEmail(req, res, next) {
   const url = process.env.EMAIL_URL;
   let body = `<h4>Hello ${user?.userSignUpDetails?.userName},</h4><p>To reset your password, kindly <a href="${url}/sensec/password/${user?.uniqueId}/${user?._id}/${token}/reset"> click here</a> to do so.</p>`;
   try {
+    if (user?.userSignUpDetails?.passwordResetRequest) {
+      return res.status(400).json({
+        errorMessage: { message: ["Password reset already requested!"] },
+      });
+    }
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -143,7 +148,7 @@ async function passwordResetRequestEmail(req, res, next) {
         console.log("Error sending password reset email:", error);
         return res
           .status(400)
-          .json({ errorMessage: { message: "Failed to send email." } });
+          .json({ errorMessage: { message: ["Failed to send email."] } });
       } else {
         console.log("Password reset link sent!", info);
         // Attach userFound and token to the request for further use
@@ -169,29 +174,37 @@ const passwordResetSuccessEmail = async ({ userFound, password }) => {
 <br>
 Senya Senior High School.</p>
 `;
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.NODEMAILER_GMAIL,
-      pass: process.env.NODEMAILER_PASSWORD,
-    },
-  });
-  let mailTemplate = {
-    from: `Sensec <${process.env.NODEMAILER_GMAIL}>`,
-    to: userFound?.contactAddress?.email,
-    subject: "Password Reset Successful",
-    html: body,
-  };
-  transporter.sendMail(mailTemplate, (error, info) => {
-    if (error) {
-      console.log("Error sending password reset email:", error);
-      return res
-        .status(400)
-        .json({ errorMessage: { message: "Failed to send email." } });
-    } else {
-      console.log("Password reset link sent!", info);
-    }
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.NODEMAILER_GMAIL,
+        pass: process.env.NODEMAILER_PASSWORD,
+      },
+    });
+    let mailTemplate = {
+      from: `Sensec <${process.env.NODEMAILER_GMAIL}>`,
+      to: userFound?.contactAddress?.email,
+      subject: "Password Reset Successful",
+      html: body,
+    };
+    transporter.sendMail(mailTemplate, (error, info) => {
+      if (error) {
+        console.log("Error sending password reset email:", error);
+        return res
+          .status(400)
+          .json({ errorMessage: { message: ["Failed to send email."] } });
+      } else {
+        console.log("Password reset link sent!", info);
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
 };
 
 const sendEnrollmentEmail = async ({ foundStudent }) => {
@@ -242,7 +255,7 @@ const sendEnrollmentEmail = async ({ foundStudent }) => {
       console.log("Error sending email:", error);
       return res
         .status(400)
-        .json({ errorMessage: { message: "Failed to send email." } });
+        .json({ errorMessage: { message: ["Failed to send email."] } });
     } else {
       console.log("Verification email sent!");
       next();
