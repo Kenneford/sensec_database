@@ -63,7 +63,7 @@ router.post("/users/refresh-token", refreshUserToken);
 router.post(
   "/users/request_password_reset",
   requestPasswordReset,
-  passwordResetRequestEmail,
+  // passwordResetRequestEmail,
   forgotPasswordRequest
 );
 router.post(
