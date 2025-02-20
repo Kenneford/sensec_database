@@ -60,7 +60,7 @@ router.post(
 );
 router.post("/users/login", generateUserToken, userLogin);
 router.post("/users/refresh-token", refreshUserToken);
-router.put(
+router.get(
   "/users/request_password_reset",
   requestPasswordReset,
   passwordResetRequestEmail,
