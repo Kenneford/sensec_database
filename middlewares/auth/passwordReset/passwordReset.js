@@ -55,7 +55,7 @@ async function requestPasswordReset(req, res, next) {
       next();
     } else {
       return res.status(400).json({
-        errorMessage: { message: "Failed to request for password reset!" },
+        errorMessage: { message: ["Failed to request for password reset!"] },
       });
     }
   } catch (error) {
