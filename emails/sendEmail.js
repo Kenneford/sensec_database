@@ -133,7 +133,7 @@ async function passwordResetRequestEmail(req, res, next) {
       },
     });
     let mailTemplate = {
-      from: `Sensec <${process.env.NODEMAILER_EMAIL}>`,
+      from: `Sensec <${process.env.NODEMAILER_GMAIL}>`,
       to: user?.contactAddress?.email,
       subject: "Password Reset Link",
       html: body,
