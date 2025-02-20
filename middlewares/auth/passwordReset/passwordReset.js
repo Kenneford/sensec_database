@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../../../models/user/UserModel");
 
 async function requestPasswordReset(req, res, next) {
-  const userEmail = req.body.email;
+  const { userEmail } = req.body.email;
   try {
     if (userEmail && !validator.isEmail(userEmail)) {
       res.status(403).json({
