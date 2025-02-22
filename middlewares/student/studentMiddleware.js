@@ -543,7 +543,9 @@ async function level100Promotion(req, res, next) {
             );
       let studentNextClassSection;
       //Find Student Next Class Section
-      if (studentFound?.studentSchoolData?.divisionProgram) {
+      if (
+        studentFound?.studentSchoolData?.program?.type === "ProgramDivision"
+      ) {
         studentNextClassSection = await ClassLevelSection.findOne({
           classLevelName: "Level 200",
           divisionProgram: programId,
@@ -660,7 +662,9 @@ async function level200Promotion(req, res, next) {
             );
       let studentNextClassSection;
       //Find Student Next Class Section
-      if (studentFound?.studentSchoolData?.divisionProgram) {
+      if (
+        studentFound?.studentSchoolData?.program?.type === "ProgramDivision"
+      ) {
         studentNextClassSection = await ClassLevelSection.findOne({
           classLevelName: "Level 300",
           divisionProgram: programId,
