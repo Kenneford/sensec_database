@@ -17,6 +17,7 @@ const {
   sendVerificationEmail,
   passwordResetRequestEmail,
   userSignUpSMS,
+  sendEnquiryEmail,
 } = require("../../emails/sendEmail");
 const {
   verifyApiKey,
@@ -77,5 +78,6 @@ router.put("/users/role/remove", removeUserRole);
 router.get("/users/fetch_all", fetchAllUsers);
 router.get("/users/:userId", verifyApiKey, fetchSingleUser);
 // router.put("/users/:userId/update", verifyApiKey, updateUserDataFromChatApp);
+router.post("/support/message/send", sendEnquiryEmail);
 
 module.exports = router;
