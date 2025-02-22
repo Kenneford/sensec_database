@@ -247,3 +247,7 @@ start();
 //         root /usr/share/nginx/html;
 //         internal;
 //     }
+
+// 🔄 Next Steps (Optional) //Necessary
+// Want to auto-add dynamic pages (e.g., blog posts)? Let me know, and I’ll help you set that up!
+// Need help automating deployments? I can guide you on setting up Git hooks or CI/CD.
