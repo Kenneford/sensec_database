@@ -28,6 +28,61 @@ const ClassLevelSection = require("../models/academics/class/ClassLevelSectionMo
 const Program = require("../models/academics/programmes/ProgramsModel");
 const ProgramDivision = require("../models/academics/programmes/divisions/ProgramDivisionModel");
 
+const sendEnquiryEmail = async (req, res) => {
+  const data = req.body;
+  console.log("Message Data: ", data);
+
+  try {
+    const body = `Dear Sir/Madam,\n\n${data?.message}\n\nBest regards,\n${data?.userName}`;
+    const transporter = nodemailer.createTransport({
+      // service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // Use SSL
+      auth: {
+        user: process.env.NODEMAILER_GMAIL,
+        pass: process.env.NODEMAILER_PASSWORD,
+      },
+    });
+    const mailTemplate = {
+      from: `${data?.userName} - ${data?.userEmail}`,
+      to: `Sensec Support Team - ${process.env.NODEMAILER_GMAIL}`,
+      subject: data?.subject,
+      text: body,
+    };
+    // transporter.sendMail(mailTemplate, (error, info) => {
+    //   if (error) {
+    //     console.log("Error sending password reset email:", error);
+    //     return res
+    //       .status(400)
+    //       .json({ errorMessage: { message: ["Failed to send email."] } });
+    //   } else {
+    //     console.log("Password reset link sent!", info);
+    //     // Attach userFound and token to the request for further use
+    //     req.data = { user, token };
+    //     next();
+    //   }
+    // });
+    try {
+      await transporter.sendMail(mailTemplate);
+      return res.status(200).json({
+        successMessage: "Message sent successfully!",
+        supportEmail: body,
+      });
+    } catch (error) {
+      console.log("Error sending email:", error);
+      return res.status(400).json({
+        errorMessage: { message: ["Failed to send email."] },
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
+};
 const sendVerificationEmail = async (req, res, next) => {
   // Get verification data
   const verificationData = req?.newSignedUpUserData?.verificationData;
@@ -747,4 +802,5 @@ module.exports = {
   sendEmploymentEmail,
   employmentSMS,
   sendEmploymentApprovalEmail,
+  sendEnquiryEmail,
 };
