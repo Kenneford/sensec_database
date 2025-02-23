@@ -69,7 +69,7 @@ module.exports.studentOnlineEnrolment = async (req, res) => {
         if (err) {
           return res.status(400).json({
             errorMessage: {
-              message: ["Something went wrong!"],
+              message: ["Something went wrong!", err?.message],
             },
           });
         }

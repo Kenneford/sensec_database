@@ -6,6 +6,7 @@ const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
 const { format } = require("date-fns");
 const nodemailer = require("nodemailer");
+const validator = require("validator");
 
 // Text message engine
 
@@ -33,6 +34,13 @@ const sendEnquiryEmail = async (req, res) => {
   console.log("Message Data: ", data);
 
   try {
+    if (data?.userEmail && !validator.isEmail(data?.userEmail)) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["Please provide a valid email!"],
+        },
+      });
+    }
     const body = `Dear Sir/Madam,\n\n${data?.message}\n\nBest regards,\n${data?.userName}`;
     const transporter = nodemailer.createTransport({
       // service: "gmail",
