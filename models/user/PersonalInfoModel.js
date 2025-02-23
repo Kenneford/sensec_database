@@ -23,12 +23,12 @@ const PersonalInfoSchema = new mongoose.Schema(
     placeOfBirth: {
       type: String,
       // default: "",
-      // require: true,
+      require: true,
     },
     nationality: {
       type: String,
       // default: "",
-      // require: true,
+      require: true,
     },
     gender: {
       type: String,
