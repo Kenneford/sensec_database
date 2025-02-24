@@ -64,7 +64,9 @@ module.exports.addSchoolData = async (req, res) => {
             },
             whoWeAre: data?.whoWeAre,
             academicExcellence: data?.academicExcellence,
-            visionStatement: data?.visionStatement,
+            "schoolVision.visionStatement": data?.visionStatement,
+            "schoolVision.missionStatement": data?.mission,
+            "schoolVision.coreValues": data?.coreValues,
             "achievements.text": data?.achievementText,
             history: data?.history,
             anthems: data?.anthem,
@@ -85,6 +87,7 @@ module.exports.addSchoolData = async (req, res) => {
 
 module.exports.fetchSchoolData = async (req, res) => {
   const sensecSchoolData = await SensecSchoolData.find({});
+
   try {
     if (sensecSchoolData) {
       res.status(200).json({

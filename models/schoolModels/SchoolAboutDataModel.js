@@ -25,8 +25,10 @@ const SensecSchoolDataSchema = new mongoose.Schema(
     academicExcellence: {
       type: String,
     },
-    visionStatement: {
-      type: String,
+    schoolVision: {
+      visionStatement: { type: String },
+      missionStatement: { type: String },
+      coreValues: { type: String },
     },
     history: {
       type: String,
