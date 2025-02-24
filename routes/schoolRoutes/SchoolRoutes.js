@@ -1,6 +1,7 @@
 const {
   addSchoolData,
   fetchSchoolData,
+  updateSchoolData,
 } = require("../../controllers/schoolDataController/SchoolAboutDataController");
 const { authUserRole, authUser } = require("../../middlewares/auth/authUser");
 const { uploadImageFile } = require("../../middlewares/multer/multer");
@@ -13,6 +14,12 @@ router.post(
   authUser,
   authUserRole({ userRoles: { admin: "Admin" } }),
   addSchoolData
+);
+router.put(
+  "/school_data/update",
+  authUser,
+  authUserRole({ userRoles: { admin: "Admin" } }),
+  updateSchoolData
 );
 router.get("/school_data/fetch", fetchSchoolData);
 module.exports = router;

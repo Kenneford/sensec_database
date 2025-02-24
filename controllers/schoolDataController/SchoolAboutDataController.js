@@ -70,6 +70,7 @@ module.exports.addSchoolData = async (req, res) => {
             "achievements.text": data?.achievementText,
             history: data?.history,
             anthems: data?.anthem,
+            createdBy: adminFound?._id,
           });
           res.status(201).json({
             successMessage: "School data created successfully!",
@@ -85,6 +86,63 @@ module.exports.addSchoolData = async (req, res) => {
   }
 };
 
+module.exports.updateSchoolData = async (req, res) => {
+  const data = req.body;
+  const currentUser = req.user;
+
+  try {
+    //Find Admin
+    const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not an admin!"],
+        },
+      });
+      return;
+    }
+    const allSchoolData = await SensecSchoolData.find({});
+    const foundSchoolData = allSchoolData[0];
+    if (!foundSchoolData) {
+      return res.status(403).json({
+        errorMessage: {
+          message: ["Data to update not found!"],
+        },
+      });
+    }
+    const updatedSensecSchoolData = await SensecSchoolData.findOneAndUpdate(
+      { _id: foundSchoolData?._id },
+      {
+        nameOfSchool: data?.nameOfSchool,
+        slogan: data?.slogan,
+        greetings: data?.greetings,
+        whoWeAre: data?.whoWeAre,
+        academicExcellence: data?.academicExcellence,
+        anthems: data?.anthems,
+        "schoolVision.visionStatement": data?.visionStatement,
+        "schoolVision.missionStatement": data?.missionStatement,
+        "schoolVision.coreValues": data?.coreValues,
+        "achievements.text": data?.achievementText,
+        history: data?.history,
+        lastUpdatedBy: adminFound?._id,
+        previouslyUpdatedBy: foundSchoolData?.lastUpdatedBy
+          ? foundSchoolData?.lastUpdatedBy
+          : null,
+        previouslyUpdateDate: foundSchoolData?.updatedAt
+          ? foundSchoolData?.updatedAt
+          : null,
+      }
+    );
+    res.status(201).json({
+      successMessage: `${data?.currentUpdate} updated successfully!`,
+      updatedSensecSchoolData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: { message: ["Internal server error", error?.message] },
+    });
+  }
+};
 module.exports.fetchSchoolData = async (req, res) => {
   const sensecSchoolData = await SensecSchoolData.find({});
 

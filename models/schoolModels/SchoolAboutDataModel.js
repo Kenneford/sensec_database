@@ -56,6 +56,22 @@ const SensecSchoolDataSchema = new mongoose.Schema(
         ref: "Team",
       },
     ],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    lastUpdatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    previouslyUpdatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    previouslyUpdateDate: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
