@@ -5,7 +5,7 @@ const {
   updateAcademicTerm,
   deleteAcademicTerm,
   getCurrentAcademicTerm,
-  setNextAcademicTerm,
+  setAcademicTermStatus,
 } = require("../../../controllers/academics/term/academicTermController");
 const {
   authUser,
@@ -21,7 +21,7 @@ router.post(
   createAcademicTerm
 );
 router.get("/academics/terms/current/fetch", getCurrentAcademicTerm);
-router.put("/academics/terms/next/set", setNextAcademicTerm);
+router.put("/academics/terms/:semesterId/status/set", setAcademicTermStatus);
 router.get("/academics/terms/fetch_all", getAllAcademicTerms);
 router.get("/academics/terms/:termId/fetch", getSingleAcademicTerm);
 router.put(

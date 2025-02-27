@@ -39,6 +39,11 @@ const academicTermSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    status: {
+      type: [String],
+      enum: ["isCurrent", "isNext", "isPending"],
+      default: ["isPending"],
+    },
     isCurrent: {
       type: Boolean,
       default: false,

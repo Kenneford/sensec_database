@@ -92,7 +92,14 @@ module.exports.createAcademicTerm = async (req, res) => {
 // Get all Academic Terms ✅
 module.exports.getAllAcademicTerms = async (req, res) => {
   try {
-    const academicTerms = await AcademicTerm.find({});
+    const academicTerms = await AcademicTerm.find({}).populate([
+      {
+        path: "createdBy",
+        select:
+          "uniqueId personalInfo.gender personalInfo.lastName personalInfo.profilePicture",
+      },
+      { path: "lastUpdatedBy", select: "uniqueId personalInfo" },
+    ]);
     if (academicTerms) {
       res.status(201).json({
         successMessage: "Academic terms fetched successfully...",
@@ -139,32 +146,87 @@ module.exports.getSingleAcademicTerm = async (req, res) => {
   }
 };
 // Set next academic term ✅
-module.exports.setNextAcademicTerm = async (req, res) => {
+module.exports.setAcademicTermStatus = async (req, res) => {
   const { semesterId } = req.params;
+  const currentUser = req.user;
+  const data = req.body;
 
   try {
-    // Step 1: Ensure all other semesters' `isNext` is set to false
-    await AcademicTerm.updateMany({}, { $set: { isNext: false } });
+    //Find admin
+    const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
+    if (
+      !adminFound
+      // || !currentUser?.roles?.includes("Admin")
+    ) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Operation Denied! You're not an admin!"],
+        },
+      });
+      return;
+    }
+    // Find semester
+    const semesterToUpdateStatus = await AcademicTerm.findOne({
+      _id: semesterId,
+    });
+    if (!semesterToUpdateStatus) {
+      res.status(404).json({
+        errorMessage: {
+          message: ["Semester data not found!"],
+        },
+      });
+      return;
+    }
+    // Find all semesters
+    const allAcademicSemesters = await AcademicTerm.find({
+      status: data?.status,
+    });
+    // console.log("allAcademicSemesters: ", allAcademicSemesters);
 
-    // Step 2: Set the selected semester as `isNext`
-    const updatedSemester = await AcademicTerm.findOneAndUpdate(
-      semesterId,
-      { $set: { isNext: true } },
+    const filteredSemesters = allAcademicSemesters?.filter(
+      (semester) =>
+        semester?._id?.toString() !== semesterToUpdateStatus?._id?.toString()
+    );
+    // console.log("filteredSemesters: ", filteredSemesters);
+    if (filteredSemesters?.length > 0) {
+      for (const semester of filteredSemesters) {
+        await AcademicTerm.findOneAndUpdate(
+          { _id: semester?._id },
+          { status: "isPending" },
+          { new: true }
+        );
+      }
+    }
+
+    // Step 1: Ensure all other semesters' `isNext` is set to false
+    // await AcademicTerm.updateMany({}, { $set: { isNext: false } });
+
+    // Step 2: Set the selected semester new status
+    const updatedSemesterStatus = await AcademicTerm.findOneAndUpdate(
+      { _id: semesterToUpdateStatus?._id },
+      { status: data?.status, lastUpdatedBy: data?.lastUpdatedBy },
       { new: true }
     );
 
-    if (!updatedSemester) {
-      return res
-        .status(404)
-        .json({ errorMessage: { message: "Semester not found" } });
-    }
-
     res.status(200).json({
-      message: `Semester ${updatedSemester.name} is now marked as next.`,
-      nextSemester: updatedSemester,
+      successMessage: `${updatedSemesterStatus?.name} is now marked as ${
+        data?.status === "isCurrent"
+          ? "current"
+          : data?.status === "isNext"
+          ? "next"
+          : "pending"
+      }.`,
+      updatedSemesterStatus,
+      // allAcademicSemesters,
+      // filteredSemesters,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error updating semester", error });
+    res.status(404).json({
+      errorMessage: {
+        message: ["Error updating semester!", error],
+      },
+    });
+    return;
   }
 };
 module.exports.getCurrentAcademicTerm = async (req, res) => {
