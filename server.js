@@ -47,6 +47,7 @@ const start = async (req, res) => {
       "https://official-sensec-website.onrender.com",
       "http://localhost:2025",
       "http://192.168.178.22:2025",
+      "http://192.168.178.22:7006",
       // "*",
     ];
     // Configure CORS options if needed
