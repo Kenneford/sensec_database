@@ -117,6 +117,7 @@ const UsersModelSchema = new mongoose.Schema(
         "Student",
         "IT",
         "NT-Staff",
+        "Developer",
       ],
       // default: ["NT-Staff"],
     },

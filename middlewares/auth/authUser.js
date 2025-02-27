@@ -6,6 +6,7 @@ const User = require("../../models/user/UserModel");
 const Program = require("../../models/academics/programmes/ProgramsModel");
 const ClassLevelSection = require("../../models/academics/class/ClassLevelSectionModel");
 const { cloudinary } = require("../cloudinary/cloudinary");
+const ProgramDivision = require("../../models/academics/programmes/divisions/ProgramDivisionModel");
 
 // Generate token for login user
 async function generateUserToken(req, res, next) {
@@ -61,6 +62,7 @@ async function generateUserToken(req, res, next) {
             id: userFound?._id,
             uniqueId: userFound?.uniqueId,
             personalInfo: userFound?.personalInfo,
+            programme: userFound?.studentSchoolData?.program?.programId,
             userSignUpDetails: userFound?.userSignUpDetails,
             roles: userFound?.roles,
             isVerified: userFound?.isVerified,
@@ -81,6 +83,7 @@ async function generateUserToken(req, res, next) {
             uniqueId: userFound?.uniqueId,
             personalInfo: userFound?.personalInfo,
             userSignUpDetails: userFound?.userSignUpDetails,
+            programme: userFound?.studentSchoolData?.program?.programId,
             roles: userFound?.roles,
             isVerified: userFound?.isVerified,
             isVerifiedSensosa: userFound?.isVerifiedSensosa,
@@ -126,6 +129,7 @@ async function generatePasswordResetUserToken(req, res, next) {
         personalInfo: userFound?.personalInfo,
         userSignUpDetails: userFound?.userSignUpDetails,
         roles: userFound?.roles,
+        programme: userFound?.studentSchoolData?.program?.programId,
         isVerified: userFound?.isVerified,
         isVerifiedSensosa: userFound?.isVerifiedSensosa,
         lastUpdatedBy: userFound?.lastUpdatedBy,
@@ -179,17 +183,23 @@ async function validateUserSignUpData(req, res, next) {
   // Get data from request body
   const signUpData = req.body?.signUpData;
   try {
+    let studentProgramme;
     // Find student's programme
     if (signUpData?.programme) {
-      const studentProgramme = await Program.findOne({
+      const isMainProgramme = await Program.findOne({
         _id: signUpData?.programme,
       });
-      if (!studentProgramme) {
+      const isDivisionProgramme = await ProgramDivision.findOne({
+        _id: signUpData?.programme,
+      });
+      if (!isMainProgramme && !isDivisionProgramme) {
         return res.status(404).json({
           errorMessage: {
             message: [`Programme not found!`],
           },
         });
+      } else {
+        studentProgramme = isMainProgramme || isDivisionProgramme;
       }
     }
     // Find user
@@ -204,6 +214,18 @@ async function validateUserSignUpData(req, res, next) {
       });
       return;
     }
+    if (
+      signUpData?.programme &&
+      userFound?.studentSchoolData?.program?.programId?.toString() !==
+        studentProgramme?._id?.toString()
+    ) {
+      res.status(403).json({
+        errorMessage: {
+          message: [`Programme validation failed!`],
+        },
+      });
+      return;
+    }
     // Check if user has already signed-up
     if (userFound && userFound?.signedUp) {
       res.status(404).json({
@@ -214,7 +236,7 @@ async function validateUserSignUpData(req, res, next) {
       return;
     }
     // Check if user is an admin and his/her employment has been approved
-    if (userFound && userFound?.roles?.includes("admin")) {
+    if (userFound && userFound?.roles?.includes("Admin")) {
       if (
         userFound &&
         userFound?.employment?.employmentStatus !== "approved" &&
@@ -229,7 +251,7 @@ async function validateUserSignUpData(req, res, next) {
       }
     }
     // Check if user is a lecturer and his/her employment has been approved
-    if (userFound && userFound?.roles?.includes("lecturer")) {
+    if (userFound && userFound?.roles?.includes("Lecturer")) {
       if (userFound && userFound?.employment?.employmentStatus !== "approved") {
         res.status(404).json({
           errorMessage: {
@@ -240,7 +262,7 @@ async function validateUserSignUpData(req, res, next) {
       }
     }
     // Check if user is a non-teaching staff and his/her employment has been approved
-    if (userFound && userFound?.roles?.includes("nt-staff")) {
+    if (userFound && userFound?.roles?.includes("NT-staff")) {
       if (userFound && userFound?.employment?.employmentStatus !== "approved") {
         res.status(404).json({
           errorMessage: {
@@ -250,31 +272,31 @@ async function validateUserSignUpData(req, res, next) {
         return;
       }
     }
-    // Check if user is a student and his/her enrollment has been approved
-    if (userFound && userFound?.roles?.includes("student")) {
-      if (
-        userFound &&
-        userFound?.studentStatusExtend?.enrollmentStatus !== "approved"
-      ) {
-        res.status(404).json({
-          errorMessage: {
-            message: [`Sign-up denied! You're not a student!`],
-          },
-        });
-        return;
-      }
-    }
-    // Check if user is not a student and his/her employment has been approved
-    if (userFound && !userFound?.roles?.includes("student")) {
-      if (userFound && userFound?.employment?.employmentStatus !== "approved") {
-        res.status(404).json({
-          errorMessage: {
-            message: [`Sign-up denied! You're not yet approved!`],
-          },
-        });
-        return;
-      }
-    }
+    // Check if user is a student and his/her enrollment has been approved ❓Must be updated
+    // if (userFound && userFound?.roles?.includes("Student")) {
+    //   if (
+    //     userFound &&
+    //     userFound?.studentStatusExtend?.enrollmentStatus !== "approved"
+    //   ) {
+    //     res.status(404).json({
+    //       errorMessage: {
+    //         message: [`Sign-up denied! You're not a student!`],
+    //       },
+    //     });
+    //     return;
+    //   }
+    // }
+    // Check if user is not a student and his/her employment has been approved ❓Must be updated
+    // if (userFound && !userFound?.roles?.includes("student")) {
+    //   if (userFound && userFound?.employment?.employmentStatus !== "approved") {
+    //     res.status(404).json({
+    //       errorMessage: {
+    //         message: [`Sign-up denied! You're not yet approved!`],
+    //       },
+    //     });
+    //     return;
+    //   }
+    // }
     //Check if username already in use
     const userNameFound = await User.findOne({
       "userSignUpDetails.userName": signUpData?.userName,
@@ -287,7 +309,7 @@ async function validateUserSignUpData(req, res, next) {
       });
     }
     // Find student's class
-    if (userFound && userFound?.roles?.includes("student")) {
+    if (userFound && userFound?.roles?.includes("Student")) {
       const studentClassSection = await ClassLevelSection.findOne({
         _id: signUpData?.class,
       });

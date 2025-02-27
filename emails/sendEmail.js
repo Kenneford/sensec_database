@@ -132,8 +132,9 @@ const sendVerificationEmail = async (req, res, next) => {
           context: {
             userImage: userFound?.personalInfo?.profilePicture.url,
             uniqueId: userFound?.uniqueId,
-            firstName: userFound?.personalInfo?.firstName,
-            lastName: userFound?.personalInfo?.lastName,
+            fullName: userFound?.roles?.includes("Student")
+              ? `${userFound?.personalInfo?.fullName}`
+              : `${userFound?.personalInfo?.firstName} ${userFound?.personalInfo?.lastName}`,
             userName: userFound?.userSignUpDetails?.userName,
             password: userPassword,
             company: "Senya Senior High School",
