@@ -21,7 +21,12 @@ router.post(
   createAcademicTerm
 );
 router.get("/academics/terms/current/fetch", getCurrentAcademicTerm);
-router.put("/academics/terms/:semesterId/status/set", setAcademicTermStatus);
+router.put(
+  "/academics/terms/:semesterId/status/set",
+  authUser,
+  authUserRole({ userRoles: { admin: "Admin" } }),
+  setAcademicTermStatus
+);
 router.get("/academics/terms/fetch_all", getAllAcademicTerms);
 router.get("/academics/terms/:termId/fetch", getSingleAcademicTerm);
 router.put(

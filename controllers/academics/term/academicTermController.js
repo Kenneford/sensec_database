@@ -154,10 +154,7 @@ module.exports.setAcademicTermStatus = async (req, res) => {
   try {
     //Find admin
     const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
-    if (
-      !adminFound
-      // || !currentUser?.roles?.includes("Admin")
-    ) {
+    if (!adminFound || !currentUser?.roles?.includes("Admin")) {
       res.status(403).json({
         errorMessage: {
           message: ["Operation Denied! You're not an admin!"],
