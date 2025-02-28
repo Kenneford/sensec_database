@@ -192,7 +192,10 @@ module.exports.setAcademicTermStatus = async (req, res) => {
       for (const semester of filteredSemesters) {
         await AcademicTerm.findOneAndUpdate(
           { _id: semester?._id },
-          { status: "isPending" },
+          {
+            status: "isPending",
+            lastUpdatedBy: data?.lastUpdatedBy ? data?.lastUpdatedBy : null,
+          },
           { new: true }
         );
       }
@@ -204,7 +207,10 @@ module.exports.setAcademicTermStatus = async (req, res) => {
     // Step 2: Set the selected semester new status
     const updatedSemesterStatus = await AcademicTerm.findOneAndUpdate(
       { _id: semesterToUpdateStatus?._id },
-      { status: data?.status, lastUpdatedBy: data?.lastUpdatedBy },
+      {
+        status: data?.status,
+        lastUpdatedBy: data?.lastUpdatedBy ? data?.lastUpdatedBy : null,
+      },
       { new: true }
     );
 
