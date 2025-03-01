@@ -70,7 +70,7 @@ async function deleteExpiredVerificationData(req, res, next) {
   }
 }
 // User verification middleware
-async function verifyUserMiddleware(req, res, next) {
+async function verifyUserToken(req, res, next) {
   const { userId, emailToken } = req.params;
   const userFound = req.userFound;
   // console.log(userId, "User-ID");
@@ -94,6 +94,8 @@ async function verifyUserMiddleware(req, res, next) {
         uniqueId: userFound?.uniqueId,
         personalInfo: userFound?.personalInfo,
         userSignUpDetails: userFound?.userSignUpDetails,
+        programme: userFound?.studentSchoolData?.program?.programId,
+        currentClassLevel: userFound?.studentSchoolData?.currentClassLevel,
         roles: userFound?.roles,
         isVerified: userFound?.isVerified,
         isVerifiedSensosa: userFound?.isVerifiedSensosa,
@@ -142,7 +144,7 @@ async function deleteVerificationDataAfterVerification(req, res, next) {
 }
 
 module.exports = {
-  verifyUserMiddleware,
+  verifyUserToken,
   deleteExpiredVerificationData,
   deleteVerificationDataAfterVerification,
 };
