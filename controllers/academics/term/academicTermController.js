@@ -151,7 +151,18 @@ module.exports.setAcademicTermStatus = async (req, res) => {
   const currentUser = req.user;
   const data = req.body;
 
+  console.log("startDate: ", data?.startDate);
+  console.log("endDate: ", data?.endDate);
+
   try {
+    if (!data) {
+      res.status(403).json({
+        errorMessage: {
+          message: ["Semester update data not provided!"],
+        },
+      });
+      return;
+    }
     //Find admin
     const adminFound = await User.findOne({ _id: data?.lastUpdatedBy });
     if (!adminFound || !currentUser?.roles?.includes("Admin")) {
@@ -174,6 +185,7 @@ module.exports.setAcademicTermStatus = async (req, res) => {
       });
       return;
     }
+    // if (!data?.changeSemesterName) {
     // Find all semesters
     const allAcademicSemesters = await AcademicTerm.find({
       status: data?.status,
@@ -197,6 +209,7 @@ module.exports.setAcademicTermStatus = async (req, res) => {
         );
       }
     }
+    // }
 
     // Step 1: Ensure all other semesters' `isNext` is set to false
     // await AcademicTerm.updateMany({}, { $set: { isNext: false } });
@@ -205,6 +218,9 @@ module.exports.setAcademicTermStatus = async (req, res) => {
     const updatedSemesterStatus = await AcademicTerm.findOneAndUpdate(
       { _id: semesterToUpdateStatus?._id },
       {
+        name: data?.newSemesterName,
+        from: data?.startDate,
+        to: data?.endDate,
         status: data?.status,
         lastUpdatedBy: data?.lastUpdatedBy ? data?.lastUpdatedBy : null,
       },
@@ -224,9 +240,11 @@ module.exports.setAcademicTermStatus = async (req, res) => {
       // filteredSemesters,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(404).json({
       errorMessage: {
-        message: ["Error updating semester!", error],
+        message: ["Error updating semester!", error?.message],
       },
     });
     return;
@@ -355,26 +373,8 @@ module.exports.deleteAcademicTerm = async (req, res) => {
     const deletedAcademicTerm = await AcademicTerm.findOneAndDelete({
       _id: academicTermFound?._id,
     });
-    if (deletedAcademicTerm) {
-      // Remove academic term from admin academic terms array
-      if (
-        adminFound?.adminActionsData?.academicTerms.includes(
-          deletedAcademicTerm?._id
-        )
-      ) {
-        await User.findOneAndUpdate(
-          adminFound._id,
-          {
-            $pull: {
-              "adminActionsData.academicTerms": deletedAcademicTerm?._id,
-            },
-          },
-          { new: true }
-        );
-      }
-    }
     res.status(200).json({
-      successMessage: "Academic term deleted successfully!",
+      successMessage: "Academic semester deleted successfully!",
       deletedAcademicTerm,
     });
   } catch (error) {
