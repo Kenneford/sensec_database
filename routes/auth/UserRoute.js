@@ -29,7 +29,7 @@ const {
   validateUserSignUpData,
 } = require("../../middlewares/auth/authUser");
 const {
-  verifyUserMiddleware,
+  verifyUserToken,
   deleteExpiredVerificationData,
   deleteVerificationDataAfterVerification,
 } = require("../../middlewares/auth/emailVerification/emailVerification");
@@ -55,7 +55,7 @@ router.get(
 router.post(
   "/users/:userId/:emailToken/verify",
   deleteExpiredVerificationData,
-  verifyUserMiddleware,
+  verifyUserToken,
   deleteVerificationDataAfterVerification,
   userVerification
 );
