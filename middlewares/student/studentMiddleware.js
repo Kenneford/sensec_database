@@ -1138,7 +1138,7 @@ async function level300MultiStudentsPromotion(req, res, next) {
         });
         //Find Student's House
         const studentHouse = await House.findOne({
-          _id: studentFound?.studentSchoolData?.enrollmentCode,
+          _id: studentFound?.studentSchoolData?.house,
         });
         const studentPlacementData = await PlacementStudent.findOne({
           enrollmentCode: studentFound?.studentSchoolData?.enrollmentCode,

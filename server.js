@@ -48,6 +48,7 @@ const start = async (req, res) => {
       "http://localhost:2025",
       "http://192.168.178.22:2025",
       "http://192.168.178.22:7006",
+      "http://192.168.178.22:7070",
       // "*",
     ];
     // Configure CORS options if needed
@@ -137,7 +138,7 @@ const start = async (req, res) => {
     app.use(express.static("public"));
     // Routes
     app.use(
-      "/api/sensec_db/v1",
+      "/api/sensec_db/v1", // Will be changed to "/api/sensec_db/website/v1"
       UsersRoute,
       AdminsRoute,
       EmploymentRoute,
@@ -158,6 +159,9 @@ const start = async (req, res) => {
       AttendanceRoute,
       SensecSchoolDataRoute
     );
+
+    // ToDo
+    // app.use("/api/sensec_db/website/v1");
 
     // Run the update function immediately on server start
     // (async () => {
