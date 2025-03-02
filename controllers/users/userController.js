@@ -561,21 +561,24 @@ module.exports.fetchAllUsers = async (req, res) => {
 };
 module.exports.fetchSingleUser = async (req, res) => {
   const { userId } = req.params;
-  console.log(userId);
+  console.log("userId: ", userId);
 
   try {
-    const userFound = await User.findOne({ uniqueId: userId }).populate([
+    const userFound = await User.findOne({
+      // uniqueId: userId,
+      $or: [{ "userSignUpDetails.userName": userId }, { uniqueId: userId }],
+    }).populate([
       // { path: "employment.employmentProcessedBy" },
       // { path: "employment.employmentApprovedBy" },
       // { path: "adminActionsData.admins" },
-      {
-        path: "lecturerSchoolData.program",
-      },
-      { path: "lecturerSchoolData.classLevelHandling" },
-      { path: "lecturerSchoolData.students" },
-      { path: "lecturerSchoolData.teachingSubjects" },
+      // {
+      //   path: "lecturerSchoolData.program",
+      // },
+      // { path: "lecturerSchoolData.classLevelHandling" },
+      // { path: "lecturerSchoolData.students" },
+      // { path: "lecturerSchoolData.teachingSubjects" },
       { path: "studentSchoolData.batch" },
-      { path: "studentSchoolData.program" },
+      { path: "studentSchoolData.program.programId" },
       { path: "studentSchoolData.divisionProgram" },
       { path: "studentSchoolData.currentClassLevel" },
       { path: "studentSchoolData.currentClassTeacher" },
@@ -595,6 +598,8 @@ module.exports.fetchSingleUser = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log(error);
+
     return res.status(400).json({
       errorMessage: {
         message: [`Could not fetch users data!`],
