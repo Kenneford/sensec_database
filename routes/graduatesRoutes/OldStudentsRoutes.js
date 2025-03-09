@@ -4,6 +4,7 @@ const {
   getSingleOldStudentsGroup,
   deleteOldStudentsGroup,
   updateOldStudentsGroup,
+  fetchAllGraduates,
 } = require("../../controllers/graduates/OldStudentsController");
 const { authUser, authUserRole } = require("../../middlewares/auth/authUser");
 
@@ -16,6 +17,7 @@ router.post(
   createOldStudentsGroup
 );
 router.get("/sensosan/groups/fetch_all", getOldStudentsGroups);
+router.get("/sensosan/members/fetch_all", fetchAllGraduates);
 router.get("/sensosan/groups/:sensosanId/fetch", getSingleOldStudentsGroup);
 router.put(
   "/sensosan/groups/:sensosanId/update",

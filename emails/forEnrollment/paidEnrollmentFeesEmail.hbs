@@ -1,0 +1,117 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Enrollment Approval</title>
+    <style>
+      body { font-family: "Arial", sans-serif; margin: 0; padding: 0;
+      background-color: #f4f4f4; } .container { width: 100%; max-width: 600px;
+      margin: auto; background-color: #e6f6e0; /*border: 1px solid #ccc;*/
+      -webkit-box-shadow: 0px 0px 16px -8px rgba(0, 0, 0, 0.68); box-shadow: 0px
+      0px 16px -8px rgba(0, 0, 0, 0.68); overflow: hidden; border-radius: 8px; }
+      .header { width: 100%; background-color: #e6f6e0; text-align: center;
+      padding: 10px 0; } .header img { width: 3rem; height: 3rem;object-fit:
+      cover; } .header-title { width: 100%; background-color: green; color:
+      white; text-align: center; padding: .3rem 0; margin: 0; letter-spacing:
+      1px; font-weight: 400; } .content {margin: 2rem 1rem; line-height: 1.6;
+      color: #333333; } .student-picture { margin: auto; width: 4.5rem; height:
+      4.5rem; object-fit: cover; padding: 0.3rem 0.2rem 0.2rem 0.3rem;
+      border-radius: 0.4rem; border: 1px solid #cccc; background-color: #fff; }
+      .footer { text-align: center; padding: 10px 0; color: #666666; font-size:
+      12px; } .button { color: #099cbd !important;} a { color: #099cbd
+      !important; } @media only screen and (max-width: 600px) { .container {
+      width: 100% !important; } .content { width: 95% !important;margin: 2rem
+      .5rem !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <!-- School Logo -->
+        <img src="cid:schoolLogo" alt="School Logo" class="logo" />
+      </div>
+      <!-- Header -->
+      <h2 class="header-title">Welcome to {{company}}!</h2>
+      <!-- Email content -->
+      <div class="content">
+        <!-- Student's Photo -->
+        {{!-- <img src={{userImage}} alt="Student Photo" class="student-picture" /> --}}
+        <p>Hi {{fullName}},</p>
+        <p>Thank you for completing your enrolment fees payment. Below are brief
+          information about your transaction:</p>
+        <ul>
+          <li><strong>Index Number:</strong> {{indexNumber}}</li>
+          <li><strong>Enrollment Code:</strong> {{enrollmentCode}}</li>
+          <li><strong>Amount:</strong>
+            GHS ¢{{amount}}
+          </li>
+          <li><strong>Reference:</strong>
+            {{reference}}
+          </li>
+          <li><strong>Transaction ID:</strong>
+            {{transactionId}}
+          </li>
+          <li><strong>Provider:</strong>
+            {{provider}}
+          </li>
+          <li><strong>Phone Number:</strong>
+            {{phoneNumber}}</li>
+        </ul>
+        <p>If you have not already enrolled,
+          <span><a href="{{urlLink}}" class="button">click here</a></span>
+          to begin your enrolment process.</p>
+        {{!-- <p class="linkBtn">
+          <a href="{{urlLink}}" class="button">{{linkText}}</a>
+        </p> --}}
+        <p>Best regards,</p>
+        <p style="font-weight: 600; padding-bottom: -.5rem; margin: 0">Head of
+          Administration
+          <br />
+          Senya Senior High School.</p>
+      </div>
+      <hr />
+      <!-- Footer -->
+      <div class="footer">
+        {{!-- &copy;
+        {{year}}
+        Our School. All rights reserved. --}}
+        <span
+          className="sensecRight"
+          style="
+        width:90%;
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      "
+        >
+          <p
+            style="
+          width: 100%;
+          padding: 0 0 1rem;
+          margin-bottom: 0;
+          font-size: .8rem;
+          font-weight: 500;
+          color: #555;
+          text-align: center;
+        "
+          >
+            &copy;{{currentYear}}
+            <span
+              style="
+          font-size: .8rem;
+          color: green;
+        "
+            >{{company}}</span>.
+            <span
+              style="
+          font-size: .8rem;
+        "
+            >All Rights Reserved!</span>
+          </p>
+        </span>
+      </div>
+    </div>
+  </body>
+</html>

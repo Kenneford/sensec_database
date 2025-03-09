@@ -294,6 +294,48 @@ Senya Senior High School.</p>
   }
 };
 
+// Send EnrolmentCode email
+const sendEnrolmentCodeEmail = async ({ userFound }) => {
+  const url = process.env.EMAIL_URL;
+  let body = `
+<h4>Hello ${userFound?.fullName},</h4><p>Your password was changed to ${password}. Kindly <a href="${url}/sensec/contact"> click here</a> to contact our support team if you didn't take this action.</p>
+<p>Best regards,</p>
+<p style="font-weight: 600; padding-bottom: -.5rem">Support Team,
+<br>
+Senya Senior High School.</p>
+`;
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.NODEMAILER_GMAIL,
+        pass: process.env.NODEMAILER_PASSWORD,
+      },
+    });
+    let mailTemplate = {
+      from: `Sensec <${process.env.NODEMAILER_GMAIL}>`,
+      to: userFound?.contactAddress?.email,
+      subject: "Password Reset Successful",
+      html: body,
+    };
+    transporter.sendMail(mailTemplate, (error, info) => {
+      if (error) {
+        console.log("Error sending password reset email:", error);
+        return res
+          .status(400)
+          .json({ errorMessage: { message: ["Failed to send email."] } });
+      } else {
+        console.log("Password reset link sent!", info);
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error!", error?.message],
+      },
+    });
+  }
+};
 const sendEnrollmentEmail = async ({ foundStudent }) => {
   const currentYear = new Date().getFullYear();
   const url = process.env.EMAIL_URL;
@@ -424,6 +466,72 @@ const sendEnrollmentApprovalEmail = async ({ foundStudent }) => {
         company: "Senya Senior High School",
         urlLink: `${url}/sensec/students/enrollment/online/${foundStudent?.uniqueId}/success/Overview`,
         linkText: "Visit Our Website",
+        currentYear,
+      },
+      attachments: [
+        {
+          filename: "school-logo.png",
+          path: path.resolve(__dirname, "assets/sensec-logo1.png"), // Path to school logo
+          cid: "schoolLogo", // Same CID as in the HTML template
+        },
+      ],
+    };
+    transporter.sendMail(mailTemplate, (error, info) => {
+      if (error) {
+        console.log("Error sending email:", error);
+        // return res
+        //   .status(400)
+        //   .json({ errorMessage: { message: "Failed to send email." } });
+      } else {
+        console.log("Verification email sent!");
+        next();
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+const paidEnrollmentFeesEmail = async (paymentData) => {
+  const currentYear = new Date().getFullYear();
+  const url = process.env.EMAIL_URL;
+  // const url = "https://official-sensec-website.onrender.com";
+  try {
+    const nextSemester = await AcademicTerm.findOne({
+      isNext: true,
+    });
+    const transporter = createGMailTransporter();
+
+    const handlebarOptions = {
+      viewEngine: {
+        extname: "hbs",
+        partialsDir: path.resolve("./emails/forEnrollment/"),
+        layoutsDir: path.resolve("./emails/forEnrollment/"),
+        defaultLayout: "",
+      },
+      viewPath: path.resolve("./emails/forEnrollment/"),
+      extName: ".hbs",
+    };
+
+    // use a template file with nodemailer
+    transporter.use("compile", hbs(handlebarOptions));
+
+    let mailTemplate = {
+      from: `Senya Senior High School <${process.env.NODEMAILER_GMAIL}>`,
+      to: paymentData?.email,
+      subject: "Enrolment Payment Received!",
+      template: "paidEnrollmentFeesEmail",
+      context: {
+        fullName: paymentData?.fullName,
+        indexNumber: paymentData?.studentId,
+        amount: paymentData?.amount,
+        reference: paymentData?.reference,
+        transactionId: paymentData?.transactionId,
+        phoneNumber: paymentData?.phoneNumber,
+        provider: paymentData?.provider,
+        enrollmentCode: paymentData?.enrollmentCode,
+        company: "Senya Senior High School",
+        urlLink: `${url}/sensec/students/enrollment/online/${paymentData?.studentId}`,
+        linkText: "Enroll Now",
         currentYear,
       },
       attachments: [
@@ -804,6 +912,7 @@ module.exports = {
   sendVerificationEmail,
   passwordResetRequestEmail,
   passwordResetSuccessEmail,
+  paidEnrollmentFeesEmail,
   sendEnrollmentEmail,
   sendEnrollmentApprovalEmail,
   studentEnrollmentApprovalSMS,
