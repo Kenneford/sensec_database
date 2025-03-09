@@ -592,10 +592,6 @@ module.exports.fetchSingleUser = async (req, res) => {
         successMessage: `User data fetched successfully!`,
         userFound,
       });
-    } else {
-      res.status(200).json({
-        successMessage: `No user data found!`,
-      });
     }
   } catch (error) {
     console.log(error);

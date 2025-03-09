@@ -93,6 +93,26 @@ module.exports.createOldStudentsGroup = async (req, res) => {
   }
 };
 // Get old students groups ✅
+module.exports.fetchAllGraduates = async (req, res) => {
+  try {
+    const sensosans = await User.find({
+      "studentStatusExtend.isGraduated": true,
+    });
+    if (sensosans) {
+      res.status(200).json({
+        successMessage: "Graduates data fetched successfully!",
+        allGraduatesFound: sensosans,
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      errorMessage: {
+        message: ["Internal Server Error"],
+      },
+    });
+  }
+};
+// Get old students groups ✅
 module.exports.getOldStudentsGroups = async (req, res) => {
   try {
     const sensosans = await OldStudents.find({});

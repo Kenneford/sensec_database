@@ -121,19 +121,19 @@ module.exports.updatePlacementData = async (req, res) => {
       return;
     }
     // Generating Enrollment Code Process
-    const generatedNum = Math.floor(100 + Math.random() * 900); // Generate random number
-    // Get the student's programme abbreviation
-    const programmeAbbreviation = existingStudent?.programme
-      .split(" ")
-      .map((word) => word[0].toUpperCase())
-      .join("");
+    // const generatedNum = Math.floor(100 + Math.random() * 900); // Generate random number
+    // // Get the student's programme abbreviation
+    // const programmeAbbreviation = existingStudent?.programme
+    //   .split(" ")
+    //   .map((word) => word[0].toUpperCase())
+    //   .join("");
 
-    // Get the last two digits of the current year
-    const currentYear = new Date().getFullYear();
-    const yearSuffix = currentYear.toString().slice(-2);
+    // // Get the last two digits of the current year
+    // const currentYear = new Date().getFullYear();
+    // const yearSuffix = currentYear.toString().slice(-2);
 
-    // Generate the enrolment Code
-    const enrollmentCode = `${programmeAbbreviation}${generatedNum}-${yearSuffix}`;
+    // // Generate the enrolment Code
+    // const enrollmentCode = `${programmeAbbreviation}${generatedNum}-${yearSuffix}`;
 
     // Update student's placement verification status
     // if (existingStudent && existingStudent.placementVerified === false) {
@@ -150,7 +150,7 @@ module.exports.updatePlacementData = async (req, res) => {
         jhsAttended: data?.jhsAttended,
         yearGraduated: data?.yearGraduated,
         smsContact: data?.smsContact,
-        enrollmentCode,
+        // enrollmentCode,
       },
       { new: true }
     );

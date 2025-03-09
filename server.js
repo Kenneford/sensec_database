@@ -30,6 +30,7 @@ const BlogRoute = require("./routes/blogRoutes/blogRoute");
 const StudentReportRoute = require("./routes/academics/reports/studentReportRoutes");
 const AttendanceRoute = require("./routes/academics/attendance/attendanceRoutes");
 const SensecSchoolDataRoute = require("./routes/schoolRoutes/SchoolRoutes");
+const PaymentRoute = require("./routes/payment/PaymentRoutes");
 const {
   updateCurrentSemester,
   updateAcademicYear,
@@ -157,7 +158,8 @@ const start = async (req, res) => {
       BlogRoute,
       StudentReportRoute,
       AttendanceRoute,
-      SensecSchoolDataRoute
+      SensecSchoolDataRoute,
+      PaymentRoute
     );
 
     // ToDo
