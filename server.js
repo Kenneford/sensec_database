@@ -47,6 +47,7 @@ const start = async (req, res) => {
       "https://backend.senyashs.com",
       "https://official-sensec-website.onrender.com",
       "http://localhost:2025",
+      "http://localhost:3000",
       "http://192.168.178.22:2025",
       "http://192.168.178.22:7006",
       "http://192.168.178.22:7070",
