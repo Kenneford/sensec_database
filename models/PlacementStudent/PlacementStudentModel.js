@@ -10,16 +10,6 @@ const placementStudentsModelSchema = new mongoose.Schema(
       default: "",
       // require: true,
     },
-    // firstName: {
-    //   type: String,
-    //   default: "",
-    //   // require: true,
-    // },
-    // lastName: {
-    //   type: String,
-    //   default: "",
-    //   // require: true,
-    // },
     fullName: {
       type: String,
       default: "",
@@ -90,7 +80,15 @@ const placementStudentsModelSchema = new mongoose.Schema(
     },
     enrollmentCode: {
       type: String,
-      default: "",
+      // default: "",
+    },
+    enrollmentFeesPaid: {
+      type: Boolean,
+      default: false,
+    },
+    enrollmentFeesId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
     },
   },
   {

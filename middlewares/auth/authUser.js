@@ -11,7 +11,7 @@ const ProgramDivision = require("../../models/academics/programmes/divisions/Pro
 // Generate token for login user
 async function generateUserToken(req, res, next) {
   const { uniqueId, password, rememberMe } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
 
   try {
     if (!uniqueId) {

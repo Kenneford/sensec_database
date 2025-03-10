@@ -30,6 +30,7 @@
     "nodemailer-express-handlebars": "^6.1.2",
     "opossum": "^8.1.4",
     "twilio": "^5.2.3",
+    "uuid": "^11.1.0",
     "validator": "^13.12.0"
   },
   "devDependencies": {

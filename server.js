@@ -30,6 +30,7 @@ const BlogRoute = require("./routes/blogRoutes/blogRoute");
 const StudentReportRoute = require("./routes/academics/reports/studentReportRoutes");
 const AttendanceRoute = require("./routes/academics/attendance/attendanceRoutes");
 const SensecSchoolDataRoute = require("./routes/schoolRoutes/SchoolRoutes");
+const PaymentRoute = require("./routes/payment/PaymentRoutes");
 const {
   updateCurrentSemester,
   updateAcademicYear,
@@ -46,6 +47,7 @@ const start = async (req, res) => {
       "https://backend.senyashs.com",
       "https://official-sensec-website.onrender.com",
       "http://localhost:2025",
+      "http://localhost:3000",
       "http://192.168.178.22:2025",
       "http://192.168.178.22:7006",
       "http://192.168.178.22:7070",
@@ -157,7 +159,8 @@ const start = async (req, res) => {
       BlogRoute,
       StudentReportRoute,
       AttendanceRoute,
-      SensecSchoolDataRoute
+      SensecSchoolDataRoute,
+      PaymentRoute
     );
 
     // ToDo
