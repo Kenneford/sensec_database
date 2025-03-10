@@ -258,6 +258,7 @@ module.exports.verifyPlacementStudent = async (req, res) => {
     //Find student's data to verify
     const foundStudent = await PlacementStudent.findOne({
       jhsIndexNo: data?.jhsIndexNo,
+      yearGraduated: data?.yearGraduated,
     });
     if (!foundStudent) {
       res.status(404).json({

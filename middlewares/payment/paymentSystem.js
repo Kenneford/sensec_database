@@ -24,7 +24,7 @@ async function getPaymentAccessToken(req, res, next) {
         headers: {
           "Ocp-Apim-Subscription-Key":
             process.env.MTN_MOMO_API_SUBSCRIPTION_KEY,
-          "X-Target-Environment": "sandbox",
+          "X-Target-Environment": process.env.MTN_MOMO_API_ENVIRONMENT,
           Authorization: `Basic ${Buffer.from(
             `${process.env.MTN_MOMO_API_USER}:${process.env.MTN_MOMO_API_KEY}`
           ).toString("base64")}`,
@@ -48,7 +48,7 @@ async function getPaymentAccessToken(req, res, next) {
   } catch (error) {
     console.log(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       errorMessage: {
         message: ["Internal Server Error!", error?.message],
       },
